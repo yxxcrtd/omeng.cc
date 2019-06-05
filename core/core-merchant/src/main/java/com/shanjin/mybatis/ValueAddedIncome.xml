@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IValueAddedIncomeDao">
+  
+   <!-- 根据商户ID查询商户信息 -->
+  <select id="selectMerchantInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+     select
+          mi.province,  
+          mi.city,
+          mi.app_type  
+      from
+          merchant_info mi 
+      where
+          mi.id = #{merchantId}
+          and mi.is_del = 0
+  </select>
+  
+  <!-- 查询项目代理用户 -->
+  <select id="getSystemUserInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+    SELECT
+		t.*
+	FROM
+		authority_user_info t
+	LEFT JOIN authority_user_app ua ON t.id = ua.userId
+	LEFT JOIN merchant_app_info ai ON ua.appId = ai.id
+	AND ai.is_del = 0
+	WHERE
+		t.isDel = 0
+	AND t.userType = 4
+	AND t.provinceDesc = #{province}
+	AND t.cityDesc = #{city} 
+	AND ai.app_type = #{appType} 
+  </select>
+  
+  <!-- 更改用户余额信息 -->
+  <update id="updateSystemUserInfo" parameterType="java.util.Map">
+      update
+          authority_user_info
+      set
+          balance = #{balance}
+      where
+          id = #{id}
+          and isDel = 0
+  </update>
+  
+  <!-- 保存明细 -->
+  <insert id="saveAgent" parameterType="java.util.Map" >
+      insert into manager_agent_charge
+           (
+               agent_id,
+               charge_money,
+               charge_time,
+               charge_type,
+               head_name,
+               remark,
+               charge_reason,
+               order_status
+           )
+      values
+           (
+               #{agent_id},
+               #{charge_money},
+               #{charge_time},
+               #{charge_type},
+               #{head_name},
+               #{remark},
+               #{charge_reason},
+               #{order_status}
+           )
+  </insert>
+  
+   <!-- 查询市代用户 -->
+  <select id="getCityUserInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+    SELECT
+		*
+	FROM
+		authority_user_info t
+	WHERE
+		t.isDel = 0
+	AND t.userType = 3
+	AND t.provinceDesc = #{province}
+	AND t.cityDesc = #{city} 
+  </select>
+  
+   <!-- 查询市代用户 -->
+  <select id="getProvinceUser" parameterType="java.util.Map" resultType="java.util.HashMap">
+    SELECT
+		*
+	FROM
+		authority_user_info t
+	WHERE
+		t.isDel = 0
+	AND t.userType = 2
+	AND t.provinceDesc = #{province}
+  </select>
+  
+  <!-- 查询系统用户 -->
+  <select id="getOmengUser" parameterType="java.util.Map" resultType="java.util.HashMap">
+    SELECT
+		*
+	FROM
+		authority_user_info t
+	WHERE
+		t.isDel = 0
+	AND t.userType = 1
+	AND t.userName = #{userName}
+  </select>
+  
+</mapper>
+

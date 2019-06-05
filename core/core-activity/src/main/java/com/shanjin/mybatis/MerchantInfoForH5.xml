@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantInfoForH5Dao">
+
+	<!-- 查询店铺基本信息 -->
+	<select id="selectMerchantInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+			mi.id,
+			mi.name,
+			mi.province,
+			mi.city,
+			mi.longitude,
+			mi.latitude,
+			mi.map_type as mapType,
+			mi.location_address as locationAddress,
+			mi.detail_address as detailAddress,
+			mi.micro_website_url as microWebsiteUrl,
+			mi.detail,
+			mc.telephone AS phone,
+			mi.vip_level as vipLevel,
+			mi.app_type as appType,
+			mi.catalog_id as catalogId,
+			mi.auth_type as authType,
+			mi.auth_status as authStatus,
+			mi.max_employee_num as maxEmployeeNum,
+			mi.last_active_time as lastActiveTime,
+			mi.business_type as businessType,
+			mi.is_private_assistant as isPrivateAssistant,
+			(select name from catalog where id = mi.catalog_id and status = 1) as catalogName,
+			(select order_surplus_price from merchant_statistics where merchant_id = mi.id ) as orderSurplusPrice,
+			(SELECT ma.path FROM merchant_attachment ma WHERE ma.merchant_id=#{merchantId} AND ma.attachment_type = 1 and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+			vip_background_url vipBackgroundUrl
+		from
+			merchant_info mi
+		LEFT JOIN 
+			merchant_contact mc ON mi.id=mc.merchant_id
+		where
+			mi.id = #{merchantId}
+			and mi.is_del = 0
+	</select>
+
+  <!-- 申请认证的类型查询 -->
+  <select id="selectAuthType" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          auth_type as authType,
+          auth_status as authStatus,
+          path
+      from
+          merchant_auth
+      where
+          merchant_id = #{merchantId}
+      and auth_status=1
+      order by
+          join_time desc
+      limit 1
+  </select>
+
+<!-- 	查询vip背景模板 -->
+	<select id="selectVipBackgroundUrlList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT id,
+	       theme,
+	       grade,
+	       is_default isDefault,
+	       image
+	  FROM homepage_backgroud
+	  where is_pub = 1
+	  	and is_default = 1
+	</select>
+	
+  <!-- 查询当前还未被领取的代金券记录数 -->
+  <select id="selectCurrentVouchersInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          (select
+              vi.service_type_id as couponsType
+          from
+              merchant_vouchers_permissions mvp
+              inner join vouchers_info vi on mvp.vouchers_id = vi.id
+          where
+              mvp.merchant_id = #{merchantId}
+              and mvp.cutoff_time > #{cutoffTime}
+              and mvp.is_del = 0
+              and vi.cutoff_time > #{cutoffTime}
+              and vi.is_del = 0
+          ) tmp0
+          inner join merchant_service_type mst on tmp0.couponsType = mst.service_type_id
+      where
+		  mst.merchant_id = #{merchantId}
+  </select>
+
+  <!-- 查询商户服务项目名 -->
+  <select id="selectMerchantServiceTypeName" parameterType="java.util.Map" resultType="java.lang.String">
+      select
+          st.service_type_name as serviceTypeName
+      from
+          merchant_service_type mst
+          inner join service_type st on mst.service_type_id = st.id
+      where
+          mst.merchant_id = #{merchantId}
+          and st.is_del = 0
+      order by
+          mst.service_type_id asc
+  </select>
+
+  <!-- 查询单个商户的总相片数 -->
+  <select id="selectPhotoTotal" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_photo
+      where
+          album_id in (select id from merchant_album where merchant_id = #{merchantId} and is_del = 0)
+          and is_del = 0
+  </select>
+
+  <!-- 根据商户ID查询最新的4张照片 -->
+  <select id="selectLast4Photo" parameterType="java.util.Map" resultType="java.util.HashMap">
+	  select
+	      GROUP_CONCAT(tmp.path) as path
+	  from
+	  (
+	      select
+	          mp.path as path
+	      from
+	          merchant_album ma
+	          inner join merchant_photo mp on ma.id = mp.album_id
+	      where
+	          ma.merchant_id = #{merchantId}
+	          and ma.is_del = 0
+	          and mp.is_del = 0
+	      order by
+	          mp.join_time desc
+	      limit
+	          0, 4
+	  ) tmp
+  </select>
+
+  <!-- 单个商家可用商品数量查询 -->
+  <select id="selectGoodsCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_out=0
+          and is_del = 0
+  </select>
+
+  <!-- 查询商户最新3个商品信息 -->
+  <select id="selectLast3GoodsInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          goods_name as goodsName,
+          goods_price as goodsPrice,
+          goods_picture_url as goodsPictureUrl
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and is_out=0
+	  order by
+	      join_time desc
+	  limit
+	      0, 3
+  </select>
+
+  <!-- 根据商户ID查询商户的所有统计信息 -->
+  <select id="selectStatisticsInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          grab_frequency as grabFrequency,
+          service_frequency as serviceFrequency,
+          total_income_price as totalIncomePrice,
+          total_withdraw_price as totalWithdrawPrice,
+          surplus_price as surplusPrice,
+          order_surplus_price as orderSurplusPrice,
+          total_attitude_evaluation as totalAttitudeEvaluation,
+          total_quality_evaluation as totalQualityEvaluation,
+          total_speed_evaluation as totalSpeedEvaluation,
+          total_count_evaluation as totalCountEvaluation
+      from
+          merchant_statistics
+      where
+          merchant_id = #{merchantId}
+  </select>
+
+  <!-- 查询商户的最新两条文件评价 -->
+  <select id="getTextEvaluationTop2" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      select
+			a.text_evaluation as textEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as time,
+			b.phone as phone,
+			c.path as path
+	  from
+			evaluation a
+			left join user_info b on a.user_id = b.id and b.is_del=0
+			left join user_attachment c on a.user_id = c.user_id
+	  where
+	  		 a.merchant_id = #{merchantId}
+	  order by a.join_time desc
+      limit 0, 2
+  </select>
+
+  <!-- 根据商户ID查询商户的所有统计信息 -->
+  <select id="selectUserIdByopenId" parameterType="java.util.Map" resultType="java.lang.Long">
+      select
+          user_id as userId
+      from
+          wechat_user
+      where
+          openid = #{openid}
+  </select>
+
+	<!-- 验证是否收藏店铺 -->
+	<select id="checkCollectionMerchant" parameterType="java.util.Map" resultType="int">
+	  select
+			count(1)
+	  from
+	   		user_merchant_collection
+	  where
+			user_id = #{userId}
+	   		and merchant_id = #{merchantId} 
+	</select>
+
+	<!-- 查询商户被多少用户收藏 -->
+	<select id="selectCollectionNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			user_merchant_collection
+		where
+			merchant_id = #{merchantId}
+	</select>
+
+	<!-- 查询商户是否设置过接单计划 -->
+	<select id="selectAlreadySetOrderPlan" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			order_plan_num as orderPlanNum
+		from
+			already_set_order_plan_merchant
+		where
+			merchant_id = #{merchantId}
+	</select>
+	
+	<!-- 获得服务商购买的服务列表 -->
+	<select id="getMerchantServiceList" resultType="java.util.HashMap" parameterType="java.util.Map">
+	SELECT ipo.pkg_id FROM inc_pkg_order ipo
+	WHERE ipo.merchant_id = #{merchantId}
+	AND ipo. STATUS = 1
+	AND now() &gt; ipo.effictive_time
+	<choose>
+        <when test="lose_effictive_time == null||lose_effictive_time == ''"></when>
+        <otherwise> and now() &lt;  ipo.lose_effictive_time</otherwise>
+    </choose>
+	</select>
+
+	<!-- 查看商户是否是vip -->
+	<select id="getVipStatus" parameterType="java.util.Map"
+		resultType="int">
+		SELECT
+		count(1)
+		FROM
+		inc_rs_item_rule
+		WHERE
+		rule_id = (
+		SELECT
+		id
+		FROM
+		inc_rule
+		WHERE
+		rule_code = 'vip_merchant_order'
+		)
+		AND item_id IN (
+		SELECT
+		item_id
+		FROM
+		inc_rs_pkg_item
+		WHERE
+		pkg_id IN (${pkgIds})
+		)
+	</select>
+	
+	
+  <select id="getNumberByOrder" resultType="Integer" parameterType="java.util.Map">
+	select count(1) from (
+		SELECT o.id
+		FROM order_info o
+		WHERE
+		(exists (select 1 from merchant_plan p where
+		(UNIX_TIMESTAMP(p.join_time)-UNIX_TIMESTAMP(o.join_time))/60>#{waitTime}
+		and o.id=p.order_id )
+		or (not exists(select 1 from merchant_plan p where o.id=p.order_id ) and
+		(UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(o.join_time))/60>#{waitTime})
+		)
+		and DATE_FORMAT(o.join_time, '%H%i') > #{startTime}
+		and #{endTime} > DATE_FORMAT(o.join_time, '%H%i')
+		AND DATE_FORMAT(o.join_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+		and o.user_id = #{userId_}
+		and o.order_status not in (6,7)
+		limit 1
+	) t
+  </select>
+  
+  <select id="getNumberByShare" resultType="Integer" parameterType="list">
+	  	SELECT count(1)
+	  FROM order_info o, user_info u
+	 WHERE     o.user_id = u.id
+	       AND u.phone IN
+	       (
+			<foreach collection="list" item="item" index="index" separator=",">				
+		        #{item.phone}
+		    </foreach>
+		    )
+	      AND DATE_FORMAT(o.join_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+  </select>
+  <select id="findActivityInfo" resultType="java.util.Map" parameterType="java.util.Map">
+	  	SELECT a.title,
+	       DATE_FORMAT(a.stime, '%Y%m%d') acStartTime,
+	       DATE_FORMAT(a.etime, '%Y%m%d') acEndTime,
+	       DATE_FORMAT(now(), '%Y%m%d') nowTime,
+	       a.is_pub isPub
+	  FROM activity_info a
+	 WHERE a.id = #{activityId}
+  </select>
+  
+</mapper>
+

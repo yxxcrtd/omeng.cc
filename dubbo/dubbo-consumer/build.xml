@@ -1,0 +1,9 @@
+<project default="copy">
+	<target name="copy">
+		<copy todir="D:\\work\\apache-tomcat-7.0.59\\webapps">
+			<fileset dir="./target">
+				<include name="*.war"/>
+			</fileset>
+		</copy>
+	</target>
+</project>

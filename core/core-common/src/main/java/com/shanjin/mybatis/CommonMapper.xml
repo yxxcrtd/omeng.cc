@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.ICommonDao">
+  
+    <!-- 根据用户id获取用户信息 -->
+	<select id="getBasicUserInfoByUid" resultType="Map" parameterType="java.util.Map">
+       SELECT u.id,u.`name`,u.phone,ua.path
+       FROM user_info u 
+       LEFT JOIN user_attachment ua
+       ON u.id=ua.user_id AND ua.attachment_type=1 AND ua.attachment_use=11
+       WHERE u.id=#{uid}
+	</select>  
+	
+	<!-- 根据员工id获取该员工所属的商铺信息 -->
+	<select id="getBasicMerchantInfoByUid" resultType="Map" parameterType="java.util.Map">
+       SELECT me.id,me.merchant_id AS merchantId,me.phone,mi.app_type AS appType,mi.`name`,ma.path 
+       FROM merchant_employees me LEFT JOIN merchant_info mi
+       ON me.merchant_id=mi.id LEFT JOIN merchant_attachment ma 
+       ON me.merchant_id=ma.merchant_id AND ma.attachment_type=1 AND
+       ma.attachment_use=11
+       WHERE me.id=#{uid} 
+	</select>  
+	
+	
+	<!-- 获取当前分享页面 -->
+	<select id="getShareHtml" resultType="Map" parameterType="java.util.Map">
+       SELECT s.title,s.desc,s.image,s.clickUrl,s.webUrl
+       FROM share_activity s 
+       WHERE s.is_del=0 and s.status=0
+	</select> 
+	
+	<!-- 获取当前分享页面 -->
+	<select id="getStaticActivityHtml" resultType="String" parameterType="java.util.Map">
+       SELECT s.url
+       FROM static_activity s 
+       WHERE s.status=0 and s.act_key=#{act_key}
+	</select>
+	
+	<!-- 获得活动列表 -->
+    <select id="getActivityList" resultType="java.util.HashMap" parameterType="java.util.Map">  
+	SELECT
+	     ai.*,
+	     DATE_FORMAT(ai.stime,'%Y-%m-%d %H:%i:%s') AS st,
+	     DATE_FORMAT(ai.etime,'%Y-%m-%d %H:%i:%s') AS et,
+	     ae.tag
+    FROM
+	     activity_entrance_relation aer
+    LEFT JOIN activity_entrance ae ON aer.entrance_id = ae.id
+    LEFT JOIN activity_info ai ON aer.activity_id = ai.id
+    WHERE
+	     ai.is_pub = 1
+         AND ae.entrance = #{entrance}
+         ORDER BY
+         aer.rank
+	</select>  
+	
+	<!-- 获得活动的分享平台 -->
+    <select id="getActivityPlateForm" resultType="java.util.HashMap" parameterType="Long">  
+	SELECT
+	     sp.*
+    FROM
+	     activity_share_platform asp
+     JOIN share_platform sp ON asp.platform_id = sp.id
+    WHERE
+	     asp.activity_id = #{activity_id}
+	</select>  
+	
+	<!-- 获取重复提交配置项 -->
+	<select id="getRestrictList" resultType="java.util.Map" >
+       SELECT *  from   restrict_update where isPublished=1
+	</select>
+	
+	<!-- 查询交易明细列表筛选导航 -->
+	<select id="getPaymentNaviList" resultType="java.util.Map">
+	 select mpt.id as paymentType,
+       mpt.payment_type_name as detailsName
+	 from merchant_payment_type  mpt where mpt.is_del = 0
+	</select>
+	
+	
+	
+	<select id="getUserHomePageRequireTip" resultType="String">
+		select config_value from configuration_info where config_key="useHomePage_require_tip";
+	</select>
+	
+	<select id="getUserHomePageGoods" resultType="java.util.Map" parameterType="Long">
+		SELECT
+		cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) as userId,
+		oi.service_type_id AS serviceType,
+		oi.order_status AS orderStatus,
+		oi.merchant_id  as merchantId,
+		(SELECT service_type_name FROM service_type WHERE  id = oi.service_type_id AND is_del = 0 ) AS serviceTypeName
+	  FROM
+		order_info oi
+	  LEFT JOIN  merchant_info mi  on oi.merchant_id = mi.id
+	  WHERE
+		oi.user_id = #{userId} and oi.is_del=0 and oi.order_status in (1,2,3,4)
+	  ORDER BY
+		 oi.join_time desc
+      limit 1
+	</select>
+	
+	<select id="getMockupBuyInfo" resultType="String">
+		 select info from mockup_buy_info where is_pub=1 limit 500
+	</select>
+	
+	<select id="getMerchantNumById" resultType="Integer" parameterType="java.lang.Long">
+		 select count(1) from merchant_employees me where me.user_id=#{userId}  and me.employees_type=1
+	</select>
+	
+	<!-- 获取帮助页的分组 -->
+	<select id="getSystemHelpGroupList" resultType="java.util.HashMap">
+	 select hfg.* from help_feed_group hfg join (select * from help_feedback hf where hf.status=1 group by hf.group_id ) hff on hfg.id=hff.group_id order by hfg.rank
+	</select>
+	
+	<!-- 获取帮助页的分组详情 -->
+	<select id="getSystemHelpGroupDetailList" resultType="java.util.HashMap" parameterType="java.util.Map">
+	 select hf.id,hf.name,hf.title,hf.share_title,hf.image,hf.good_count,hf.bad_count,hf.html_path,hf.html_path,hf.rank
+	  from help_feedback hf 
+	  where hf.status=1 and hf.group_id=#{id} order by hf.rank
+	</select>
+	
+	<!-- 更新帮助页的评价 -->
+	<update  id="saveHelpEvaluation" parameterType="java.util.Map">
+       UPDATE help_feedback SET
+        <if test="eval == 'good'">
+        good_count=good_count+1
+       </if>
+       <if test="eval == 'bad'">
+        bad_count=bad_count+1
+       </if>
+       WHERE id=#{link_id}
+	</update >
+	
+	<insert id="addStartAppInfo" parameterType="java.util.Map">
+		insert into 
+		sms_startApp_info 
+			(user_id,join_time,device_id) 
+		values
+			(#{userId},now(),null)
+	</insert>
+	
+	
+	  <!-- 根据用户id获取用户信息 -->
+	<select id="getBasicUserInfoByAssistantId" resultType="Map" parameterType="java.util.Map">
+       SELECT u.id,u.name,u.phone
+       FROM assistant_info u 
+       WHERE u.id=#{uid}
+	</select>  
+</mapper>
+

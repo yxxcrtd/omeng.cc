@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantEmployeesDao">
+
+  <!-- 根据手机查询员工类型 -->
+  <select id="checkEmployeesType" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          employees_type
+      from
+          merchant_employees
+      where
+          phone = #{phone}
+          and app_type = #{appType}
+          and is_del = 0
+  </select>
+
+  <!-- 根据手机号查询商户Id -->
+  <select id="selectMerchantIdByPhone" parameterType="java.util.Map" resultType="java.lang.Long">
+      select
+          merchant_id
+      from
+          merchant_employees
+      where
+          phone = #{phone}
+          and app_type = #{appType}
+          and is_del = 0
+  </select>
+
+  <!-- 根据手机号查询商户信息，用于登陆接口 -->
+  <select id="selectMerchantInfoForLoginByPhone" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          me.id as employeesId,
+          me.merchant_id as merchantId,
+          me.employees_type as employeesType,
+          me.phone,
+          mi.`name` as name,
+          mi.location_address as locationAddress,
+          (select count(1) from merchant_service_type where merchant_id = me.merchant_id) as haveService
+      from
+          merchant_employees me
+          inner join merchant_info mi on mi.id=me.merchant_id and mi.is_del=0
+      where
+          me.phone = #{phone}
+          and me.app_type = #{appType}
+          and me.is_del=0
+          
+  </select>
+
+  <!-- 根据手机号查询商户开店信息，用于登陆接口 -->
+  <select id="selectOpenedInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          (select count(1) from merchant_service_type where merchant_id = me.merchant_id) as haveService,
+          (select name from merchant_info where id = me.merchant_id) as name,
+          (select location_address from merchant_info where id = me.merchant_id) as locationAddress
+      from
+          merchant_employees me
+      where
+          phone = #{phone}
+          and app_type = #{appType}
+          and is_del = 0
+  </select>
+
+  <!-- 更新验证码,最后登陆时间 -->
+  <update id="updateVerificationInfo" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          verification_code = #{verificationCode},
+          verification_time = now(),
+          verification_status = 0,
+          last_login_time = now()
+      where
+          phone = #{phone}
+          and app_type = #{appType}
+          and is_del = 0
+  </update>
+
+  <!-- 保存手机号 -->
+  <insert id="insertPhone" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="employeesId">
+      insert into
+          merchant_employees
+      (
+          merchant_id,
+          name,
+          phone,
+          employees_type,
+          join_time,
+          verification_time,
+          verification_status,
+          last_login_time,
+          app_type,
+          employee_key,
+          is_del,
+          user_id
+      )
+      values
+      (
+          #{merchantId},
+          #{name},
+          #{phone},
+          #{employeesType},
+          now(),
+          now(),
+          1,
+          now(),
+          #{appType},
+          #{employeeKey},
+          0,
+          #{userId}
+      )
+  </insert>
+
+  <!-- 根据手机号和验证码获取验证信息 -->
+  <select id="validateVerificationCode" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          verification_code,
+          verification_time
+      from
+          merchant_employees
+      where
+          phone = #{phone}
+          and verification_code = #{verificationCode}
+          and verification_status = 0
+          and app_type = #{appType}
+          and is_del = 0
+  </select>
+
+  <!-- 验证码验证通过之后更新验证状态 -->
+  <update id="updateVerificationStatus" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          verification_status = 1
+      where
+          phone = #{phone}
+          and verification_status = 0
+          and app_type = #{appType}
+          and is_del = 0
+  </update>
+
+  <!-- 根据商户Id删除所有员工（包括老板） -->
+  <update id="deleteAllEmployee" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          is_del = 1
+      where
+          merchant_id = #{merchantId}
+  </update>
+
+  <!-- 查询员工接单次数-->
+  <select id="selectEmployeesReceivedFrequency" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          name,
+          phone,
+          (select count(1) from order_info where receive_employees_id = me.id) as receivedFrequency
+      from
+          merchant_employees me
+      where
+          merchant_id = #{merchantId}
+          and employees_type != 1
+          and verification_status = 1
+          and is_del = 0
+  </select>
+
+  <!-- 验证员工手机号是否已被当前商户添加 -->
+  <select id="checkEmployeesPhoneInCurrent" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          employees_type
+      from
+          merchant_employees
+      where
+          merchant_id = #{merchantId}
+          and phone = #{phone}
+          and verification_status = #{verificationStatus}
+          and is_del = 0
+  </select>
+
+  <!-- 验证员工手机号是否已被其他商户添加 -->
+  <select id="checkEmployeesPhoneInOther" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_employees
+      where
+          merchant_id != #{merchantId}
+          and phone = #{phone}
+          and verification_status = #{verificationStatus}
+          and app_type = #{appType}
+          and is_del = 0
+  </select>
+
+  <!-- 更新验证码（添加员工场合） -->
+  <update id="updateVerification" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          verification_code = #{verificationCode},
+          verification_time = now(),
+          verification_status = 0
+      where
+          merchant_id = #{merchantId}
+          and phone = #{phone}
+          and is_del = 0
+  </update>
+
+  <!-- 查询商户员工记录数 -->
+  <select id="selectMerchantEmployeesCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_employees
+      where
+          merchant_id = #{merchantId}
+          and employees_type != 1
+          and verification_status = 1
+          and is_del = 0
+  </select>
+
+  <!-- 查询商户员工信息 -->
+  <select id="selectMerchantEmployeesInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+      	  user_id as userId,
+          name,
+          phone,
+          (select count(1) from order_info where merchant_id=me.merchant_id and receive_employees_id = me.user_id and service_type_id in (${catalogIds}) ) as receivedFrequency
+      from
+          merchant_employees me
+      where
+          merchant_id = #{merchantId}
+          and employees_type != 1
+          and verification_status = 1
+          and is_del = 0
+      order by
+          id desc
+      limit
+          #{rows}, #{pageSize}
+  </select>
+
+  <!-- 删除单个员工 -->
+  <update id="deleteEmployee" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          is_del = 1
+      where
+          merchant_id = #{merchantId}
+          and phone = #{phone}
+          and is_del = 0
+  </update>
+  <!-- 
+  <select id="getEmployeeKey" parameterType="java.util.Map" resultType="java.lang.String">
+  	SELECT
+		a.employee_key
+	FROM
+		merchant_employees a
+	WHERE
+		a.phone = #{phone} AND a.app_type = #{appType} and is_del = 0
+  </select>
+  -->
+  
+  <select id="getEmployeeKey" parameterType="java.util.Map" resultType="java.lang.String">
+     SELECT t.user_key FROM user_info t 
+     WHERE t.phone=#{phone} AND t.is_del=0
+  </select>
+  <select id="getPhoneByMerchantId" resultType="String" parameterType="Long">
+  	select 
+  		phone 
+  	from
+  		merchant_employees
+  	where 
+  		merchant_id = #{merchantId}
+  		and employees_type=1
+  </select>
+  <select id="getUserIdByMerchantId" resultType="Long" parameterType="java.util.Map">
+  	select 
+  		user_id as userId 
+  	from
+  		merchant_employees
+  	where 
+  		merchant_id = #{merchantId}
+  		and phone=#{phone}
+  		and is_del=0
+  </select>
+  <!-- 更新员工的类型 -->
+  <update id="updateEmployeeType" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          <if test="name != null">
+          name = #{name},
+          </if>
+          employees_type = #{employeeType}
+      where
+          merchant_id = #{merchantId}
+          and phone = #{phone}
+          and is_del = 0
+  </update>
+  
+  
+  <!-- 查询员工clientId-->
+  <select id="getEmployeeClientMap" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          user_id as userId,
+          client_id as clientId,
+          app_type as appType,
+          client_type as clientType,
+          push_id as pushId
+      from
+          user_push up
+      where
+          user_id = #{userId}
+  </select>
+  <!-- version：1.1.0，date：2016-3-9，author：wangrui-->
+  <select id="getUserInfoByPhone" parameterType="java.util.Map" resultType="java.util.HashMap">
+  	select 
+  		id as userId
+  	from
+  		user_info
+  	where
+  		phone=#{phone}  		
+  		and is_del=0
+  </select>
+  <!-- end -->
+  	<!-- 注册新用户,填写基本手机号和验证码、验证时间 -->
+	<insert id="insertUserInfo" parameterType="java.util.Map" >
+  		insert into 
+  		    user_info(id,phone, verification_code,join_time,verification_time,is_verification,is_del,user_key,ip,province,city,rong_cloud_token) 
+  		values(#{userId},#{phone}, #{verificationCode},now(),now(),1,0,#{userKey},#{ip},#{province},#{city},#{rongCloudToken})
+	</insert>
+	
+    <!-- 删除排除当前访问设备的记录  Long userId -->
+	<delete id="deleteUserPushByUserId" parameterType="java.util.Map">
+	    DELETE FROM user_push WHERE user_id=#{userId}
+	</delete>
+</mapper>

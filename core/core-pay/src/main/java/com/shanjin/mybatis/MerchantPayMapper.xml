@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPayDao">
+
+  <!-- 得到订单余额 -->  
+  <select id="getOrderSurplusMoney" resultType="java.lang.Object" parameterType="java.util.Map">
+  		SELECT 
+  			order_surplus_price
+  		FROM 
+  			merchant_statistics
+  		WHERE
+  			merchant_id=#{merchantId}
+  			<!-- and app_type=#{appType} -->
+  </select>
+  <!-- 查询抢单费用 -->  
+  <select id="getOrderPrice" resultType="java.lang.Object" parameterType="java.util.Map">
+  		SELECT 
+  			order_price
+  		FROM 
+  			merchant_info
+  		WHERE
+  			id=#{merchantId}
+  			<!-- and app_type=#{appType} -->
+  </select>
+  
+  <!-- 订单余额中扣除抢单费 -->
+  <update id="deductOrderMoney" parameterType="java.util.Map">
+  			UPDATE 
+  				merchant_statistics 
+  			SET
+  				order_surplus_price=(order_surplus_price-#{money})
+  			WHERE
+  				merchant_id=#{merchantId}	
+  				<!-- and app_type=#{appType} -->
+  				
+  </update>
+  <!-- 生成扣费记录 -->
+  <insert id="addMerchantOrderPaymentDetails" parameterType="java.util.Map">
+  		insert into 
+  			merchant_order_payment_details 
+  		(
+  			merchant_id,
+  			pay_type,
+  			pay_money,
+  			pay_time,
+  			service_type_id,
+  			order_id
+  			<!-- app_type -->
+  		)values(
+  			#{merchantId},
+  			#{payType},
+  			#{payMoney},
+  			now(),
+  			#{serviceTypeId},
+  			#{orderId}
+  			<!-- #{appType} -->
+  		)
+  			
+  </insert>
+  
+  <select id="getServiceTypeIdByOrderId" resultType="Object" parameterType="Long">
+  	select 
+  		service_type_id 
+  	from 
+  		order_info
+  	where 
+  		id=#{orderId} 
+  </select>
+  
+  <select id = "getMerchantServiceRecordByID" resultType="Integer" parameterType="String">
+  	 select 
+  	 		version 
+  	 from  
+  	        merchant_service_record
+  	 where  
+  	        order_id=(select id from order_info where order_no=#{orderNo})
+  </select>
+
+    <!-- 更新商户订单金额 -->
+    <update id="updateMerchantOrderSurplusPrice" parameterType="java.util.Map">
+        UPDATE
+            merchant_statistics
+        SET
+            order_surplus_price = order_surplus_price + #{money} <!-- 增加：订单余额 -->
+        WHERE
+            merchant_id = #{merchantId}
+    </update>
+
+</mapper>
+

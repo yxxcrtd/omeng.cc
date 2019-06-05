@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.CiUserVoucherMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.CiUserVoucher" id="CiUserVoucherBsRstMap">
+		<id property="id" column="id"/>
+
+		<result property="userId" column="user_id"/>
+		<result property="phone" column="phone"/>
+		<result property="vouCode" column="vou_code"/>
+		<result property="originDesc" column="origin_desc"/>
+		<result property="originId" column="origin_id"/>
+		<result property="orginId2" column="orgin_id2"/>
+		<result property="orginId3" column="orgin_id3"/>
+		<result property="orginId4" column="orgin_id4"/>
+		<result property="originType" column="origin_type"/>
+		<result property="startTime" column="start_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="vouNo" column="vou_no"/>
+		<result property="status" column="status"/>
+		<result property="createTime" column="create_time"/>
+		<result property="midifyTime" column="midify_time"/>
+		<result property="isDel" column="is_del"/>
+	</resultMap>
+
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.CiUserVoucher" id="CiUserVoucherBsParaMap">
+		<id property="id" column="id"/>
+
+		<result property="userId" column="user_id"/>
+		<result property="phone" column="phone"/>
+		<result property="vouCode" column="vou_code"/>
+		<result property="originDesc" column="origin_desc"/>
+		<result property="originId" column="origin_id"/>
+		<result property="orginId2" column="orgin_id2"/>
+		<result property="orginId3" column="orgin_id3"/>
+		<result property="orginId4" column="orgin_id4"/>
+		<result property="originType" column="origin_type"/>
+		<result property="startTime" column="start_time"/>
+		<result property="endTime" column="end_time"/>
+		<result property="vouNo" column="vou_no"/>
+		<result property="status" column="status"/>
+		<result property="createTime" column="create_time"/>
+		<result property="midifyTime" column="midify_time"/>
+		<result property="isDel" column="is_del"/>
+	</resultMap>
+
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT
+		t.id as id,
+		t.user_id as userId,
+		t.phone as phone,
+		t.vou_code as vouCode,
+		t.origin_desc as originDesc,
+		t.origin_id as originId,
+		t.orgin_id2 as orginId2,
+		t.orgin_id3 as orginId3,
+		t.orgin_id4 as orginId4,
+		t.origin_type as originType,
+		t.start_time as startTime,
+		t.end_time as endTime,
+		t.vou_no as vouNo,
+		t.status as status,
+		t.create_time as createTime,
+		t.midify_time as midifyTime,
+		t.is_del as isDel
+		FROM ci_user_voucher AS t
+	</sql>
+
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM ci_user_voucher AS t
+	</sql>
+
+	<sql id="commInsTpl">
+		INSERT INTO ci_user_voucher (
+
+		user_id,
+		phone,
+		vou_code,
+		origin_desc,
+		origin_id,
+		orgin_id2,
+		orgin_id3,
+		orgin_id4,
+		origin_type,
+		start_time,
+		end_time,
+		vou_no,
+		status,
+		create_time,
+		midify_time,
+		is_del
+		) VALUES (
+
+		#{userId},
+		#{phone},
+		#{vouCode},
+		#{originDesc},
+		#{originId},
+		#{orginId2},
+		#{orginId3},
+		#{orginId4},
+		#{originType},
+		#{startTime},
+		#{endTime},
+		#{vouNo},
+		#{status},
+		#{createTime},
+		#{midifyTime},
+		#{isDel}
+		)
+	</sql>
+
+	<sql id="commUpdTpl">
+		UPDATE ci_user_voucher AS t
+	</sql>
+
+	<sql id="commDelTpl">
+		DELETE t FROM ci_user_voucher AS t
+	</sql>
+
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+
+
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.CiUserVoucher" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.CiUserVoucher">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=userId">
+				t.user_id = #{userId},
+			</if>
+			<if test="null!=phone and phone!=''">
+				t.phone = #{phone},
+			</if>
+			<if test="null!=vouCode and vouCode!=''">
+				t.vou_code = #{vouCode},
+			</if>
+			<if test="null!=originDesc and originDesc!=''">
+				t.origin_desc = #{originDesc},
+			</if>
+			<if test="null!=originId">
+				t.origin_id = #{originId},
+			</if>
+			<if test="null!=orginId2 and orginId2!=''">
+				t.orgin_id2 = #{orginId2},
+			</if>
+			<if test="null!=orginId3 and orginId3!=''">
+				t.orgin_id3 = #{orginId3},
+			</if>
+			<if test="null!=orginId4 and orginId4!=''">
+				t.orgin_id4 = #{orginId4},
+			</if>
+			<if test="null!=originType">
+				t.origin_type = #{originType},
+			</if>
+			<if test="null!=startTime">
+				t.start_time = #{startTime},
+			</if>
+			<if test="null!=endTime">
+				t.end_time = #{endTime},
+			</if>
+			<if test="null!=vouNo and vouNo!=''">
+				t.vou_no = #{vouNo},
+			</if>
+			<if test="null!=status">
+				t.status = #{status},
+			</if>
+			<if test="null!=createTime">
+				t.create_time = #{createTime},
+			</if>
+			<if test="null!=midifyTime">
+				t.midify_time = #{midifyTime},
+			</if>
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>
+		</trim>
+		where t.id = #{id}
+	</update>
+
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>
+			<if test="null!=vouCode and vouCode!=''">
+				and t.vou_code = #{vouCode}
+			</if>
+			<if test="null!=originDesc and originDesc!=''">
+				and t.origin_desc = #{originDesc}
+			</if>
+			<if test="null!=originId">
+				and t.origin_id = #{originId}
+			</if>
+			<if test="null!=orginId2 and orginId2!=''">
+				and t.orgin_id2 = #{orginId2}
+			</if>
+			<if test="null!=orginId3 and orginId3!=''">
+				and t.orgin_id3 = #{orginId3}
+			</if>
+			<if test="null!=orginId4 and orginId4!=''">
+				and t.orgin_id4 = #{orginId4}
+			</if>
+			<if test="null!=originType">
+				and t.origin_type = #{originType}
+			</if>
+			<if test="null!=startTime">
+				and t.start_time = #{startTime}
+			</if>
+			<if test="null!=endTime">
+				and t.end_time = #{endTime}
+			</if>
+			<if test="null!=vouNo and vouNo!=''">
+				and t.vou_no = #{vouNo}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=midifyTime">
+				and t.midify_time = #{midifyTime}
+			</if>
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>
+		</trim>
+	</delete>
+
+
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/>
+		where t.id in
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+	</delete>
+
+	<select id="getEntityByKey" resultMap="CiUserVoucherBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id}
+	</select>
+
+	<select id="getAll" resultMap="CiUserVoucherBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>
+			<if test="null!=vouCode and vouCode!=''">
+				and t.vou_code = #{vouCode}
+			</if>
+			<if test="null!=originDesc and originDesc!=''">
+				and t.origin_desc = #{originDesc}
+			</if>
+			<if test="null!=originId">
+				and t.origin_id = #{originId}
+			</if>
+			<if test="null!=orginId2 and orginId2!=''">
+				and t.orgin_id2 = #{orginId2}
+			</if>
+			<if test="null!=orginId3 and orginId3!=''">
+				and t.orgin_id3 = #{orginId3}
+			</if>
+			<if test="null!=orginId4 and orginId4!=''">
+				and t.orgin_id4 = #{orginId4}
+			</if>
+			<if test="null!=originType">
+				and t.origin_type = #{originType}
+			</if>
+			<if test="null!=startTime">
+				and t.start_time = #{startTime}
+			</if>
+			<if test="null!=endTime">
+				and t.end_time = #{endTime}
+			</if>
+			<if test="null!=vouNo and vouNo!=''">
+				and t.vou_no = #{vouNo}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=midifyTime">
+				and t.midify_time = #{midifyTime}
+			</if>
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>
+		</trim>
+	</select>
+
+
+	<select id="findInByKeyIds" parameterType="list" resultMap="CiUserVoucherBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.CiUserVoucher" resultMap="CiUserVoucherBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>
+			<if test="null!=vouCode and vouCode!=''">
+				and t.vou_code = #{vouCode}
+			</if>
+			<if test="null!=originDesc and originDesc!=''">
+				and t.origin_desc = #{originDesc}
+			</if>
+			<if test="null!=originId">
+				and t.origin_id = #{originId}
+			</if>
+			<if test="null!=orginId2 and orginId2!=''">
+				and t.orgin_id2 = #{orginId2}
+			</if>
+			<if test="null!=orginId3 and orginId3!=''">
+				and t.orgin_id3 = #{orginId3}
+			</if>
+			<if test="null!=orginId4 and orginId4!=''">
+				and t.orgin_id4 = #{orginId4}
+			</if>
+			<if test="null!=originType">
+				and t.origin_type = #{originType}
+			</if>
+			<if test="null!=startTime">
+				and t.start_time = #{startTime}
+			</if>
+			<if test="null!=endTime">
+				and t.end_time = #{endTime}
+			</if>
+			<if test="null!=vouNo and vouNo!=''">
+				and t.vou_no = #{vouNo}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=midifyTime">
+				and t.midify_time = #{midifyTime}
+			</if>
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+
+
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<update id="updateVoucherStatus">
+		update ci_user_voucher set status = #{newStatus},midify_time = CURRENT_TIME
+		where status != #{newStatus} and vou_no = #{vouNo}
+	</update>
+	
+	<select id="getUserVoucherByVouNo" resultType="com.shanjin.carinsur.model.CiUserVoucher">
+		<include refid="commSelTpl"/>
+		where t.vou_no =#{vouNo}
+	</select>
+
+	<select id="findVounchrByParams" parameterType="com.shanjin.carinsur.model.CiUserVoucher" resultType="com.shanjin.carinsur.model.CiUserVoucher">
+		 SELECT
+			t.origin_desc as originDesc,
+			t.start_time as startTime,
+			t.end_time as endTime,
+			t.vou_no as vouNo,
+			t.create_time as createTime,
+			v.amount as amount,
+			v.name as vouName,
+			t.midify_time as modifyTime
+			FROM ci_user_voucher AS t LEFT  JOIN ci_voucher v on v.code = t.vou_code AND v.vou_type = #{vouType}
+			WHERE
+				<if test="0==status">
+					t.status = #{status} AND t.end_time >= #{curTime}
+				</if>
+				<if test="1==status">
+					t.status = #{status}
+				</if>
+				<if test="-1==status">
+					t.end_time &lt; #{curTime} AND t.status != 1
+				</if>
+				and t.user_id = #{userId}
+				<if test="0==status">
+					ORDER BY createTime desc,amount DESC
+				</if>
+				<if test="1==status">
+					ORDER BY modifyTime desc
+				</if>
+				<if test="-1==status">
+					ORDER BY endTime desc,amount DESC
+				</if>
+
+	</select>
+
+	<update id="batchUpdateExpireVouchers">
+		update ci_user_voucher t SET t.status = #{newStatus},t.midify_time = CURRENT_DATE
+		where t.status = #{oldStatus}
+		AND  t.end_time &lt; #{curTime}
+	</update>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

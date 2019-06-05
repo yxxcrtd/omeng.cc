@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPaymentDetailsDao">
+
+  <!-- 查询收支明细记录数 -->
+  <select id="selectPaymentDetailsCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+       select
+          count(1)
+      from
+      (
+          select
+              mpd.merchant_id 
+          from
+              merchant_payment_details mpd
+              inner join order_info oi on mpd.business_id = oi.id
+              inner join service_type st on oi.service_type_id = st.id<!-- st.service_type_id -->
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type = 0
+              and mpd.is_del = 0
+              and st.is_del = 0
+             <!--  and mpd.app_type = #{appType}
+              and st.app_type = #{appType} -->
+          union all
+          select
+              mpd.merchant_id 
+          from
+              merchant_payment_details mpd
+              left join merchant_apply_withdraw_record mawr on mpd.business_id = mawr.id
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type &gt; 0
+              and mpd.is_del = 0
+             <!--  and mpd.app_type = #{appType} -->
+      ) tmp0
+  </select>
+
+  <!-- 查询收支明细 -->
+  <select id="selectPaymentDetails" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          tmp0.detailsName as detailsName,
+          tmp0.paymentPrice as paymentPrice,
+          tmp0.paymentType as paymentType,
+          tmp0.orderPayType,
+          
+			(CASE tmp0.orderPayType
+			WHEN 1 THEN '支付宝支付'
+			WHEN 2 THEN '微信支付'
+			WHEN 3 THEN '线下支付'
+			WHEN 4 THEN '免单'
+			ELSE	'支付'
+			END ) as  orderPayTypeName,
+          (
+              CASE tmp0.paymentType
+              WHEN 0 then '收入成功'
+              WHEN 1 then (
+                       case tmp0.status
+                       WHEN 0 then '提现失败'
+                       WHEN 1 then '提现成功'
+                       WHEN 2 then '提现中'
+                       ELSE ''
+                       END
+                   )
+              ELSE (
+                        tmp0.activityDesc
+                   )
+              END
+          ) as detailsStatus,
+          date_format(tmp0.paymentTime,'%Y-%m-%d %H:%i') as paymentTime
+      from
+      (
+          (select
+              mpd.payment_type as paymentType,
+              mpd.business_id as businessId,
+			  (select order_pay_type from order_info where id=businessId) as orderPayType,
+              mpd.payment_price as paymentPrice,
+              mpd.payment_time as paymentTime,
+              CONCAT(st.service_type_name, '订单') as detailsName,
+              '' as activityDesc,
+              0 as status
+          from
+              merchant_payment_details mpd
+              inner join order_info oi on mpd.business_id = oi.id
+              inner join service_type st on oi.service_type_id = st.id<!-- st.service_type_id -->
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type = 0
+              and mpd.is_del = 0
+              and st.is_del = 0
+             <!--  and mpd.app_type = #{appType}
+              and st.app_type = #{appType} -->
+          )
+          union all
+          (
+          select
+              mpd.payment_type as paymentType,
+              mpd.business_id as businessId,
+			  (select order_pay_type from order_info where id=businessId) as orderPayType,
+              mpd.payment_price as paymentPrice,
+              mpd.payment_time as paymentTime,
+              (select detailsName from activtiy_dict where type=mpd.payment_type) as detailsName,
+              (select activityDesc from activtiy_dict where type=mpd.payment_type) as activityDesc,
+              mawr.withdraw_status as status
+          from
+              merchant_payment_details mpd
+              left join merchant_apply_withdraw_record mawr on mpd.business_id = mawr.id
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type &gt; 0
+              and mpd.is_del = 0
+             <!--  and mpd.app_type = #{appType} -->
+           ) 
+      ) tmp0
+      order by
+          tmp0.paymentTime desc
+      limit #{rows}, #{pageSize}
+  </select>
+
+  <!-- 插入收支明细记录 -->
+  <insert id="insertPaymentDetails" parameterType="java.util.Map">
+      insert into
+          merchant_payment_details
+      (
+          merchant_id,
+          payment_type,
+          business_id,
+          payment_price,
+          payment_time,
+          app_type,
+          trade_no
+      )
+      values
+      (
+          #{merchantId},
+          #{paymentType},
+          #{businessId},
+          #{paymentPrice},
+          now(),
+          #{appType},
+          #{tradeNo}
+      ) 
+  </insert>
+  
+  <select id="checkTopupApplyByPayNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+			count(1)
+		FROM
+			merchant_topup_apply
+		WHERE
+			pay_no=#{payNo}     
+  </select>
+  
+  
+  <select id="checkTopupApplyByInnerTradeNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+			count(1)
+		FROM
+			merchant_topup_apply
+		WHERE
+			innerTradeNo=#{innerTradeNo}     
+  </select>
+  
+  
+  <insert id="addTopupApply" parameterType="java.util.Map">
+      INSERT INTO
+          merchant_topup_apply
+      (
+          merchant_id,
+          topup_money,
+          apply_time,
+          apply_status,
+          app_type,
+          pay_no,
+          pay_type,
+		  trade_no,
+          client_type,
+          open_time,
+          buyer_no
+          
+      )
+      VALUES
+      (
+          #{merchantId},
+          #{money},
+          now(),
+          #{applyStatus},
+          #{appType},
+          #{payNo},
+          #{payType},
+          #{tradeNo},
+          #{clientType},
+          #{openTime},
+          #{buyerNo}
+      ) 
+  </insert>
+  
+  <insert id="addTopupApplyWithConfirm" parameterType="java.util.Map">
+      INSERT INTO
+          merchant_topup_apply
+      (
+          merchant_id,
+          topup_money,
+          apply_time,
+          apply_status,
+          app_type,
+          pay_no,
+          pay_type,
+		  trade_no,
+          client_type,
+          open_time,
+          buyer_no,
+          buyConfirm,
+          innerTradeNo,
+          inviteCode
+      )
+      VALUES
+      (
+          #{merchantId},
+          #{money},
+          now(),
+          #{applyStatus},
+          #{appType},
+          #{payNo},
+          #{payType},
+          #{tradeNo},
+          #{clientType},
+          #{openTime},
+          #{buyerNo},
+          #{buyConfirm},
+          #{innerTradeNo},
+          #{inviteCode}
+      ) 
+  </insert>
+  
+  <select id="selectOrderPaymentDetailsCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+			count(1)
+		FROM
+			merchant_order_payment_details mopd
+		WHERE
+			merchant_id=#{merchantId}     
+			AND is_del=0   
+  </select>
+   <select id="selectOrderPaymentDetails" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT
+			mopd.id,
+			(
+				CASE mopd.pay_type 
+				WHEN 1  THEN '订单充值' 
+				when 3 THEN '首单奖励' 
+				when 4 THEN '注册奖励' 
+				when 6 THEN '增值服务送抢单金' 
+				ELSE 
+					CONCAT((select st.service_type_name from service_type st where st.id=mopd.service_type_id and st.is_del=0),'订单') 
+				END
+			) as serviceTypeName,
+			(SELECT dict_value FROM dictionary WHERE dict_type = 'orderSurplusMoneyPaytype' AND dict_key = mopd.pay_type AND is_del = 0 ) as payTypeName,
+			mopd.pay_money as payMoney,
+			DATE_FORMAT(mopd.pay_time,'%Y-%m-%d %H:%i:%s') as payTime
+		FROM
+			merchant_order_payment_details  mopd
+		WHERE
+			mopd.merchant_id=#{merchantId}     
+			AND mopd.is_del=0  
+		ORDER BY
+			mopd.pay_time 
+		DESC
+		LIMIT 
+			#{rows}, #{pageSize}
+  </select>
+  
+  
+  <!-- 查询收支明细  添加 收入转出明细   addby xmsheng 2016/7/5-->
+  <select id="selectPaymentDetailsList" parameterType="java.util.Map" resultType="java.util.HashMap">
+        select
+          tmp0.paymentId as paymentId,
+          tmp0.detailsName as detailsName,
+          tmp0.paymentPrice as paymentPrice,
+          tmp0.paymentType as paymentType,       
+			<!-- (CASE tmp0.orderPayType
+			WHEN 1 THEN '支付宝支付'
+			WHEN 2 THEN '微信支付'
+			WHEN 3 THEN '线下支付'
+			WHEN 4 THEN '免单'
+			ELSE	'支付'
+			END ) as  orderPayTypeName, -->
+          (
+              CASE tmp0.paymentType
+              WHEN 0 then '收入成功'
+              WHEN 1 then (
+                       case tmp0.status
+                       WHEN 0 then '提现失败'
+                       WHEN 1 then '提现成功'
+                       WHEN 2 then '提现中'
+                       ELSE ''
+                       END
+                   )
+              ELSE (
+                        tmp0.activityDesc
+                   )
+              END
+          ) as detailsStatus,
+          date_format(tmp0.paymentTime,'%Y') AS year,
+          date_format(tmp0.paymentTime,'%m') AS month,
+          date_format(tmp0.paymentTime,'%Y-%m-%d %H:%i') as paymentTime
+      from
+      (
+          (select
+              mpd.id as paymentId,
+              mpd.payment_type as paymentType,
+              mpd.business_id as businessId,
+			  (select order_pay_type from order_info where id=businessId) as orderPayType,
+              mpd.payment_price as paymentPrice,
+              mpd.payment_time as paymentTime,
+              CONCAT('订单收入 - ',st.service_type_name) as detailsName,
+              '' as activityDesc,
+              0 as status
+          from
+              merchant_payment_details mpd
+              inner join order_info oi on mpd.business_id = oi.id
+              inner join service_type st on oi.service_type_id = st.id
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type = 0
+              and mpd.is_del = 0
+              and st.is_del = 0
+              and oi.order_pay_type != 3
+              and oi.order_pay_type != 4
+          )
+          union all
+          (
+          select
+              mpd.id as paymentId,
+              mpd.payment_type as paymentType,
+              mpd.business_id as businessId,
+			  (select order_pay_type from order_info where id=businessId) as orderPayType,
+              mpd.payment_price as paymentPrice,
+              mpd.payment_time as paymentTime,
+              (
+               CASE mpd.payment_type
+               WHEN 3 then (
+                 select CONCAT('活动奖励 - ',detailsName)  from activtiy_dict where type=mpd.payment_type
+                )
+               WHEN 4 then(
+                select CONCAT('活动奖励 - ',detailsName)  from activtiy_dict where type=mpd.payment_type
+               )
+               ELSE (
+                        select detailsName  from activtiy_dict where type=mpd.payment_type
+                    )
+               END
+              ) as detailsName,              
+              (select activityDesc from activtiy_dict where type=mpd.payment_type) as activityDesc,
+              0  as status
+          from
+              merchant_payment_details mpd
+          where
+              mpd.merchant_id = #{merchantId}
+              and mpd.payment_type &gt; 1
+              and mpd.payment_type &lt; 6
+              and mpd.is_del = 0
+           ) 
+      ) tmp0 where 1 = 1
+      <if test="todayQueryFlag == 1">
+       and  DATE_FORMAT(tmp0.paymentTime,'%Y-%m-%d') = DATE_FORMAT(now(),'%Y-%m-%d')
+      </if>
+      <if test="parentPaymentId != -1">
+       and  tmp0.paymentType in (select  ad.type from activtiy_dict ad where ad.parent_payment_id = #{parentPaymentId})
+      	  
+      </if>  
+      order by
+          tmp0.paymentTime desc
+      limit #{rows}, #{pageSize}
+  </select>
+  
+  <!-- 统计交易明细记录数 含收入转出 addby xmSheng 2016/7/5 -->
+  <select id="selectPaymentlistCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+   select count(t.merchantPaymentId)  from( 
+       		(            
+			select  
+                  mpd.id as merchantPaymentId,
+                  mpd.payment_type as paymentType
+          	 from
+              merchant_payment_details mpd
+              inner join order_info oi on mpd.business_id = oi.id
+              inner join service_type st on oi.service_type_id = st.id
+          	where
+          	   mpd.merchant_id =#{merchantId}
+              and mpd.payment_type = 0
+              and mpd.is_del = 0
+              and st.is_del = 0
+              and oi.order_pay_type != 3
+              and oi.order_pay_type != 4
+        
+            )union all(
+            select  
+                  mpd.id as merchantPaymentId,
+                  mpd.payment_type as paymentType
+          	 from
+              merchant_payment_details mpd
+          	where
+          	   mpd.merchant_id =#{merchantId}
+             and mpd.payment_type &gt; 1
+             and mpd.payment_type &lt; 6
+             and mpd.is_del = 0
+            )
+        ) t  where 1 = 1
+         <if test="paymentType != -1">
+      		 and  t.paymentType in (select  ad.type from activtiy_dict ad where ad.parent_payment_id = #{paymentType})      	  
+        </if>  
+        
+  </select>
+  
+  
+  
+  <!-- 查询订单的交易详细信息 -->
+   <select id="selectOrderPaymentDetailInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+       select 
+     mpd.id as paymentId,
+     mpd.merchant_id as merchantId,
+     mpd.payment_price as paymentPrice,
+     date_format( mpd.payment_time,'%Y-%m-%d %H:%i:%s') as paymentTime,
+	CONCAT('订单收入 - ',st.service_type_name) as detailsName,
+    (select payment_type_name from merchant_payment_type where id =(select parent_payment_id from activtiy_dict where type =#{paymentType})) as paymentTypeDesc,
+    oi.service_type_id as serviceType,
+    oi.order_no as orderNo,
+    oi.order_pay_type as orderPayType,
+    ui.phone as userPhone,
+   (CASE oi.order_pay_type
+			WHEN 1 THEN '支付宝支付'
+			WHEN 2 THEN '微信支付'
+			WHEN 3 THEN '线下支付'
+			WHEN 4 THEN '免单'
+			WHEN 5 THEN '银联支付'
+			ELSE	'支付'
+			END ) as  orderPayTypeName
+ 	from 
+  	  merchant_payment_details  mpd 
+ 	inner join order_info oi on mpd.business_id = oi.id
+ 	inner join service_type st on oi.service_type_id = st.id
+ 	inner join user_info ui on ui.id = oi.user_id
+	where  mpd.is_del =0 
+ 	and mpd.id = #{paymentId}
+    and payment_type =#{paymentType}
+  </select>
+   
+  <!-- 查询转收入转出的交易的详细信息 -->
+   <select id="selectTransoutPaymentDetailInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+     select 
+ 	 mpd.id as paymentId, 
+  	 mpd.payment_price as paymentPrice,
+   	(select detailsName from activtiy_dict where type=mpd.payment_type) as detailsName,
+     date_format( mpd.payment_time,'%Y-%m-%d %H:%i:%s') as paymentTime,
+     mtr.trans_seq as tradeNo
+     from   merchant_payment_details  mpd 
+     inner join  merchant_transout_record mtr  on  mtr.id = mpd.business_id
+     where  mpd.is_del =0 
+     and mpd.id = #{paymentId}
+     and mpd.payment_type = #{paymentType}
+  </select>
+
+
+<!-- 查询订单奖励交易详细信息 -->
+<select id="seletOrderAwardPaymentDeatilInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+	 select 
+	 	mpd.id as paymentId, 
+	 	oi.order_no as orderNo,
+	 	date_format( mpd.payment_time,'%Y-%m-%d %H:%i:%s') as paymentTime,
+    	(select payment_type_name from merchant_payment_type where id =(select parent_payment_id from activtiy_dict where type =#{paymentType})) as paymentTypeDesc,
+    	mpd.payment_price as paymentPrice,
+  		ain.title as remark
+  from merchant_payment_details mpd
+  inner join order_info oi on mpd.business_id =oi.id
+  inner join activity_order_reward_detail aord  on aord.order_id = oi.id
+  inner join activity_info ain on ain.id = aord.activity_id
+	where mpd.payment_type =#{paymentType}
+	and mpd.is_del =0
+	and mpd.id = #{paymentId}
+  limit 0,1
+</select>
+
+
+<!-- 查询活动详细信息-->
+<select id="selectActivityPaymentDetailInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+select mpd.id as paymentId,
+       mpd.payment_price as paymentPrice,
+       date_format( mpd.payment_time,'%Y-%m-%d %H:%i:%s') as paymentTime,
+      (select detailsName from activtiy_dict where type=mpd.payment_type) as remark,
+      (select payment_type_name from merchant_payment_type where id =(select parent_payment_id from activtiy_dict where type =#{paymentType})) as paymentTypeDesc
+  from merchant_payment_details mpd
+ where 
+       mpd.payment_type = #{paymentType}
+   and mpd.is_del = 0
+   and mpd.id = #{paymentId}
+</select>
+
+  <!-- 开业剪彩详细信息 -->
+<select id="selectCuttingPaymentDetailInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+	select mpd.id as paymentId,
+       mpd.payment_price as paymentPrice,
+       date_format( mpd.payment_time,'%Y-%m-%d %H:%i:%s') as paymentTime,
+      (select payment_type_name from merchant_payment_type where id =(select parent_payment_id from activtiy_dict where type =#{paymentType})) as paymentTypeDesc,
+       CONCAT(acd.name,'为您店铺剪彩') as remark
+  from merchant_payment_details mpd
+ 	left join  activity_cutting_detail acd on acd.id = mpd.business_id
+  where 
+       mpd.payment_type = #{paymentType}
+   and mpd.is_del = 0
+   and mpd.id = #{paymentId}
+</select>
+
+
+  <!-- 保存线下转账凭证图片和语音 -->
+  <insert id="saveTopupApplyFile" parameterType="java.util.List">
+      insert into pay_evidence (
+		  type
+		  ,pay_no
+		  ,path
+		  ,join_time
+		) VALUES
+           <foreach collection="list" item="item" index="index" separator=",">
+           (
+			  #{item.serviceType}  
+			  ,#{item.payNo}  
+			  ,#{item.path}  
+			  ,now() 
+			)
+           </foreach>
+  </insert>
+  
+  <!-- 查看线下转账凭证图片和语音-->
+<select id="findTopupApplys" parameterType="java.util.Map" resultType="java.util.HashMap">
+	select path FROM pay_evidence p where p.pay_no=#{payNo}
+</select>
+
+  <!-- 查看线下转账凭证图片和语音-->
+<select id="getServiceType" parameterType="java.util.Map" resultType="java.lang.String">
+	select type serviceType FROM pay_evidence p where p.pay_no=#{payNo} limit 1
+</select>
+    
+  <!-- 删除线下转账凭证图片和语音-->
+<delete id="deleteTopupApplyFile" parameterType="java.util.Map">
+    delete from pay_evidence where pay_no=#{payNo}
+</delete>
+
+<update id="updateTopupApplyStatus" parameterType="java.util.Map">
+	update merchant_topup_apply set apply_status=#{applyStatus} where pay_no=#{payNo} and apply_status=0
+</update>
+<update id="updateVipApplyStatus" parameterType="java.util.Map">
+	update merchant_vip_apply set apply_status=#{applyStatus} where pay_no=#{payNo} and apply_status=0
+</update>
+<update id="updateEmployeeApplyStatus" parameterType="java.util.Map">
+	update merchant_employees_num_apply set apply_status=#{applyStatus} where pay_no=#{payNo} and apply_status=0
+</update>
+
+<update id="confirmGrapBuyRecord" parameterType="java.util.Map">
+	update merchant_topup_apply set apply_status=2,buyConfirm=1,trade_no=#{tradeNo},open_time=#{openTime} where innerTradeNo=#{innerTraceNo}
+</update>
+
+
+<select id="selectpaymentStatus" parameterType="java.util.Map" resultType="java.util.Map">
+	select mpd.payment_status      
+  from merchant_payment_details mpd
+  where 
+       mpd.is_del = 0 and payment_status=0
+   and mpd.business_id = #{orderId}
+    LIMIT 1
+</select>
+<select id="selectpaymentByOrderId" parameterType="java.util.Map" resultType="java.util.Map">
+	select mpd.payment_status,mpd.payment_price,mpd.consume_price      
+  from merchant_payment_details mpd
+  where 
+       mpd.is_del = 0
+   and mpd.business_id = #{orderId}
+    LIMIT 1
+</select>
+
+
+</mapper>
+

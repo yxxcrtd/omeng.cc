@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantEmployeesNumApplyDao">
+
+  <!-- 保存商户员工数增加的申请 -->
+  <insert id="insertMerchantEmployeesNumApply" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+       insert into 
+          merchant_employees_num_apply
+          (
+              merchant_id,
+              apply_increase_employee_num,
+              apply_time,
+              apply_status,
+              app_type,
+              money,
+              pay_no,
+              pay_type,
+              client_type,
+              trade_no,
+              open_time,
+              buyer_no
+          )
+          values
+          (
+              #{merchantId},
+              #{increaseEmployeeNum},
+              now(),
+              #{applyStatus},
+              #{appType},
+              #{money},
+              #{payNo},
+              #{payType},
+              #{clientType},
+              #{tradeNo},
+              #{openTime},
+              #{buyerNo}
+              
+              
+          )
+  </insert>
+  
+  
+   <!-- 保存商户员工数增加的申请  有确认版本-->
+  <insert id="addMerchantEmployeesNumApplyWithConfirm" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+       insert into 
+          merchant_employees_num_apply
+          (
+              merchant_id,
+              apply_increase_employee_num,
+              apply_time,
+              apply_status,
+              app_type,
+              money,
+              pay_no,
+              pay_type,
+              client_type,
+              trade_no,
+              open_time,
+              buyer_no,
+              buyConfirm,
+              innerTradeNo,
+              inviteCode
+          )
+          values
+          (
+              #{merchantId},
+              #{increaseEmployeeNum},
+              now(),
+              #{applyStatus},
+              #{appType},
+              #{money},
+              #{payNo},
+              #{payType},
+              #{clientType},
+              #{tradeNo},
+              #{openTime},
+              #{buyerNo},
+              #{buyConfirm},
+              #{innerTradeNo},
+              #{inviteCode}              
+          )
+  </insert>
+  
+  
+  <update id="confirmBuyEmployeeNumRecord"  parameterType="java.util.Map">
+  		 update merchant_employees_num_apply  set apply_status=2,buyConfirm=1,open_time=#{openTime},trade_no=#{tradeNo},open_time=#{openTime} where innerTradeNo=#{innerTradeNo}
+  </update>
+  
+  
+  
+  <!-- 增加商户的最大员工数 -->
+  <update id="updateMerchantEmployeesNum" parameterType="java.util.Map">
+      update
+          merchant_info
+      set
+          max_employee_num = max_employee_num + #{increaseEmployeeNum}
+      where
+         id = #{merchantId}
+  </update>
+  
+  <!-- 设置商户的最大员工数 -->
+  <update id="setMerchantEmployeesNum" parameterType="java.util.Map">
+      update
+          merchant_info
+      set
+          max_employee_num = #{employeeNum}
+      where
+          id = #{merchantId}
+  </update>
+  
+  <select id="checkEmployeesNumApplyByPayNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+			count(1)
+		FROM
+			merchant_employees_num_apply
+		WHERE
+			pay_no=#{payNo}     
+  </select>
+  
+  
+   <select id="checkEmployeesNumApplyByInnerTradeNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+		SELECT
+			count(1)
+		FROM
+			merchant_employees_num_apply
+		WHERE
+			innerTradeNo=#{innerTradeNo}     
+  </select>
+  
+  
+   <!--查询商户最大人数申请状态 -1-可申请，1-确认中，不可申请-->
+  <select id="selectEmployeesNumApplyStatus" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select case when ifnull(count(1),0)=0 then -1 else 1 end payApplyStatus from merchant_employees_num_apply m where m.merchant_id=#{merchantId}  
+      and m.apply_status in (0,1)
+      and m.app_type= #{appType}
+      and m.is_del=0
+  </select>
+  
+</mapper>
+

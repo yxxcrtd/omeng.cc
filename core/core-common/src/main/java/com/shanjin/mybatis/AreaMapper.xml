@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IAreaDao">
+
+  <!-- 
+  	表     名：area							地区表
+  	表描述：
+  		id								主键
+  		area							地区名
+  		parent_id						父id
+  		index_str						索引字符串
+  		is_leaves						是否叶子节点
+   -->
+  
+  <!-- 获取省份列表 -->
+  <select id="getProvince" parameterType="java.util.Map" resultType="java.util.HashMap">
+  	select a.id, a.area, a.index_str as indexStr from area a where a.parent_id is NULL
+  </select>
+  
+  <!-- 获取城市列表 -->
+  <select id="getCity" parameterType="java.util.Map" resultType="java.util.HashMap">
+  	select a.id, a.area, a.index_str as indexStr from area a where a.parent_id = #{parentId}
+  </select>
+  
+   <!-- 获取城市信息列表，供移动端一次性选择城市 -->
+  <select id="getCityList" resultType="java.util.LinkedHashMap">
+     SELECT
+		id,
+		area,
+		parent_id AS parentId,
+		index_str AS indexStr
+	 FROM
+		area
+  </select>
+  <select id="getAllCityList" resultType="java.util.LinkedHashMap">
+   	SELECT
+		id,
+		area as city ,
+		(SELECT area from city_indestr where parent_id is null and id= a.parent_id) as province,
+		index_str AS indexStr
+	 FROM
+		city_indestr a
+	 WHERE
+	 	parent_id is not null order by index_str
+	</select> 	
+</mapper>
+

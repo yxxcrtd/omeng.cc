@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantServiceTagDao">
+
+  <!-- 查询商户的服务标签 -->
+  <select id="selectMerchantServiceTag" parameterType="java.util.Map" resultType="java.util.HashMap">
+      <!-- select
+          tag,is_audit as isAudit
+      from
+          merchant_service_tag 
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and (is_audit = 1 or is_audit = 0)
+      order by
+          join_time asc -->
+      select
+          name as tag,
+          is_audit as isAudit
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and (is_audit = 1 or is_audit = 0)
+      order by
+          join_time asc
+  </select>
+
+  <!-- 验证商户服务标签 -->
+  <select id="checkMerchantServiceTag" parameterType="java.util.Map" resultType="int">
+     <!--  select
+          count(1)
+      from
+          merchant_service_tag 
+      where
+          merchant_id = #{merchantId}
+          and tag = #{tag}
+          and is_del = 0
+          and (is_audit=1 or is_audit=0) -->
+      select
+          count(1)
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and name = #{tag}
+          and is_del = 0
+          and (is_audit=1 or is_audit=0)
+  </select>
+  
+  <!-- 验证商户添加的服务标签个数 -->
+  <select id="checkAddMerchantServiceTag" parameterType="java.util.Map" resultType="int">
+      <!-- select
+          count(1)
+      from
+          merchant_service_tag 
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and (is_audit=1 or is_audit=0) -->
+      select
+          count(1)
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and (is_audit=1 or is_audit=0)
+  </select>
+  
+  <!-- 查询商户服务标签信息 -->
+  <select id="checkAuditMerchantServiceTag" parameterType="java.util.Map" resultType="int">
+      <!-- select
+          is_audit
+      from
+          merchant_service_tag 
+      where
+          merchant_id = #{merchantId}
+          and tag = #{tag}
+          and is_del = 0 -->
+      select
+          is_audit
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and name = #{tag}
+          and is_del = 0
+  </select>
+
+  <!-- 商户服务标签的保存 -->
+  <insert id="insertMerchantServiceTag" parameterType="java.util.Map">
+  <!--    insert into merchant_service_tag
+           (
+               merchant_id,
+               tag,
+               join_time
+           )
+      values
+           (
+               #{merchantId},
+               #{tag},
+               now()
+           ) -->
+           insert into service_type_apply(
+           	merchant_id,
+           	name,
+           	join_time
+           )values(
+            #{merchantId},
+            #{tag},
+            now()
+           )
+  </insert>
+
+	<!-- 选择推荐的服务标签保存 -->
+  <insert id="chooseServiceTagSave" parameterType="java.util.Map">
+  <!--    insert into merchant_service_tag
+           (
+               merchant_id,
+               tag,
+               join_time
+           )
+      values
+           <foreach collection="tagArray" index="index" item="item" separator=","> 
+              ( #{merchantId},#{item},now())
+           </foreach>   -->
+            insert into service_type_apply
+           (
+               merchant_id,
+               name,
+               join_time
+           )
+      values
+           <foreach collection="tagArray" index="index" item="item" separator=","> 
+              ( #{merchantId},#{item},now())
+           </foreach>
+  </insert>
+
+	<!-- 删除商户的服务标签-->
+	<update id="deleteMerchantServiceTag" parameterType="java.util.Map">
+	    <!-- update 
+	        merchant_service_tag
+	    set 
+	        is_del = 1
+	    where 
+	      merchant_id = #{merchantId}
+	      and tag = #{tag}
+	      and is_del = 0 -->
+	      update 
+	        service_type_apply
+	    set 
+	        is_del = 1
+	    where 
+	      merchant_id = #{merchantId}
+	      and name = #{tag}
+	      and is_del = 0
+	</update>
+	
+   <!-- 查询商户的服务标签ID -->
+  <select id="selectMerchantServiceTagId" parameterType="java.util.Map" resultType="java.util.HashMap">
+      <!-- select
+          id
+      from
+          merchant_service_tag 
+      where
+          merchant_id = #{merchantId}
+          and tag = #{tag}
+          and is_del = 0 -->
+           select
+          id
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and name = #{tag}
+          and is_del = 0 
+  </select>
+	
+	
+	<!-- 检查用户搜索的关键词是否被记录过  -->
+  <select id="checkServiceTagForKeyword" parameterType="String" resultType="Integer">
+      SELECT
+			count(1)
+		FROM
+			user_supply_app_key_word
+		WHERE
+			is_del = 0
+		AND app_key_word = #{tag}
+  </select>
+  
+  <!-- 添加商户服务标签为待审核关键词 -->
+  <insert id="insertServiceTagForKeyword" parameterType="java.util.Map">
+     insert into user_supply_app_key_word
+           (
+               app_key_word,
+               join_time,
+               is_del,
+               is_audit
+           )
+      values
+           (
+               #{tag},
+               now(),
+               0,
+               0
+           )
+  </insert>
+</mapper>
+

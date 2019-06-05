@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.MsgComInsurInfoMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgComInsurInfo" id="MsgComInsurInfoBsRstMap">
+		<id property="orderNo" column="order_no"/>
+		
+		<result property="sunOrderNo" column="sun_order_no"/>
+		<result property="proposalNo" column="proposal_no"/>
+		<result property="policyNo" column="policy_no"/>
+		<result property="startDate" column="start_date"/>
+		<result property="endDate" column="end_date"/>
+		<result property="premium" column="premium"/>
+		<result property="tax" column="tax"/>
+		<result property="payTime" column="pay_time"/>
+		<result property="outPayId" column="out_pay_id"/>
+		<result property="callbackDetail" column="callback_detail"/>
+		<result property="callbackPay" column="callback_pay"/>
+		<result property="pcPayUrl" column="pc_pay_url"/>
+		<result property="comInsurKinds" column="com_insur_kinds"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgComInsurInfo" id="MsgComInsurInfoBsParaMap">
+		<id property="orderNo" column="order_no"/>
+		
+		<result property="sunOrderNo" column="sun_order_no"/>
+		<result property="proposalNo" column="proposal_no"/>
+		<result property="policyNo" column="policy_no"/>
+		<result property="startDate" column="start_date"/>
+		<result property="endDate" column="end_date"/>
+		<result property="premium" column="premium"/>
+		<result property="tax" column="tax"/>
+		<result property="payTime" column="pay_time"/>
+		<result property="outPayId" column="out_pay_id"/>
+		<result property="callbackDetail" column="callback_detail"/>
+		<result property="callbackPay" column="callback_pay"/>
+		<result property="pcPayUrl" column="pc_pay_url"/>
+		<result property="comInsurKinds" column="com_insur_kinds"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.order_no as orderNo, 
+			t.sun_order_no as sunOrderNo, 
+			t.proposal_no as proposalNo, 
+			t.policy_no as policyNo, 
+			t.start_date as startDate, 
+			t.end_date as endDate, 
+			t.premium as premium, 
+			t.tax as tax, 
+			t.pay_time as payTime, 
+			t.out_pay_id as outPayId, 
+			t.callback_detail as callbackDetail, 
+			t.callback_pay as callbackPay, 
+			t.pc_pay_url as pcPayUrl, 
+			t.com_insur_kinds as comInsurKinds
+		FROM msg_com_insur_info AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM msg_com_insur_info AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO msg_com_insur_info (
+				order_no,
+				sun_order_no, 
+				proposal_no, 
+				policy_no, 
+				start_date, 
+				end_date, 
+				premium, 
+				tax, 
+				pay_time, 
+				out_pay_id, 
+				callback_detail, 
+				callback_pay, 
+				pc_pay_url, 
+				com_insur_kinds
+			) VALUES (
+				#{orderNo},
+				#{sunOrderNo}, 
+				#{proposalNo}, 
+				#{policyNo}, 
+				#{startDate}, 
+				#{endDate}, 
+				#{premium}, 
+				#{tax}, 
+				#{payTime}, 
+				#{outPayId}, 
+				#{callbackDetail}, 
+				#{callbackPay}, 
+				#{pcPayUrl}, 
+				#{comInsurKinds}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE msg_com_insur_info AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM msg_com_insur_info AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY order_no DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.MsgComInsurInfo">
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.MsgComInsurInfo">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=sunOrderNo and sunOrderNo!=''">
+				t.sun_order_no = #{sunOrderNo},
+			</if>		
+			<if test="null!=proposalNo and proposalNo!=''">
+				t.proposal_no = #{proposalNo},
+			</if>		
+			<if test="null!=policyNo and policyNo!=''">
+				t.policy_no = #{policyNo},
+			</if>		
+			<if test="null!=startDate and startDate!=''">
+				t.start_date = #{startDate},
+			</if>		
+			<if test="null!=endDate and endDate!=''">
+				t.end_date = #{endDate},
+			</if>		
+			<if test="null!=premium and premium!=''">
+				t.premium = #{premium},
+			</if>		
+			<if test="null!=tax and tax!=''">
+				t.tax = #{tax},
+			</if>		
+			<if test="null!=payTime and payTime!=''">
+				t.pay_time = #{payTime},
+			</if>		
+			<if test="null!=outPayId and outPayId!=''">
+				t.out_pay_id = #{outPayId},
+			</if>		
+			<if test="null!=callbackDetail and callbackDetail!=''">
+				t.callback_detail = #{callbackDetail},
+			</if>		
+			<if test="null!=callbackPay and callbackPay!=''">
+				t.callback_pay = #{callbackPay},
+			</if>		
+			<if test="null!=pcPayUrl and pcPayUrl!=''">
+				t.pc_pay_url = #{pcPayUrl},
+			</if>		
+			<if test="null!=comInsurKinds and comInsurKinds!=''">
+				t.com_insur_kinds = #{comInsurKinds},
+			</if>		
+		</trim>
+		where t.order_no = #{orderNo}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> where order_no = #{orderNo}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=sunOrderNo and sunOrderNo!=''">
+				and t.sun_order_no = #{sunOrderNo}
+			</if>		
+			<if test="null!=proposalNo and proposalNo!=''">
+				and t.proposal_no = #{proposalNo}
+			</if>		
+			<if test="null!=policyNo and policyNo!=''">
+				and t.policy_no = #{policyNo}
+			</if>		
+			<if test="null!=startDate and startDate!=''">
+				and t.start_date = #{startDate}
+			</if>		
+			<if test="null!=endDate and endDate!=''">
+				and t.end_date = #{endDate}
+			</if>		
+			<if test="null!=premium and premium!=''">
+				and t.premium = #{premium}
+			</if>		
+			<if test="null!=tax and tax!=''">
+				and t.tax = #{tax}
+			</if>		
+			<if test="null!=payTime and payTime!=''">
+				and t.pay_time = #{payTime}
+			</if>		
+			<if test="null!=outPayId and outPayId!=''">
+				and t.out_pay_id = #{outPayId}
+			</if>		
+			<if test="null!=callbackDetail and callbackDetail!=''">
+				and t.callback_detail = #{callbackDetail}
+			</if>		
+			<if test="null!=callbackPay and callbackPay!=''">
+				and t.callback_pay = #{callbackPay}
+			</if>		
+			<if test="null!=pcPayUrl and pcPayUrl!=''">
+				and t.pc_pay_url = #{pcPayUrl}
+			</if>		
+			<if test="null!=comInsurKinds and comInsurKinds!=''">
+				and t.com_insur_kinds = #{comInsurKinds}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.order_no in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MsgComInsurInfoBsRstMap" parameterType="java.lang.String">
+		<include refid="commSelTpl"/> where t.order_no = #{orderNo} 
+	</select>
+	
+	<select id="getAll" resultMap="MsgComInsurInfoBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=sunOrderNo and sunOrderNo!=''">
+				and t.sun_order_no = #{sunOrderNo}
+			</if>		
+			<if test="null!=proposalNo and proposalNo!=''">
+				and t.proposal_no = #{proposalNo}
+			</if>		
+			<if test="null!=policyNo and policyNo!=''">
+				and t.policy_no = #{policyNo}
+			</if>		
+			<if test="null!=startDate and startDate!=''">
+				and t.start_date = #{startDate}
+			</if>		
+			<if test="null!=endDate and endDate!=''">
+				and t.end_date = #{endDate}
+			</if>		
+			<if test="null!=premium and premium!=''">
+				and t.premium = #{premium}
+			</if>		
+			<if test="null!=tax and tax!=''">
+				and t.tax = #{tax}
+			</if>		
+			<if test="null!=payTime and payTime!=''">
+				and t.pay_time = #{payTime}
+			</if>		
+			<if test="null!=outPayId and outPayId!=''">
+				and t.out_pay_id = #{outPayId}
+			</if>		
+			<if test="null!=callbackDetail and callbackDetail!=''">
+				and t.callback_detail = #{callbackDetail}
+			</if>		
+			<if test="null!=callbackPay and callbackPay!=''">
+				and t.callback_pay = #{callbackPay}
+			</if>		
+			<if test="null!=pcPayUrl and pcPayUrl!=''">
+				and t.pc_pay_url = #{pcPayUrl}
+			</if>		
+			<if test="null!=comInsurKinds and comInsurKinds!=''">
+				and t.com_insur_kinds = #{comInsurKinds}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MsgComInsurInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.order_no in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.MsgComInsurInfo" resultMap="MsgComInsurInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=sunOrderNo and sunOrderNo!=''">
+				and t.sun_order_no = #{sunOrderNo}
+			</if>		
+			<if test="null!=proposalNo and proposalNo!=''">
+				and t.proposal_no = #{proposalNo}
+			</if>		
+			<if test="null!=policyNo and policyNo!=''">
+				and t.policy_no = #{policyNo}
+			</if>		
+			<if test="null!=startDate and startDate!=''">
+				and t.start_date = #{startDate}
+			</if>		
+			<if test="null!=endDate and endDate!=''">
+				and t.end_date = #{endDate}
+			</if>		
+			<if test="null!=premium and premium!=''">
+				and t.premium = #{premium}
+			</if>		
+			<if test="null!=tax and tax!=''">
+				and t.tax = #{tax}
+			</if>		
+			<if test="null!=payTime and payTime!=''">
+				and t.pay_time = #{payTime}
+			</if>		
+			<if test="null!=outPayId and outPayId!=''">
+				and t.out_pay_id = #{outPayId}
+			</if>		
+			<if test="null!=callbackDetail and callbackDetail!=''">
+				and t.callback_detail = #{callbackDetail}
+			</if>		
+			<if test="null!=callbackPay and callbackPay!=''">
+				and t.callback_pay = #{callbackPay}
+			</if>		
+			<if test="null!=pcPayUrl and pcPayUrl!=''">
+				and t.pc_pay_url = #{pcPayUrl}
+			</if>		
+			<if test="null!=comInsurKinds and comInsurKinds!=''">
+				and t.com_insur_kinds = #{comInsurKinds}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

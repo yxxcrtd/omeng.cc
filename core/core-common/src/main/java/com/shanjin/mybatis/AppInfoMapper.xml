@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IAppInfoDao">
+
+	<!-- 
+		表     名：app_info						行业分类表
+		表描述：
+			id								主键
+			app_name						行业名称
+			app_type						行业类型，即行业名称简称
+			app_remark						行业描述
+			icon_path						图标地址
+			is_del							是否已经删除
+	 -->
+
+	<!-- 获得APP列表 -->
+	<select id="getAPPList" resultType="java.util.HashMap">  
+		<!-- select app_type as appType, app_name as name,app_remark as value,icon_path as iconPath from app_info where is_del=0 order by id  -->
+		SELECT
+			id AS catalogId,
+			NAME AS appName,
+			icon AS path
+		FROM
+			catalog_for_order ca
+		WHERE
+			ca.parentid =- 1
+		AND ca. LEVEL =- 1
+		AND status=1
+		AND flag &lt;&gt;2
+		ORDER BY
+			ca.id ASC
+	</select>  
+</mapper>
+

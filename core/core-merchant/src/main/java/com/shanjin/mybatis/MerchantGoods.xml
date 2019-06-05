@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantGoodsDao">
+
+  <!-- 商品的信息查询 -->
+	<select id="selectGoodsInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+		COUNT(1)
+		from
+		merchant_goods mg
+		where mg.is_del = 0
+      		and merchant_Id = #{merchantId}
+      	<if test="isAll != null and isAll == 0">
+      		and is_out = 0
+      	</if>
+		<!--查询店铺商品总数不需要查询分类下个数-->
+      	 <if test="classificationId != null and classificationId != '' and classificationId != 0 and classificationId != -1">
+			and mg.id in (select goods_id from
+			merchant_goods_classification_relation where classification_id =
+			#{classificationId})
+		</if>
+	</select>
+
+  <!-- 商品的信息查询 -->
+  <select id="selectGoodsInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          mg.id as goodsId,
+          mg.goods_name as goodsName,
+          mg.goods_price as goodsPrice,
+          mg.goods_price_unit as goodsPriceUnit,
+          mg.version as version,
+          mg.is_out as isOut,
+          mg.goods_picture_url as goodsPictureUrl,
+          mg.goods_describe as goodsDescribe,
+          (select group_concat(classification_id) from merchant_goods_classification_relation where goods_id = mg.id) as classificationIds,
+          (select group_concat(classification_name) from merchant_goods_classification where id in (select classification_id from merchant_goods_classification_relation where goods_id = mg.id)) as classificationNames
+      from
+          merchant_goods mg
+      where mg.is_del = 0
+      		and merchant_Id = #{merchantId}
+      	<if test="isAll != null and isAll == 0">
+      		and is_out = 0
+      	</if>
+
+      <if test="classificationId == -1">
+          and is_out = 1
+      </if>
+      	 <if test="classificationId != null and classificationId != '' and classificationId != 0 and classificationId != -1">
+          and exists (select 1 from merchant_goods_classification_relation c where c.goods_id=mg.id and c.classification_id = #{classificationId})
+          </if>
+      order by
+          join_time desc
+      limit #{rows}, #{pageSize}
+  </select>
+
+  <!-- 商品的信息查询 -->
+  <select id="selectGoodsDetail" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          mg.id as goodsId,
+          mg.goods_name as goodsName,
+          mg.goods_price as goodsPrice,
+          mg.goods_price_unit as goodsPriceUnit,
+          mg.version as version,
+          mg.is_out as isOut,
+          mg.goods_picture_url as goodsPictureUrl,
+          mg.goods_describe as goodsDescribe,
+          (select group_concat(classification_id) from merchant_goods_classification_relation where goods_id = mg.id) as classificationIds,
+          (select group_concat(classification_name) from merchant_goods_classification where id in (select classification_id from merchant_goods_classification_relation where goods_id = mg.id)) as classificationNames
+      from
+          merchant_goods mg
+      where id = #{goodsId}
+  </select>
+
+
+  <!-- 商品图片 -->
+  <select id="selectGoodsPic" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+         p.path,
+         p.id
+      from
+          merchant_goods_pic p
+      where
+          p.goods_id=#{goodsId}
+      order by ordernumber asc
+  </select>
+  <!-- 所有商品名查询 -->
+  <select id="selectGoodsName" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          goods_name as goodsName
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          <if test="goodsId != null">
+          and id != #{goodsId}
+          </if>
+          and is_del = 0
+  </select>
+
+  <!-- 商品的保存 -->
+  <insert id="insertGoods" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="goodsId">
+      insert into merchant_goods
+          (
+              merchant_id,
+              goods_name,
+              goods_price,
+              goods_picture_url,
+              goods_describe,
+              join_time,
+              goods_price_unit,
+              is_out,
+              version,
+              is_del
+          )
+      values
+          (
+              #{merchantId},
+              #{goodsName},
+              #{goodsPrice},
+              #{goodsPictureUrl},
+              #{goodsDescribe},
+              now(),
+              #{goodsPriceUnit},
+              #{isOut},
+              1,
+              0
+          )
+  </insert>
+  <!-- 商品图片的保存 -->
+  <insert id="insertGoodsPic" parameterType="java.util.List">
+      insert into merchant_goods_pic
+          (
+              goods_id,
+              join_time,
+              path,
+              ordernumber
+          )
+      values
+          <foreach collection="list" item="item" index="index" separator=",">
+          (
+              #{item.goodsId},
+              now(),
+              #{item.path},
+              #{item.ordernumber}
+          )
+          </foreach>
+  </insert>
+
+
+  <!-- 商品快照保存 -->
+  <insert id="insertGoodsHistory" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="goodsHistoryId">
+      insert into merchant_goods_history
+          (
+              merchant_id,
+              goods_id,
+              goods_name,
+              goods_price,
+              goods_picture_url,
+              goods_describe,
+              join_time,
+              goods_price_unit,
+              is_out,
+              version,
+              is_del,
+              history_create_time
+          )
+      select merchant_id,
+              id,
+              goods_name,
+              goods_price,
+              goods_picture_url,
+              goods_describe,
+              join_time,
+              goods_price_unit,
+              is_out,
+              version,
+              is_del,
+              now()
+       from merchant_goods g where g.id=#{goodsId}
+  </insert>
+  <!-- 商品快照图片保存 -->
+  <insert id="insertGoodsHistoryPic" parameterType="java.util.Map">
+      insert into merchant_goods_history_pic
+          (
+              history_goods_id,
+              join_time,
+              path,
+              ordernumber
+          )
+      select #{goodsHistoryId},
+              join_time,
+              path,
+              ordernumber
+      from merchant_goods_pic p 
+      where p.goods_id=#{goodsId}
+  </insert>
+
+  <!-- 查询商品快照图片 -->
+  <select id="selectGoodsHistoryPic" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+         p.path,
+         p.id
+      from
+          merchant_goods_history_pic p
+      where p.history_goods_id=#{goodsHistoryId}
+      order by ordernumber asc
+  </select>
+
+  <!-- 商品快照信息查询 -->
+  <select id="selectGoodsHistoryInfo" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          mg.id as goodsHistoryId,
+          mg.goods_id as goodsId,
+          mg.goods_name as goodsName,
+          mg.goods_price as goodsPrice,
+          mg.goods_price_unit as goodsPriceUnit,
+          mg.version as version,
+          mg.is_out as isOut,
+          mg.goods_picture_url as goodsPictureUrl,
+          mg.goods_describe as goodsDescribe,
+      (select group_concat(classification_id) from merchant_goods_classification_relation where goods_id = mg.goods_id) as classificationIds,
+      (select group_concat(classification_name) from merchant_goods_classification where id in (select classification_id from merchant_goods_classification_relation where goods_id = mg.goods_id)) as classificationNames
+      from
+          merchant_goods_history mg
+      where 1=1 
+      	<choose>  
+			<when test="goodsHistoryId != null and goodsHistoryId != '' and goodsHistoryId != 0">
+				and id = #{goodsHistoryId}
+			</when>
+<!-- 			<when test="id!=0"> -->
+<!-- 				and id =#{id} -->
+<!-- 			</when> -->
+			<otherwise>
+				and goods_id=#{goodsId}
+				and version = #{version}
+			</otherwise>
+		</choose>
+  </select>
+
+<!-- 查询此版本产品是否存在快照 -->
+  <select id="findeGoodsHistoryByGoodsId" parameterType="java.util.Map" resultType="java.lang.Long">
+      select
+          id goodsHistoryId
+      from
+          merchant_goods_history
+      where
+			goods_id=#{goodsId}
+			and version = #{version}
+  </select>
+  
+<!-- 删除商品图片 -->
+  <delete id="deleteGoodsPic" parameterType="java.util.List">
+  	delete from merchant_goods_pic where goods_id in 
+  	<foreach collection="list" item="goodsId" index="index" open="("   
+        separator="," close=")">   
+        #{goodsId}   
+    </foreach>   
+  </delete>
+  <!-- 更新商品信息 -->
+  <update id="updateGoodsInfo" parameterType="java.util.Map">
+      update
+          merchant_goods
+      set
+          goods_name = #{goodsName},
+          goods_price = #{goodsPrice},
+          goods_describe = #{goodsDescribe},
+          goods_price_unit = #{goodsPriceUnit}
+          <if test="goodsPictureUrl != null">
+          ,goods_picture_url = #{goodsPictureUrl}
+          </if>
+      where
+          id = #{goodsId}
+          and is_del = 0
+  </update>
+
+  <!-- 更新产品版本号 -->
+  <update id="updateGoodsVersion" parameterType="java.util.Map">
+      update
+          merchant_goods g
+      set
+          g.version = version+1
+      where
+          id = #{goodsId}
+          AND EXISTS (SELECT 1 FROM merchant_goods_history h WHERE h.goods_id=g.id AND h.version=g.version)
+  </update>
+
+  <!-- 删除单个商品（将商品记录的is_del设置成1） -->
+  <update id="updateGoodsStatus" parameterType="java.util.Map">
+      update
+          merchant_goods
+      set
+          is_del = 1
+      where
+          id = #{goodsId}
+  </update>
+
+  <!-- 删除多个商品（将商品记录的is_del设置成1） -->
+  <update id="updateManyGoodsStatus" parameterType="java.util.List">
+      update
+          merchant_goods
+      set
+          is_del = 1
+      where
+<!--           instr(CONCAT(',',#{goodsId},','),CONCAT(',',id,','))>0 -->
+ 		  id in 
+  	<foreach collection="list" item="goodsId" index="index" open="("   
+        separator="," close=")">   
+        #{goodsId}   
+    </foreach>   
+  </update>
+
+  <!-- 单个商家可用商品数量查询 -->
+  <select id="selectGoodsCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+      	<if test="isAll != null and isAll == 0">
+      		and is_out = 0
+      	</if>
+          and is_del = 0
+  </select>
+
+  <!-- 查询商户最新2张商品图片 -->
+  <select id="selectLast2GoodsPictures" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          GROUP_CONCAT(tmp.path) as path
+      from
+      (
+	      select
+	          goods_picture_url as path
+	      from
+	          merchant_goods
+	      where
+	          merchant_id = #{merchantId}
+	          and is_del = 0
+		  order by
+		      join_time desc
+		  limit
+		      0, 2
+	  ) tmp
+  </select>
+
+  <!-- 查询商户最新3个商品信息 -->
+  <select id="selectLast3GoodsInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          id as goodsId,
+          goods_name as goodsName,
+          goods_price as goodsPrice,
+          goods_price_unit as goodsPriceUnit,
+          version as version,
+          is_out as isOut,
+          goods_picture_url as goodsPictureUrl,
+          goods_describe as goodsDescribe
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+      	<if test="isAll != null and isAll == 0">
+      		and is_out = 0
+      	</if>
+	  order by
+	      join_time desc
+	  limit
+	      0, 3
+  </select>
+  
+   <!-- 查询商户最新n个商品信息 -->
+  <select id="selectLastnGoodsInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          goods_name as goodsName,
+          goods_price as goodsPrice,
+          goods_price_unit as  goodsPriceUnit,
+          goods_picture_url as goodsPictureUrl
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0  and is_out=0
+	  order by
+	      join_time desc
+	  limit
+	      0, #{goodsNum}
+  </select>
+  
+   <!-- 查询商户最新3个商品信息 -->
+  <select id="selectLastGoodsPic" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          GROUP_CONCAT(goods_picture_url) as path
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+      	<if test="isAll != null and isAll == 0">
+      		and is_out = 0
+      	</if>
+	  order by
+	      join_time desc
+	  limit
+	      ${num}
+  </select>
+  
+   <!-- 查询商户最新3个商品信息 -->
+  <select id="selectLastGoodsInfo" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+			goods_name as goodsName,
+			goods_price as goodsPrice,
+			goods_price_unit as goodsPriceUnit,
+          	goods_picture_url as goodsPictureUrl,
+          	goods_describe as goodsDescribe
+      from
+          merchant_goods
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0 and is_out = 0
+	  order by
+	      join_time desc
+	  limit ${num}
+  </select>
+  
+  <!-- 更新商品信息 -->
+  <update id="changeGoodsStatus" parameterType="java.util.Map">
+      update
+          merchant_goods
+      set
+          is_out=#{targetStatus}
+      where
+<!--           instr(CONCAT(',',#{goodsId},','),CONCAT(',',id,','))>0 -->
+ 		  id in 
+	  	<foreach collection="goodsIds" item="goodsId" index="index" open="("   
+	        separator="," close=")">   
+	        #{goodsId}
+	    </foreach>   
+          and is_del = 0
+  </update>
+  
+</mapper>
+

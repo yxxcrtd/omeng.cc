@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.ITimelineDao">
+
+    <select id="getTimelineList" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+        SELECT id, orderId, merchantId, actionCode, actionTime
+        FROM timeline
+        WHERE actionTime BETWEEN #{startTime} AND #{endTime} AND id &gt; #{lastId}
+        ORDER BY id
+        LIMIT #{pageSize}
+    </select>
+    
+    
+     <select id="getTimeLinesByIDS" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+        SELECT id as _id, orderId, merchantId, actionCode, actionTime
+        FROM timeline
+        WHERE orderId in ( ${ids} )
+    </select>
+    
+
+</mapper>

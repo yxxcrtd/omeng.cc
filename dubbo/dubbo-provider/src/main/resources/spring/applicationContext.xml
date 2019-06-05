@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://code.alibabatech.com/schema/dubbo
+        http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+        ">
+
+	<!-- 具体的实现bean <bean id="orderService" class="com.shanjin.service.impl.UserOrderServiceImpl" 
+		/> -->
+
+	<!-- 提供方应用信息，用于计算依赖关系 -->
+	<dubbo:application name="omeng_provider" />
+
+	<!--
+	<dubbo:registry address="zookeeper://zkmaster:2181?backup=zkslave1:2181,zkslave2:2181" file=".dubbo/${service.group}.cache" />
+-->
+
+	<!-- 开发调试者使用  改最后一个IP 地址-->
+	<dubbo:registry address="zookeeper://localhost:2181" />
+
+
+	<!-- 用dubbo协议在20884 agent 服务 -->
+	<dubbo:protocol name="dubbo" port="20881" threadpool="fixed"
+		threads="200" />
+
+
+
+	<dubbo:service group="default"
+		interface="com.shanjin.service.IUserOrderService" timeout="20000"
+		retries="0" ref="userOrderService">
+		<dubbo:method name="pushMessageToListForSHB" timeout="50000" />
+		<dubbo:method name="pushMessageToListForYHB" timeout="50000" />
+		<dubbo:method name="saveOrder" timeout="120000" />
+	</dubbo:service>
+
+
+	<dubbo:service group="defaultMerchant"
+		interface="com.shanjin.service.IMerchantOrderManageService" timeout="20000"
+		retries="0" ref="merchantOrderManageService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.ICommonService"
+		timeout="20000" retries="0" ref="commonService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IValidateService"
+		timeout="20000" retries="0" ref="validateService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IDictionaryService"
+		timeout="20000" retries="0" ref="dictionaryService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IMyIncomeService"
+		timeout="20000" retries="0" ref="myIncomeService">
+	</dubbo:service>
+
+
+	<dubbo:service interface="com.shanjin.service.IMyMerchantService"
+		timeout="20000" retries="0" ref="myMerchantervice">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IMerchantOrderManageService"
+		timeout="20000" retries="0" ref="merchantOrderManageService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IStatisticsService"
+		timeout="20000" retries="0" ref="statisticsService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IUserInfoService"
+		timeout="20000" retries="0" ref="userService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IUserManageService"
+		timeout="20000" retries="0" ref="userManageService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IUserMerchantService"
+		timeout="20000" retries="0" ref="userMerchantService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IElasticSearchService"
+		timeout="50000" retries="0" ref="elasticSearchService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IMessageCenterService"
+		timeout="20000" retries="0" ref="messageCenterService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IPushService"
+		timeout="20000" retries="0" ref="pushService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.ICustomOrderService"
+		timeout="20000" retries="0" ref="customOrderService">
+	</dubbo:service>
+	
+	<dubbo:service interface="com.shanjin.service.IMongoCustomOrderService"   timeout="20000"  retries="0"
+		ref="mongoCustomOrderService" >
+    </dubbo:service>
+	
+	<dubbo:service interface="com.shanjin.service.ICustomPriceService"
+		timeout="20000" retries="0" ref="customPriceService">
+	</dubbo:service>
+
+	<!--<dubbo:service interface="com.shanjin.service.IActivityService"
+		timeout="20000" retries="0" ref="activityService">
+	</dubbo:service>-->
+
+	<!-- <dubbo:service interface="com.shanjin.service.ITransOutService" timeout="20000" 
+		retries="0" ref="transoutService" > </dubbo:service> -->
+
+	<dubbo:service interface="com.shanjin.omeng.token.api.OTokenService"
+		timeout="20000" retries="0" ref="oTokenService">
+	</dubbo:service>
+
+	<dubbo:service interface="com.shanjin.service.IUserCPlanService"
+		timeout="20000" retries="0" ref="userCPlanService">
+	</dubbo:service>
+
+  <dubbo:service ref="valueAddService" interface="com.shanjin.service.IValueAddedService" timeout="20000" retries="0"/>
+ 
+	<!-- <dubbo:annotation package="com.shanjin.service.impl" /> <dubbo:reference 
+		id="transferService" retries="0" interface="com.shanjin.opay.api.service.ITransferService" 
+		/> -->
+
+    <!--增值服务 cplan接口-->
+    <dubbo:service ref="incService" interface="com.shanjin.service.IncService" timeout="20000"  retries="0"/>
+
+	<!--好评奖励接口-->
+	<dubbo:service ref="goodRewardService" interface="com.shanjin.service.IGoodRewardService" timeout="20000"  retries="0"/>
+
+    <dubbo:service ref="cplanService" interface="com.shanjin.service.CplanSerive" timeout="20000" retries="0"/>
+    <!--好评奖励统计-->
+    <dubbo:service ref="iMerEvalStatiService" interface="com.shanjin.service.IMerEvalStatiService" timeout="200000" retries="0"/>
+
+	<!-- 提供给钱包的用户服务 -->
+    <dubbo:service interface="com.shanjin.omeng.token.api.IOpayUserService" timeout="20000" retries="0" ref="opayUserService"/>
+<!-- 开票申请 -->
+	<dubbo:service interface="com.shanjin.service.IMerchantInvoiceService" timeout="20000" retries="0" ref="merchantInvoiceService"/>
+	<!-- 王牌活动 -->
+	<dubbo:service interface="com.shanjin.service.IKingService" timeout="20000" retries="0" ref="kingServiceImpl"/>
+	<!-- 王牌活动C计划服务 -->
+	<dubbo:service interface="com.shanjin.service.ICplanKingService" timeout="20000" retries="0" ref="cplanKingServiceImpl"/>
+	<!-- 联合营销接口 -->
+	<dubbo:service interface="com.shanjin.service.IUnitedMarketingService" timeout="20000" retries="0" ref="unitedMarketingServiceImpl"/>
+	<!-- 一对一支付授权 静默登录参数 -->
+	<dubbo:service interface="com.shanjin.service.ISilenceLoginService" timeout="20000" retries="0" ref="silenceLoginServiceImpl"/>
+
+</beans>

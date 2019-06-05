@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IActivityPushDao">
+
+	<select id="getPushRange" resultType="Map" parameterType="Integer">
+		SELECT
+			push_range as pushRange,
+			push_type as pushType
+		FROM
+			push_info
+		WHERE
+			service_type_id=#{serviceTypeId}
+	</select>
+	<!-- 获取所有商户 -->
+	<select id="getAllMerchant" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index" separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and mi.is_del=0
+			and me.user_id is not null
+	</select>
+	<!-- 根据城市获取所有商户 -->
+	<select id="getAllMerchantByCity" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+				separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and (mi.province LIKE CONCAT(#{province},'%')
+			and mi.city LIKE CONCAT(#{city},'%'))
+			and mi.is_del=0
+			and me.user_id is not null
+
+	</select>
+	<!-- 根据经纬度获取所有商户的 -->
+	<select id="getAllMerchantByRange" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+				separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and (mi.longitude>#{leftLongitude} and mi.longitude &lt; #{rightLongitude})
+			and (mi.latitude>#{buttomLatitude} and mi.latitude &lt; #{topLatitude})
+			and mi.is_del=0
+			and me.user_id is not null
+
+	</select>
+
+	<!-- 获取在线商户 -->
+	<select id="getOnlineMerchant" resultType="java.util.Map"
+		parameterType="java.util.List">
+		SELECT
+			DISTINCT
+			up.push_id as pushId,
+			up.client_type as clientType,
+			up.user_id as userId,
+			up.app_type as appType
+		FROM
+			user_push up
+		WHERE
+			up.user_id IN (
+			<foreach collection="list" index="index" item="map" separator=",">
+				<foreach collection="map" index="key" item="userId">
+					#{userId}
+				</foreach>
+			</foreach>
+			)
+	</select>
+
+	<!-- 根据商户的服务标签获取clentid -->
+	<select id="getClientIdsByServiceTag" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			mi.id as merchantId,
+			me.user_id as userId
+		FROM
+			merchant_info mi
+			inner join merchant_employees me on me.merchant_id=mi.id and me.is_del=0
+		WHERE
+			mi.id in
+			<foreach collection="merchantIds" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item.merchantId}
+			</foreach>
+			<!-- and LENGTH(mi.location_address) &gt; 0 and LENGTH(mi.`name`) &gt; 0 -->
+			and (mi.longitude>#{leftLongitude} and mi.longitude &lt;#{rightLongitude})
+			and (mi.latitude>#{buttomLatitude} and mi.latitude &lt; #{topLatitude})
+			and mi.is_del=0
+			and me.user_id is not null
+	</select>
+
+	<!-- 记录推送的订单和商户ID -->
+	<insert id="insertPushMerchantOrder" parameterType="java.util.Map">
+		INSERT INTO push_merchant_order(
+			order_id,
+			merchant_id,
+			user_id,
+			join_time,
+			push_id,
+			client_type
+		) VALUES
+		<foreach collection="clientIdList" item="item" index="index"
+			separator=",">
+			(
+			#{orderId},
+			#{item.merchantId},
+			#{item.userId},
+			now(),
+			#{item.pushId},
+			#{item.clientType}
+			)
+		</foreach>
+	</insert>
+	<!-- 获得所有的服务标签 -->
+	<select id="getAllMerchantTags" resultType="java.util.HashMap">
+		SELECT
+			mst.id as id,
+			mst.tag as tag,
+			mst.merchant_id AS merchantId,
+			mst.price as price
+		FROM
+			merchant_service_tag mst,
+			merchant_info mi
+		WHERE
+			mst.merchant_id = mi.id
+			AND mst.is_del = 0
+			AND mst.is_audit = 1
+			AND mi.is_del = 0
+			ORDER BY
+			mst.price DESC
+	</select>
+
+	<!-- 获得订单的经纬度信息 -->
+	<select id="selectOrderLocation" parameterType="Long"
+		resultType="java.util.LinkedHashMap">
+		SELECT
+			longitude,
+			latitude
+		FROM
+			order_info
+		WHERE
+			id=#{orderId}
+	</select>
+	<!-- 获取订单省市信息 -->
+	<select id="getProvinceAndCityByorderId" resultType="Map"
+		parameterType="Long">
+		select
+			province,
+			city
+		from
+			order_info
+		where
+			id=#{orderId}
+	</select>
+	<!-- 获取订单指定的商户clentId -->
+	<select id="getMerchantClientId" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			up.client_id AS clientId,
+			up.client_type AS clientType,
+			up.user_id AS userId<!-- ,
+			me.phone as phone,
+			up.app_type AS appType -->
+		FROM
+			user_push up
+		INNER JOIN merchant_employees me ON me.user_id = up.user_id
+		INNER JOIN order_info oi ON oi.merchant_id =me.merchant_id
+		WHERE
+			oi.id = #{orderId}
+	</select>
+	<select id="getUserClientId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		select 
+			up.user_id as userId,
+			up.push_id as pushId,
+			up.client_type as clientType
+		from 
+			user_push up 
+		where  
+			up.user_id=#{userId}
+	</select>
+	<!-- 获得Android APP的推送设置  -->
+  	<select id="getPushConfig" parameterType="java.util.Map" resultType="java.util.HashMap">
+		SELECT
+			app_id as appId,
+			app_key as appKey,
+			app_secret as appSecret,
+			master_secret as masterSecret
+		FROM
+			android_app_push_config aapc
+		WHERE
+			aapc.app_type = #{appType}
+  	</select>
+        <!-- 根据用户ID获取用户推送设备列表  Long userId-->
+	<select id="selectUserPushList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		SELECT 
+			t.push_id AS pushId,
+			t.client_type AS clientType,
+			t.client_id AS clientId,
+			t.user_id AS userId 
+		FROM 
+			user_push t 
+		WHERE 
+			t.switch!=1 
+			AND t.user_id=#{userId} 
+			<if test=" clientId!=null and clientId!='' ">
+			and t.client_id !=#{clientId}
+			</if>
+	</select> 
+	<!-- 获取订单的关键词  -->
+  	<select id="getOrderTitle" resultType="String" parameterType="java.util.Map" >
+	    SELECT
+			title
+		FROM
+			gxfw_order_info
+		WHERE
+			order_id = #{orderId}
+  	</select>
+  	<select id="getPushServiceTypeIdList" parameterType="java.util.Map" resultType="Integer">
+  		select 
+  		<if test="type == 1">
+  			service_type_id as serviceTypeId
+  		</if>
+  		<if test="type == 2">
+  			 gxfw_service_type_id as serviceTypeId
+  		</if>
+  		from
+  			push_config
+  		where
+  			1=1
+  		<if test="type == 1">
+  			and gxfw_service_type_id=#{serviceTypeId}	
+  		</if>
+  		<if test="type == 2">
+  			and service_type_id=#{serviceTypeId}	
+  		</if>
+  	</select>
+  	<select id="getAppTypeByMerchantId" parameterType="Long" resultType="String">
+  		SELECT
+			alias AS appType
+		FROM
+			catalog ca
+		WHERE
+			ca.id = (
+				SELECT
+					catalog_id
+				FROM
+					merchant_info
+				WHERE
+					id = #{merchantId}
+			)
+  	</select>
+
+  <!--  获取配置信息 -->
+    <select id="getConfigurationInfo" resultType="Map" >  
+    	select 
+    		*
+    	from 
+    		configuration_info
+	</select>  
+
+
+<!-- 获取用户推送信息-->
+	<select id="getUserPushInfo" resultType="java.util.HashMap">
+		  SELECT
+			up.push_id as pushId,
+			up.client_type as clientType,
+			up.user_id as userId,
+			up.app_type as appType
+		  FROM user_push up
+		  WHERE user_id = #{userId}
+	</select>
+  	
+</mapper>
+

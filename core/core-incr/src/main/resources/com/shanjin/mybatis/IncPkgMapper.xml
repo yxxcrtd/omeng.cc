@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.IncPkgMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.IncPkg" id="IncPkgBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="serviceId" column="service_id"/>
+		<result property="charge" column="charge"/>
+		<result property="createTime" column="create_time"/>
+		<result property="creater" column="creater"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifer" column="modifer"/>
+		<result property="isDel" column="is_del"/>
+		<result property="status" column="status"/>
+		<result property="picsPath" column="pics_path"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.IncPkg" id="IncPkgBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="serviceId" column="service_id"/>
+		<result property="charge" column="charge"/>
+		<result property="createTime" column="create_time"/>
+		<result property="creater" column="creater"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifer" column="modifer"/>
+		<result property="isDel" column="is_del"/>
+		<result property="status" column="status"/>
+		<result property="picsPath" column="pics_path"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.name as name, 
+			t.service_id as serviceId, 
+			t.charge as charge, 
+			t.create_time as createTime, 
+			t.creater as creater, 
+			t.modify_time as modifyTime, 
+			t.modifer as modifer, 
+			t.is_del as isDel, 
+			t.status as status, 
+			t.pics_path as picsPath
+		FROM inc_pkg AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM inc_pkg AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO inc_pkg (
+				
+				name, 
+				service_id, 
+				charge, 
+				create_time, 
+				creater, 
+				modify_time, 
+				modifer, 
+				is_del, 
+				status, 
+				pics_path
+			) VALUES (
+				
+				#{name}, 
+				#{serviceId}, 
+				#{charge}, 
+				#{createTime}, 
+				#{creater}, 
+				#{modifyTime}, 
+				#{modifer}, 
+				#{isDel}, 
+				#{status}, 
+				#{picsPath}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE inc_pkg AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM inc_pkg AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.IncPkg" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.IncPkg">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>		
+			<if test="null!=serviceId">
+				t.service_id = #{serviceId},
+			</if>		
+			<if test="null!=charge">
+				t.charge = #{charge},
+			</if>		
+			<if test="null!=createTime">
+				t.create_time = #{createTime},
+			</if>		
+			<if test="null!=creater and creater!=''">
+				t.creater = #{creater},
+			</if>		
+			<if test="null!=modifyTime">
+				t.modify_time = #{modifyTime},
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				t.modifer = #{modifer},
+			</if>		
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>		
+			<if test="null!=status">
+				t.status = #{status},
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				t.pics_path = #{picsPath},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=serviceId">
+				and t.service_id = #{serviceId}
+			</if>		
+			<if test="null!=charge">
+				and t.charge = #{charge}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="IncPkgBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="IncPkgBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=serviceId">
+				and t.service_id = #{serviceId}
+			</if>		
+			<if test="null!=charge">
+				and t.charge = #{charge}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="IncPkgBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.IncPkg" resultMap="IncPkgBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=serviceId">
+				and t.service_id = #{serviceId}
+			</if>		
+			<if test="null!=charge">
+				and t.charge = #{charge}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

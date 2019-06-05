@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IPushDao">
+
+	<select id="getPushRange" resultType="Map" parameterType="Integer">
+		SELECT
+			service_type_id as serviceTypeId,
+			push_range as pushRange,
+			push_type as pushType
+		FROM
+			push_info
+	</select>
+	<!-- 获取所有商户 -->
+	<select id="getAllMerchant" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId,
+			<!-- date_format(mi.last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime -->
+			me.phone
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index" separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and mi.business_type = 1
+			and mi.is_private_assistant = 0
+			and mi.is_del=0
+			and me.user_id is not null
+			<if test="merchantId != null and merchantId != '' ">
+				and mi.merchantId!=#{merchantId}
+			</if>
+			<if test="testPhone !=null and testPhone !=''">
+				and me.phone like CONCAT(#{testPhone},'%')
+			</if>
+			
+			<if test="cityLimit !=null and cityLimit !='' and cityLimit !='0' ">				
+				limit ${cityLimit}
+			</if>
+	</select>
+	<!-- 根据城市获取所有商户 -->
+	<select id="getAllMerchantByCity" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId,
+			<!-- date_format(mi.last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime -->
+			me.phone
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+				separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and mi.business_type = 1
+			and mi.is_private_assistant = 0
+			and (mi.province LIKE CONCAT(#{province},'%')
+			and mi.city LIKE CONCAT(#{city},'%'))
+			and mi.is_del=0	
+			and me.user_id is not null
+			and (mi.vip_status != 2 or vip_status is null )		
+			<if test="merchantId != null and merchantId != '' ">
+				and mi.merchantId!=#{merchantId}
+			</if>
+			<if test="testPhone !=null and testPhone !=''">
+				and me.phone like CONCAT(#{testPhone},'%')
+			</if>
+			
+			<if test="cityLimit !=null and cityLimit !='' and cityLimit !='0' ">				
+				limit ${cityLimit}
+			</if>
+	</select>
+	<!-- 根据城市获取所有VIP商户 -->
+	<select id="getAllVIPMerchantByCity" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		<!-- SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId,
+			date_format(mi.last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+				separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and mi.business_type = 1 营业
+			and mi.is_private_assistant = 0 不是私人助理
+			and (mi.province LIKE CONCAT(#{province},'%')
+			and mi.city LIKE CONCAT(#{city},'%'))
+			and mi.is_del=0	
+			and mi.vip_status=2		
+		<if test="rangeLimit !=null and rangeLimit !=''">				
+			limit ${rangeLimit}
+		</if> -->
+		select 
+			DISTINCT
+			me.user_id as userId,
+			temp.merchantId ,
+			<!-- temp.lastActiveTime -->
+			me.phone
+		 from (
+			SELECT			
+				mi.id as merchantId<!-- ,
+				date_format(mi.last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime -->
+			FROM
+				merchant_info mi				
+			LEFT JOIN 
+				merchant_service_type mst ON mst.merchant_id =mi.id
+			WHERE	
+				mst.service_type_id in (
+				<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+					separator=",">				
+					#{serviceTypeId}				
+				</foreach>
+				) 		
+				and mi.business_type = 1 <!-- 营业 -->
+				and mi.is_private_assistant = 0 <!-- 不是私人助理 -->
+				and mi.province LIKE CONCAT(#{province},'%') 
+				and mi.city LIKE CONCAT(#{city},'%')					
+				and mi.is_del=0	
+				and mi.vip_status=2		
+			<if test="rangeLimit !=null and rangeLimit !='' and rangeLimit !='0' ">				
+				limit ${rangeLimit}
+			</if>
+		) temp 			
+		LEFT JOIN merchant_employees me ON me.merchant_id=temp.merchantId AND me.is_del = 0			
+	</select>
+	<!-- 根据经纬度获取所有商户的 -->
+	<select id="getAllMerchantByRange" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId,
+			<!-- date_format(mi.last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime -->
+			me.phone
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+			LEFT JOIN merchant_service_type mst ON mst.merchant_id =mi.id
+		WHERE
+			mst.service_type_id in (
+			<foreach collection="serviceTypeIdList" item="serviceTypeId" index="index"
+				separator=",">				
+				#{serviceTypeId}				
+			</foreach>
+			) 
+			and mi.business_type = 1 <!-- 打烊 -->
+			and mi.is_private_assistant = 0 <!-- 私人助理 -->
+			and (mi.longitude>#{leftLongitude} and mi.longitude &lt; #{rightLongitude})
+			and (mi.latitude>#{buttomLatitude} and mi.latitude &lt; #{topLatitude})
+			and mi.is_del=0
+			and me.user_id is not null
+			<if test="merchantId != null and merchantId != '' ">
+				and mi.merchantId!=#{merchantId}
+			</if>
+			<if test="testPhone !=null and testPhone !=''">
+				and me.phone like CONCAT(#{testPhone},'%')
+			</if>			
+			<if test="rangeLimit !=null and rangeLimit !='' and  rangeLimit !='0'">				
+				limit ${rangeLimit}
+			</if>
+	</select>
+
+	<!-- 获取在线商户 -->
+	<select id="getOnlineMerchant" resultType="java.util.Map"
+		parameterType="java.util.List">
+		SELECT
+			DISTINCT
+			up.push_id as pushId,
+			up.client_type as clientType,
+			up.user_id as userId,
+			phone_model as phoneModel
+			
+		FROM
+			user_push up
+		WHERE
+			up.user_id IN (
+			<foreach collection="list" index="index" item="map" separator=",">
+				<foreach collection="map" index="key" item="userId">
+					#{userId}
+				</foreach>
+			</foreach>
+			)
+	</select>
+
+	<!-- 根据商户的服务标签获取clentid -->
+	<select id="getClientIdsByServiceTag" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			mi.id as merchantId,
+			me.user_id as userId
+		FROM
+			merchant_info mi
+			inner join merchant_employees me on me.merchant_id=mi.id and me.is_del=0
+		WHERE
+			mi.id in
+			<foreach collection="merchantIds" index="index" item="item"
+				open="(" separator="," close=")">
+				#{item.merchantId}
+			</foreach>
+			<!-- and LENGTH(mi.location_address) &gt; 0 and LENGTH(mi.`name`) &gt; 0 -->
+			and (mi.longitude>#{leftLongitude} and mi.longitude &lt;#{rightLongitude})
+			and (mi.latitude>#{buttomLatitude} and mi.latitude &lt; #{topLatitude})
+			and mi.is_del=0
+			and me.user_id is not null
+	</select>
+
+	<!-- 记录推送的订单和商户ID -->
+	<insert id="insertPushMerchantOrder" parameterType="java.util.Map">
+		INSERT INTO push_merchant_order(
+			order_id,
+			order_status,
+			merchant_id,
+			user_id,
+			service_time,
+			join_time,
+			push_id,
+			client_type
+		) VALUES
+		<foreach collection="clientIdList" item="item" index="index"
+			separator=",">
+			(
+			#{orderId},
+			1,
+			#{item.merchantId},
+			#{item.userId},
+			#{serviceTime},
+			now(),
+			#{item.pushId},
+			#{item.clientType}
+			)
+		</foreach>
+	</insert>
+	<!-- 获得所有的服务标签 -->
+	<select id="getAllMerchantTags" resultType="java.util.HashMap">
+		SELECT
+			mst.id as id,
+			mst.tag as tag,
+			mst.merchant_id AS merchantId,
+			mst.price as price
+		FROM
+			merchant_service_tag mst,
+			merchant_info mi
+		WHERE
+			mst.merchant_id = mi.id
+			AND mst.is_del = 0
+			AND mst.is_audit = 1
+			AND mi.is_del = 0
+			ORDER BY
+			mst.price DESC
+	</select>
+
+	<!-- 获得订单的经纬度信息 -->
+	<select id="selectOrderLocation" parameterType="Long"
+		resultType="java.util.LinkedHashMap">
+		SELECT
+			longitude,
+			latitude
+		FROM
+			order_info
+		WHERE
+			id=#{orderId}
+	</select>
+	<!-- 获取订单省市信息 -->
+	<select id="getProvinceAndCityByorderId" resultType="Map"
+		parameterType="Long">
+		select
+			province,
+			city
+		from
+			order_info
+		where
+			id=#{orderId}
+	</select>
+	<!-- 获取订单指定的商户clentId -->
+	<select id="getMerchantClientId" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT
+			up.client_id AS clientId,
+			up.client_type AS clientType,
+			up.user_id AS userId<!-- ,
+			me.phone as phone,
+			up.app_type AS appType -->
+		FROM
+			user_push up
+		INNER JOIN merchant_employees me ON me.user_id = up.user_id
+		INNER JOIN order_info oi ON oi.merchant_id =me.merchant_id
+		WHERE
+			oi.id = #{orderId}
+	</select>
+	<select id="getUserClientId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		select 
+			up.user_id as userId,
+			up.push_id as pushId,
+			up.client_type as clientType
+		from 
+			user_push up 
+		where  
+			up.user_id in (${userId})
+	</select>
+        <!-- 根据用户ID获取用户推送设备列表  Long userId-->
+	<select id="selectUserPushList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		SELECT 
+			t.push_id AS pushId,
+			t.client_type AS clientType,
+			t.client_id AS clientId,
+			t.user_id AS userId 
+		FROM 
+			user_push t 
+		WHERE 
+			t.switch!=1 
+			AND t.user_id=#{userId} 
+			<if test=" clientId!=null and clientId!='' ">
+			and t.client_id !=#{clientId}
+			</if>
+	</select> 
+	
+  	<select id="getPushServiceTypeIdList" parameterType="java.util.Map" resultType="java.util.Map">
+  		
+		SELECT
+			service_type_id as serviceTypeId,
+			relevance_service_type_id AS relevanceServiceTypeId
+		FROM
+			push_config
+		
+  	</select>
+  	<select id="getAppTypeByMerchantId" parameterType="Long" resultType="String">
+  		SELECT
+			alias AS appType
+		FROM
+			catalog ca
+		WHERE
+			ca.id = (
+				SELECT
+					catalog_id
+				FROM
+					merchant_info
+				WHERE
+					id = #{merchantId}
+			)
+  	</select>
+  	
+  	 
+  <!--  获取配置信息 -->
+    <select id="getConfigurationInfo" resultType="Map" >  
+    	select 
+    		*
+    	from 
+    		configuration_info
+	</select>  
+	
+	<select id="getUserPushCountByUserId" resultType="Integer" parameterType="java.util.Map">
+	    select count(1) as count FROM user_push WHERE user_id=#{userId}
+	</select>
+	
+    <!-- 删除排除当前访问设备的记录  Long userId -->
+	<delete id="deleteUserPushByUserId" parameterType="java.util.Map">
+	    DELETE FROM user_push WHERE user_id=#{userId}
+	</delete>
+	
+  	<!-- 删除排除当前访问设备的记录  userId clientId -->
+	<delete id="deleteUserPushByUserIdOrClientId" parameterType="java.util.Map">
+	    DELETE FROM user_push WHERE client_id=#{clientId} or user_id=#{userId}
+	</delete>
+	 <!-- 保存用户推送设备记录信息 -->
+    <insert id="insertUserPush" parameterType="java.util.Map" >
+       INSERT INTO user_push
+           (
+           user_id,
+           client_id ,
+           client_type ,
+           push_id ,
+           phone_model
+           )
+       VALUES
+           (#{userId},
+            #{clientId},
+            #{clientType},
+            #{pushId},
+            #{phoneModel}
+           )
+    </insert>
+    <update id="updateUserPush" parameterType="java.util.Map" >
+       	update 
+			user_push
+		set 
+			client_id=#{clientId},
+           	client_type=#{clientType},
+           	push_id=#{pushId},
+           	phone_model=#{phoneModel}
+        where 
+        	user_id=#{userId}
+    </update>
+    <select id="getMerchantLastLoginList" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		id as merchantId,
+    		date_format(last_active_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime
+    	from
+    		merchant_info
+    	where 
+    		id in (${merchantIds})
+    </select>
+    
+    <select id="getMerchantActiveList" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		id as userId,
+    		date_format(last_login_time,'%Y-%m-%d %H:%i:%s') as lastActiveTime
+    	from
+    		user_info
+    	where 
+    		id in (${userIds})
+    </select>
+    
+    <!-- 根据手机号查询此用户下属所有的店铺ID -->
+    <select id="getMerchantIdsByPhone" parameterType="java.util.Map" resultType="String">
+    	select 
+    		group_CONCAT(merchant_id) as merchantIds
+    	from 
+    		merchant_employees
+    	where 
+    		phone=#{phone}
+    </select>
+    
+    <select id="getCityPrivateAssistants" parameterType="java.util.Map" resultType="java.util.Map">
+    /*master*/
+    	select 
+    		mi.id as merchantId,
+    		me.user_id as userId
+    	from 
+    		merchant_info mi
+    	left join merchant_employees me on me.merchant_id =mi.id and employees_type=1 and me.is_del=0
+    	where 
+    		mi.city like CONCAT(#{city},'%')
+			and mi.is_del=0
+			and is_private_assistant=1
+			and mi.id not in (select merchant_id from push_merchant_order where order_id in (${orderIds}) and merchant_id=mi.id)
+    </select>
+    
+    <select id="getMerchantOrderCount" parameterType="java.util.Map">
+    /*master*/
+    	select 
+    		count(1)
+    	from 
+    		push_merchant_order
+    	where
+    		merchant_id=#{merchantId}
+    	and
+    		order_id=#{orderId}
+    </select>
+    
+    <!-- 统计用户发送订单短信次数 -->
+    <select id="getSendList" parameterType="Long" resultType="java.util.Map">
+    	select join_time as joinTime from order_sendSms_info where user_id=#{userId} order by join_time desc 
+    </select>
+    
+    <insert id="addOrderSendSmsInfo" parameterType="java.util.Map">
+    	insert into order_sendSms_info(
+    		phone,
+			user_id,
+			order_id,
+			join_time    	
+    	)values(
+    		#{phone},
+			#{userId},
+			#{orderId},
+			now()  
+    	)    	
+    </insert>
+    
+     <select id="getAssistantPushInfo" parameterType="java.util.Map"  resultType="java.util.Map">
+    	SELECT
+			DISTINCT
+			up.push_id as pushId,
+			up.client_type as clientType,
+			up.user_id as userId,
+			phone_model as phoneModel
+			
+		FROM
+			user_push up
+		WHERE  user_id in ( ${ids} )
+    </select>
+</mapper>
+

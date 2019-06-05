@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IDictionaryDao">
+	<!-- 获取字典表中制定配置项信息 -->
+  	<select id="getOrderStatusFromDictonary" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">
+     		select dict_key,dict_value  from dictionary where dict_type=#{key} and is_del=0
+  	</select> 
+  	
+  	
+  	<select id="getOrderStatustTextList"  resultType="java.util.LinkedHashMap">
+  		SELECT 
+  			dict_type,dict_key,remark
+  		FROM 
+  			dictionary 
+  		WHERE
+  			dict_type = "searchOrderStatus" or dict_type="searchMerchantOrderStatus"
+  	</select>
+  	
+</mapper>
+

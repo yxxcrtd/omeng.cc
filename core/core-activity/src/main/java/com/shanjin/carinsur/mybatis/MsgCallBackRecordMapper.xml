@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.MsgCallBackRecordMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgCallBackRecord" id="MsgCallBackRecordBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="orderNo" column="order_no"/>
+		<result property="body" column="body"/>
+		<result property="requestType" column="request_type"/>
+		<result property="sendTime" column="send_time"/>
+		<result property="createTime" column="create_time"/>
+		<result property="agentCode" column="agent_code"/>
+		<result property="sellerId" column="seller_id"/>
+		<result property="version" column="version"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgCallBackRecord" id="MsgCallBackRecordBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="orderNo" column="order_no"/>
+		<result property="body" column="body"/>
+		<result property="requestType" column="request_type"/>
+		<result property="sendTime" column="send_time"/>
+		<result property="createTime" column="create_time"/>
+		<result property="agentCode" column="agent_code"/>
+		<result property="sellerId" column="seller_id"/>
+		<result property="version" column="version"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.order_no as orderNo, 
+			t.body as body, 
+			t.request_type as requestType, 
+			t.send_time as sendTime, 
+			t.create_time as createTime, 
+			t.agent_code as agentCode, 
+			t.seller_id as sellerId, 
+			t.version as version
+		FROM msg_call_back_record AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM msg_call_back_record AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO msg_call_back_record (
+				
+				order_no, 
+				body, 
+				request_type, 
+				send_time, 
+				create_time, 
+				agent_code, 
+				seller_id, 
+				version
+			) VALUES (
+				
+				#{orderNo}, 
+				#{body}, 
+				#{requestType}, 
+				#{sendTime}, 
+				#{createTime}, 
+				#{agentCode}, 
+				#{sellerId}, 
+				#{version}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE msg_call_back_record AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM msg_call_back_record AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.MsgCallBackRecord" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.MsgCallBackRecord">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=orderNo and orderNo!=''">
+				t.order_no = #{orderNo},
+			</if>		
+			<if test="null!=body and body!=''">
+				t.body = #{body},
+			</if>		
+			<if test="null!=requestType and requestType!=''">
+				t.request_type = #{requestType},
+			</if>		
+			<if test="null!=sendTime and sendTime!=''">
+				t.send_time = #{sendTime},
+			</if>		
+			<if test="null!=createTime">
+				t.create_time = #{createTime},
+			</if>		
+			<if test="null!=agentCode and agentCode!=''">
+				t.agent_code = #{agentCode},
+			</if>		
+			<if test="null!=sellerId and sellerId!=''">
+				t.seller_id = #{sellerId},
+			</if>		
+			<if test="null!=version and version!=''">
+				t.version = #{version},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>		
+			<if test="null!=body and body!=''">
+				and t.body = #{body}
+			</if>		
+			<if test="null!=requestType and requestType!=''">
+				and t.request_type = #{requestType}
+			</if>		
+			<if test="null!=sendTime and sendTime!=''">
+				and t.send_time = #{sendTime}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=agentCode and agentCode!=''">
+				and t.agent_code = #{agentCode}
+			</if>		
+			<if test="null!=sellerId and sellerId!=''">
+				and t.seller_id = #{sellerId}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MsgCallBackRecordBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="MsgCallBackRecordBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>		
+			<if test="null!=body and body!=''">
+				and t.body = #{body}
+			</if>		
+			<if test="null!=requestType and requestType!=''">
+				and t.request_type = #{requestType}
+			</if>		
+			<if test="null!=sendTime and sendTime!=''">
+				and t.send_time = #{sendTime}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=agentCode and agentCode!=''">
+				and t.agent_code = #{agentCode}
+			</if>		
+			<if test="null!=sellerId and sellerId!=''">
+				and t.seller_id = #{sellerId}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MsgCallBackRecordBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.MsgCallBackRecord" resultMap="MsgCallBackRecordBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>		
+			<if test="null!=body and body!=''">
+				and t.body = #{body}
+			</if>		
+			<if test="null!=requestType and requestType!=''">
+				and t.request_type = #{requestType}
+			</if>		
+			<if test="null!=sendTime and sendTime!=''">
+				and t.send_time = #{sendTime}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=agentCode and agentCode!=''">
+				and t.agent_code = #{agentCode}
+			</if>		
+			<if test="null!=sellerId and sellerId!=''">
+				and t.seller_id = #{sellerId}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

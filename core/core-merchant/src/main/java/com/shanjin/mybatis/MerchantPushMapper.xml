@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPushDao">
+
+    <!-- 删除商户app的clientId 可删除-->
+    <delete id="deleteMerchantPush" parameterType="java.util.Map">
+        delete from merchant_push where phone=#{phone} and app_type=#{appType}
+    </delete>
+
+	<!-- 删除商户app的clientId-->
+    <delete id="deleteMerchantPushByClientId" parameterType="java.util.Map">
+        delete from user_push where client_id=#{clientId}
+    </delete>
+
+    <!-- 删除商户app的deviceId 可删除-->
+    <delete id="deleteMerchantPushByDeviceId" parameterType="java.util.Map">
+        delete from merchant_push where device_id=#{deviceId}
+    </delete>
+
+    <!-- 保存商户app的clientId 可删除-->
+    <insert id="insertMerchantPush" parameterType="java.util.Map">
+        insert into merchant_push(
+                merchant_id,
+                phone,
+                client_id,
+                app_type,
+                client_type,
+                device_id
+        )
+        values
+            (
+                #{merchantId},
+                #{phone},
+                #{clientId},
+                #{appType},
+                #{clientType},
+                #{deviceId}
+            )
+    </insert>
+    
+    <!-- 验证是否有符合的设备注册 可删除-->
+	<select id="checkDeviceId" parameterType="java.util.Map" resultType="int">  
+		select count(1) from merchant_push up where device_id=#{deviceId} and app_type=#{appType}
+	</select>
+	
+	 <!-- 获得商户设备id 可删除-->
+	<select id="selectMerchantPush" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            client_id,client_type,push_id
+        from 
+            <!-- merchant_push  -->
+            user_push
+        where 
+            <!-- phone=#{phone} and app_type=#{appType} -->
+            user_id=#{userId}
+    </select>  
+	
+	
+     <!-- 验证该商户是否已经登陆  可删除-->
+	<select id="checkClient" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_push 
+        where 
+            user_id=#{userId} 
+            and client_id=#{clientId} 
+            <!--and push_id=#{pushId} -->
+
+    </select>  
+        <!-- 验证该商户是否已经登陆 -->
+	<select id="checkClientByUserId" parameterType="Long" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_push 
+        where 
+            user_id=#{userId} 
+    </select> 
+    <!-- 可删除 -->
+    <select id="checkEmployeeOnline" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            merchant_push 
+        where 
+            phone=#{phone} and
+            merchant_id=#{merchantId} and
+            app_type=#{appType}
+    </select>  
+    
+    
+    <!-- 检查商户的ClientId是否需要更新  可删除-->
+  <select id="checkClientId" parameterType="java.util.Map" resultType="int">  
+	    select 
+	        count(1)
+	    from 
+	        merchant_push 
+	    where 
+	        merchant_id=#{merchantId} and
+	        client_id=#{clientId} and
+	        device_id=#{deviceId} and
+	        app_type=#{appType}
+  </select>
+  <!-- 检查商户的ClientId是否需要更新 -->
+  <select id="checkClientIdByUserId" parameterType="Long" resultType="int">  
+	    select 
+	        count(1)
+	    from 
+	        user_push 
+	    where 
+	        user_id=#{userId}
+  </select>
+    <!-- 更改当前使用的设备记录的clientId -->
+  <update id="updateClientId" parameterType="java.util.Map">
+      update
+          user_push
+      set
+          client_id=#{clientId},
+          push_id=#{pushId},
+          client_type=#{clientType}
+      where
+          user_id=#{userId}
+  </update>
+    
+</mapper>
+

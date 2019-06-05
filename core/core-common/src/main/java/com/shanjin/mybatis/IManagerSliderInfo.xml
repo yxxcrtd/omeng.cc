@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IManagerSliderInfoDao">
+
+	<!-- 获得用户首页Banner -->
+	<select id="getUserBannerList" resultType="java.util.HashMap">  
+		select name,slider_type,pics_path,link_url,tag  from manager_slider_info
+					where overdue_time > sysdate() and is_del=0 and client=1 and slider_status=1 order by rank
+	</select>
+	
+	
+	<!-- 获得商户首页Banner -->
+	<select id="getMerchantBannerList" resultType="java.util.HashMap">  
+		select name,slider_type,pics_path,link_url,tag  from manager_slider_info
+					where overdue_time > sysdate() and is_del=0 and client=2 and slider_status=1 order by rank
+	</select>
+	
+	
+	<!-- 获取用户首页附近商家列表-->
+	<select id="getUserHomePageByRange" parameterType="java.util.Map" resultType="java.util.HashMap">
+		SELECT
+		   		mi.id, me.user_id as userId, mi.name,	mi.longitude,mi.latitude,
+				ms.total_attitude_evaluation as totalAttitudeEvaluation,
+        		ms.total_quality_evaluation as totalQualityEvaluation,
+        		ms.total_speed_evaluation as totalSpeedEvaluation,
+        		ms.total_count_evaluation as totalCount,
+       			CASE
+						WHEN (
+								SELECT
+										count(vouchers_id)
+								FROM
+										merchant_vouchers_permissions
+								WHERE
+										merchant_id = mi.id
+										and cutoff_time  >  now()
+										and is_del = 0
+								) > 0 THEN
+							1
+				ELSE
+					0
+				END AS useVouchers,
+      			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=1 and auth_status=1 ) as enterpriseAuth,
+				(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=2 and auth_status=1 ) as personalAuth,
+				ma.path as icoPath,
+				mi.app_type
+		FROM
+			merchant_info mi
+    	inner join merchant_statistics ms on mi.id = ms.merchant_id
+		INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id and ma.attachment_type = 1 and ma.attachment_use = 11
+		inner join merchant_employees me on  mi.id = me.merchant_id and me.employees_type=1 
+		WHERE
+			(mi.longitude>#{leftLongitude} and mi.longitude &lt; #{rightLongitude})
+			and (mi.latitude>#{buttomLatitude} and mi.latitude &lt; #{topLatitude})
+			and  mi.is_del=0 and mi.name is not null  and mi.name!=""
+		 limit 200
+		
+	</select>
+	
+	
+	<!-- 获取搜索引擎返回ids,用户首页附近商家列表-->
+	<select id="getUserHomePageByIds" parameterType="java.util.Map" resultType="java.util.HashMap">
+		SELECT
+		   		mi.id, me.user_id as userId, mi.name,	mi.longitude,mi.latitude,
+				ms.total_attitude_evaluation as totalAttitudeEvaluation,
+        		ms.total_quality_evaluation as totalQualityEvaluation,
+        		ms.total_speed_evaluation as totalSpeedEvaluation,
+        		ms.total_count_evaluation as totalCount,
+       			CASE
+						WHEN (
+								SELECT
+										count(vouchers_id)
+								FROM
+										merchant_vouchers_permissions
+								WHERE
+										merchant_id = mi.id
+										and cutoff_time  >  now()
+										and is_del = 0
+								) > 0 THEN
+							1
+				ELSE
+					0
+				END AS useVouchers,
+      			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=1 and auth_status=1 ) as enterpriseAuth,
+				(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=2 and auth_status=1 ) as personalAuth,
+				ma.path as icoPath,
+				mi.app_type
+		FROM
+			merchant_info mi
+    	inner join merchant_statistics ms on mi.id = ms.merchant_id
+		INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id and ma.attachment_type = 1 and ma.attachment_use = 11
+		inner join merchant_employees me on  mi.id = me.merchant_id and me.employees_type=1 
+		WHERE mi.id in (${ids})
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<select id="getMerchantTags" parameterType="java.lang.String" resultType="java.util.HashMap">
+			 select merchant_id, GROUP_CONCAT(tag) as tags  from  merchant_service_tag mst
+			 where mst.is_del = 0	and mst.is_audit = 1  and merchant_id in ( ${merchantIds} )
+			 group by merchant_id 
+	</select>
+	  
+	<select id="getMerchantServiceName" parameterType="java.lang.String" resultType="java.util.HashMap">
+			 select mst.merchant_id,group_concat(st.service_type_name) as serviceTypeNames from merchant_service_type mst
+			 inner join service_type st on mst.service_type_id=st.id 
+			 where  merchant_id in ( ${merchantIds} )
+			 group by mst.merchant_id
+	</select>
+</mapper>
+

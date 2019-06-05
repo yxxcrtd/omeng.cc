@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IWeekStarDao">
+
+	
+	
+<!-- 获取每周之星列表 -->
+<select id="getWeekStar" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	SELECT
+	a.id,
+	a.name,
+	a.phone,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.province
+	) AS provinceName,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.city
+	) AS cityName,
+	(
+	select IFNULL(sum(aa.total),0) from(
+	SELECT
+	if(count(DISTINCT(m.id))>3,3,count(DISTINCT(m.id))) as total,m.invitation_code
+	FROM
+	merchant_info m
+	INNER JOIN merchant_auth ma ON m.id = ma.merchant_id
+	left join merchant_employees me on m.id=me.merchant_id
+	WHERE
+	m.is_del = 0
+	AND ma.auth_status = 1
+	AND ma.join_time>#{yesterday}
+	AND ma.join_time&lt;#{currentDay}
+	AND me.employees_type = 1
+	group by me.phone
+	)aa where aa.invitation_code = a.invite_code
+	) AS auth_total
+	FROM
+	agent_employee a
+	WHERE
+	a.is_del = 0
+	and a.id!=3033
+	ORDER BY
+	auth_total DESC
+	LIMIT 0,
+	10
+	</select>
+	
+	<!--根据名字 获取每周之星 -->
+<select id="getWeekStarByName" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	SELECT
+	a.id,
+	a.name,
+	a.phone,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.province
+	) AS provinceName,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.city
+	) AS cityName,
+	(
+	select IFNULL(sum(aa.total),0) from(
+	SELECT
+	if(count(DISTINCT(m.id))>3,3,count(DISTINCT(m.id))) as total,m.invitation_code
+	FROM
+	merchant_info m
+	INNER JOIN merchant_auth ma ON m.id = ma.merchant_id
+	left join merchant_employees me on m.id=me.merchant_id
+	WHERE
+	m.is_del = 0
+	AND ma.auth_status = 1
+	AND ma.join_time>#{yesterday}
+	AND ma.join_time&lt;#{currentDay}
+	AND me.employees_type = 1
+	group by me.phone
+	)aa where aa.invitation_code = a.invite_code
+	) AS auth_total
+	FROM
+	agent_employee a
+	WHERE
+	a.is_del = 0
+	and a.name=#{name}
+	and a.id!=3033
+	ORDER BY
+	auth_total DESC
+	LIMIT 0,
+	10
+	</select>
+	
+<!-- 查询地推人员总数 -->
+  <select id="getTotalWeekStar" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          agent_employee a
+	   WHERE
+	      a.is_del = 0
+  </select>
+  
+  <!-- 根据Id查询此地推人员认证商户数量 -->
+  <select id="getTotalWeekStarById" parameterType="java.util.Map" resultType="java.lang.Integer">
+	select IFNULL(sum(aa.total),0) from(
+	select
+	if(count(DISTINCT(m.id))>3,3,count(DISTINCT(m.id))) as total,m.invitation_code
+	FROM
+	merchant_info m
+	inner join merchant_auth ma ON m.id = ma.merchant_id
+	left join merchant_employees me on m.id=me.merchant_id
+	WHERE
+	m.is_del = 0
+	AND ma.auth_status = 1
+	AND ma.join_time>#{yesterday}
+	AND ma.join_time&lt;#{currentDay}
+	AND me.employees_type = 1
+	AND m.invitation_code=(select invite_code from agent_employee where id=#{employeeId})
+	group by me.phone
+	)aa 
+  </select>
+  
+   <!-- 根据认证数量查询此地推人员以下的人员的数量 -->
+  <select id="getLessTotalWeekStar" parameterType="java.util.Map" resultType="java.lang.Integer">
+	select count(1) from (SELECT
+	a.id,
+	(
+	select IFNULL(sum(aa.total),0) from(
+	SELECT
+	if(count(DISTINCT(m.id))>3,3,count(DISTINCT(m.id))) as total,m.invitation_code
+	FROM
+	merchant_info m
+	INNER JOIN merchant_auth ma ON m.id = ma.merchant_id
+	left join merchant_employees me on m.id=me.merchant_id
+	WHERE
+	m.is_del = 0
+	AND ma.auth_status = 1
+	AND ma.join_time>#{yesterday}
+	AND ma.join_time&lt;#{currentDay}
+	AND me.employees_type = 1
+	group by me.phone
+	)aa where aa.invitation_code = a.invite_code
+	) AS auth_total
+	FROM
+	agent_employee a
+	WHERE
+	a.is_del = 0
+	)au where au.auth_total&lt;#{total}
+  </select>
+  
+  
+	 <!-- 根据认证数量查询此地推人员以上的人员的数量 -->
+  <select id="getMoreTotalWeekStar" parameterType="java.util.Map" resultType="java.lang.Integer">
+	select count(1) from (SELECT
+	a.id,
+	(
+	select IFNULL(sum(aa.total),0) from(
+	SELECT
+	if(count(DISTINCT(m.id))>3,3,count(DISTINCT(m.id))) as total,m.invitation_code
+	FROM
+	merchant_info m
+	INNER JOIN merchant_auth ma ON m.id = ma.merchant_id
+	left join merchant_employees me on m.id=me.merchant_id
+	WHERE
+	m.is_del = 0
+	AND ma.auth_status = 1
+	AND ma.join_time>#{yesterday}
+	AND ma.join_time&lt;#{currentDay}
+	AND me.employees_type = 1
+	group by me.phone
+	)aa where aa.invitation_code = a.invite_code
+	) AS auth_total
+	FROM
+	agent_employee a
+	WHERE
+	a.is_del = 0
+	)au where au.auth_total>#{auth_total}
+  </select>
+<select id="getDetailWeekStar" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	SELECT
+	a.id,
+	a.name,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.province
+	) AS provinceName,
+	(
+	SELECT
+	ae.area
+	FROM
+	area ae
+	WHERE
+	ae.id = a.city
+	) AS cityName
+	from
+	agent_employee a
+	WHERE
+	a.is_del = 0
+	and a.id=#{employeeId}
+	</select>
+</mapper>
+

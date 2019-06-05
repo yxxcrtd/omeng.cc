@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantValueAddServiceDao">
+
+  <!-- 查询增值服务记录 -->
+  <select id="selectMerchantValueAddService" parameterType="java.util.Map" resultType="java.util.HashMap">
+     (select id,'topup' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime,apply_time as sortTime,apply_status as applyStatus,'' as applyIncreaseEmployeeNum,topup_money as money,'/resource/valueAddService/topup.png' as iconPath,pay_no payNo,pay_type payType from merchant_topup_apply where merchant_id=#{merchantId} and is_del=0)
+     UNION ALL
+     (select id,'employeesNum' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime ,apply_time as sortTime,apply_status as applyStatus,apply_increase_employee_num as applyIncreaseEmployeeNum,money as money,'/resource/valueAddService/employeesNum.png' as iconPath,pay_no payNo,pay_type payType from merchant_employees_num_apply where merchant_id=#{merchantId} and is_del=0)
+     UNION ALL
+     (SELECT ipo.id, pkg.name AS TYPE, DATE_FORMAT(ipo.create_time,'%Y-%m-%d %H:%i') AS applyTime, ipo.create_time AS sortTime, ipo.STATUS AS applyStatus, 
+	  '' AS applyIncreaseEmployeeNum, trade_amount AS money, '/resource/valueAddService/employeesNum.png' AS iconPath, order_no AS payNo,
+ 	  pay_type AS payType
+      FROM inc_pkg_order  ipo
+	  inner join inc_pkg pkg on ipo.pkg_id=pkg.id
+	  where merchant_id = #{merchantId} AND ipo.is_del = 0
+     )
+     order by sortTime DESC
+  </select>
+
+
+<!-- 删除抢单余额记录 -->
+  <update id="delTopupService" parameterType="java.util.Map">
+      update
+          merchant_topup_apply
+      set
+          is_del=1
+      where
+          id = #{serviceId}
+  </update>
+  
+  <!-- 删除VIP记录 -->
+  <update id="delVipService" parameterType="java.util.Map">
+      update
+          merchant_vip_apply
+      set
+          is_del=1
+      where
+          id = #{serviceId}
+  </update>
+  
+  <!-- 删除抢增加员工次数记录 -->
+  <update id="delEmployeesService" parameterType="java.util.Map">
+      update
+          merchant_employees_num_apply
+      set
+          is_del=1
+      where
+          id = #{serviceId}
+  </update>
+
+    <!-- 修改开通时间 -->
+    <update id="updateMerchantEmployeesNumApplyOpenTime" parameterType="java.util.Map">
+        UPDATE merchant_employees_num_apply SET open_time = now() WHERE id = #{serviceId}
+    </update>
+
+<!-- 查询最新一条开通中记录 -->
+  <select id="selectMerchantApplying" parameterType="java.util.Map" resultType="java.util.HashMap">
+     <if test="type == 'topup'">
+     select id,'topup' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime,apply_time as sortTime,apply_status as applyStatus,topup_money as money,pay_no payNo,pay_type payType from merchant_topup_apply where merchant_id=#{merchantId} and is_del=0 and apply_status in (0,1) and app_type= #{appType} order by apply_time desc limit 1
+     </if>
+     <if test="type == 'vip'">
+     select id,'vip' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime,apply_time as sortTime,apply_status as applyStatus,money as money,pay_no payNo,pay_type payType from merchant_vip_apply where merchant_id=#{merchantId} and is_del=0 and apply_status in (0,1) and app_type= #{appType} order by apply_time desc limit 1
+     </if>
+     <if test="type == 'employeesNum'">
+     select id,'employeesNum' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime ,apply_time as sortTime,apply_status as applyStatus,apply_increase_employee_num as applyIncreaseEmployeeNum,money as money,pay_no payNo,pay_type payType from merchant_employees_num_apply where merchant_id=#{merchantId} and is_del=0 and apply_status in (0,1) and app_type= #{appType} order by apply_time desc limit 1
+     </if>
+  </select>
+  
+</mapper>
+

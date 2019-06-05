@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<param name="Append" value="true" />
+		<param name="Encoding" value="UTF-8" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[OMENG_MANAGER][%d{yyyy-MM-dd HH:mm:ss SSS}]%c{1}.%M(%L) | %m%n" />
+		</layout>
+	</appender>
+   
+   	<appender name="ReqAndResAppender" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="/logs/access/MANAGER_ACCESS_LOG.txt" />
+		<param name="DatePattern" value="'.'yyyyMMdd" />
+		<param name="Append" value="true" />
+		<param name="Encoding" value="UTF-8" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+	</appender>
+	
+		<!--debug日志输出配置-->
+	 <appender name="debug"
+	  class="org.apache.log4j.DailyRollingFileAppender">
+	  <param name="File" value="/logs/debug.txt" />
+	  <param name="Append" value="true" />
+	  <layout class="org.apache.log4j.PatternLayout">
+	   <param name="ConversionPattern" value="%d [%t] %p - %m%n" />
+	  </layout>
+	  <filter class="org.apache.log4j.varia.LevelRangeFilter">
+	   <param name="LevelMax" value="DEBUG" /><!--过滤只输出DEBUG级别日志-->
+	   <param name="LevelMin" value="DEBUG" />
+	  </filter>
+	 </appender>
+	 
+	<!--infor日志输出配置-->
+	 <appender name="info"
+	  class="org.apache.log4j.DailyRollingFileAppender">
+	  <param name="File" value="/logs/info.txt" />
+	  <param name="Append" value="true" />
+	  <layout class="org.apache.log4j.PatternLayout">
+	   <param name="ConversionPattern" value="%d [%t] %p - %m%n" />
+	  </layout>
+	  <filter class="org.apache.log4j.varia.LevelRangeFilter">
+	   <param name="LevelMax" value="INFO" />
+	   <param name="LevelMin" value="INFO" />
+	  </filter>
+	 </appender>
+	<!--warn日志输出配置-->
+	 <appender name="warn"
+	  class="org.apache.log4j.DailyRollingFileAppender">
+	  <param name="File" value="/logs/warn.txt" />
+	  <param name="Append" value="true" />
+	  <layout class="org.apache.log4j.PatternLayout">
+	   <param name="ConversionPattern" value="%d [%t] %p - %m%n" />
+	  </layout>
+	  <filter class="org.apache.log4j.varia.LevelRangeFilter">
+	   <param name="LevelMax" value="WARN" />
+	   <param name="LevelMin" value="WARN" />
+	  </filter>
+	 </appender>
+	 
+	<!--error日志输出配置-->
+	 <appender name="error"
+	  class="org.apache.log4j.DailyRollingFileAppender">
+	  <param name="File" value="/logs/error.txt" />
+	  <param name="Append" value="true" />
+	  <layout class="org.apache.log4j.PatternLayout">
+	   <param name="ConversionPattern" value="%d [%t] %p - %m%n" />
+	  </layout>
+	  <filter class="org.apache.log4j.varia.LevelRangeFilter">
+	   <param name="LevelMax" value="ERROR" />
+	   <param name="LevelMin" value="ERROR" />
+	  </filter>
+	 </appender>
+	 
+	<!--fatal日志输出配置-->
+	 <appender name="fatal"
+	  class="org.apache.log4j.DailyRollingFileAppender">
+	  <param name="File" value="/logs/fatal.txt" />
+	  <param name="Append" value="true" />
+	  <layout class="org.apache.log4j.PatternLayout">
+	   <param name="ConversionPattern" value="%d [%t] %p - %m%n" />
+	  </layout>
+	  <filter class="org.apache.log4j.varia.LevelRangeFilter">
+	   <param name="LevelMax" value="FATAL" />
+	   <param name="LevelMin" value="FATAL" />
+	  </filter>
+	 </appender>
+   
+	 
+	<logger name="net.sf.ehcache">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.springframework.security">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.apache">
+		<level value="WARN" />
+	</logger>
+
+	<logger name="org.apache.velocity">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.apache.myfaces.shared_impl.renderkit.html">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.dbunit">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.hibernate">
+		<level value="WARN" />
+	</logger>
+
+	<logger name="com.opensymphony.xwork2">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.springframework">
+		<level value="ERROR" />
+	</logger>
+	<logger name="com.danga.MemCached">
+		<level value="WARN" />
+	</logger>
+
+	<logger name="com.mchange.v2">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="org.apache.commons.httpclient">
+		<level value="ERROR" />
+	</logger>
+
+	<logger name="httpclient.wire.content">
+		<level value="ERROR" />
+	</logger>
+	
+	<logger name="httpclient.wire.header">
+		<level value="ERROR" />
+	</logger>
+	
+	<logger name="com.shanjin.manager">
+		<level value="INFO" />
+	</logger>
+	
+	<logger name="reqAndResLog">
+		<level value="INFO" />
+		<appender-ref ref="ReqAndResAppender" />
+	</logger>
+	
+	<root>
+		<priority value="debug"/><!--日志输出最低级别-->
+	    <appender-ref ref="debug"/><!--debug日志输出-->
+	    <appender-ref ref="info"/><!--info日志输出-->
+	    <appender-ref ref="warn"/><!--warn日志输出-->
+	    <appender-ref ref="error"/><!--error日志输出-->
+	    <appender-ref ref="fatal"/><!--fatal日志输出-->
+	</root>
+</log4j:configuration>

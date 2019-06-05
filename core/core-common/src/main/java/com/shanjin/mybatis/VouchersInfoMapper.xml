@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IVouchersInfoDao">
+
+  <!-- 
+  	表     名：vouchers_info						代金券
+  	表描述：
+  		id										主键
+  		service_type							服务类型
+  		cutoff_time								截至时间
+  		price									价格
+  		count									总数量
+  		cur_count								当前数量
+  		app_type								行业类型
+  		is_del									是否删除
+  		icon_path								图片路径
+   -->
+
+  <!-- 代金券信息查询 -->
+  <select id="selectVouchersType" resultType="java.util.HashMap" parameterType="Map">
+      select
+          vi.id as vouchersId,
+          st.service_type_name as couponsTypeName,
+          date_format(vi.cutoff_time,'%Y-%m-%d') AS cutoffTime,
+          vi.price as price
+      from
+          vouchers_info vi
+          inner join service_type st on vi.service_type_id = st.id<!-- st.service_type_id -->
+      where
+          vi.cutoff_time > now()
+          and vi.service_type_id in (select service_type_id from merchant_service_type where merchant_id = #{merchantId} <!-- and app_type = #{appType} -->)
+          <!-- and vi.app_type = #{appType} -->
+          <!-- and st.app_type = #{appType}  -->
+          and vi.service_type_id in (${catalogIds})
+         <!--  and vi.app_type in (#{appTypes}) -->
+          and vi.is_del = 0
+          and st.is_del = 0
+      order by
+          vouchersId asc,
+          price asc
+  </select>
+  
+  <!-- 代金券信息查询 -->
+  <select id="getVouchersInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          vi.id as vouchersId,
+          vi.service_type_id as couponsType,
+          vi.cutoff_time as cutoffTime,
+          vi.price as price,
+          vi.count as count,
+          vi.app_type as appType
+      from
+          vouchers_info vi,
+          user_vouchers_info uvi
+      where
+          vi.id = uvi.vouchers_id
+          and uvi.id = #{userVouchersId}
+          and vi.is_del = 0
+      order by
+          vouchersId asc,
+          price asc
+  </select>
+  <!-- 根据代金券ID查询此代金券的总数 -->
+  <select id="getSurplusVouchersNumber" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          vi.count as totalCount,
+          (select SUM(count) from merchant_vouchers_permissions where vouchers_id= #{vouchersId}) as usedCount
+      from
+          vouchers_info vi
+      where
+          vi.id = #{vouchersId}
+  </select>
+
+  <!-- 查询代金券的截止日期 -->
+  <select id="selectVouchersCutoffTime" parameterType="java.util.Map" resultType="java.lang.String">
+      select
+          cutoff_time
+      from
+          vouchers_info vi
+      where
+          vi.id = #{vouchersId}
+          and is_del = 0
+  </select>
+</mapper>
+

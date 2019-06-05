@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantAlbumDao">
+
+  <!-- 查询相册 -->
+  <select id="selectAlbum" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          id as albumId,
+          album_name as albumName,
+          (select path from merchant_photo where album_id = albumId and is_del = 0 order by join_time desc limit 1) as coverPath,
+          (select count(1) from merchant_photo where album_id = albumId and is_del = 0) as photoCount
+      from
+          merchant_album
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+      order by
+          join_time asc
+  </select>
+
+  <!-- 查询相册数量 -->
+  <select id="selectAlbumCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_album
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+  </select>
+
+  <!-- 新建相册 -->
+  <insert id="insertAlbum" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="albumId">
+      insert into merchant_album
+           (
+               merchant_id,
+               album_name,
+               join_time,
+               is_del
+           )
+      values
+           (
+               #{merchantId},
+               #{albumName},
+               now(),
+               0
+           )
+  </insert>
+
+  <!-- 重命名相册 -->
+  <update id="updateAlbum" parameterType="java.util.Map">
+      update
+          merchant_album
+      set
+          album_name = #{albumName}
+      where
+          id = #{albumId}
+          and is_del = 0
+  </update>
+
+  <!-- 删除相册 -->
+  <update id="updateAlbumStatus" parameterType="java.util.Map">
+      update
+          merchant_album
+      set
+          is_del = 1
+      where
+          id = #{albumId}
+  </update>
+</mapper>
+

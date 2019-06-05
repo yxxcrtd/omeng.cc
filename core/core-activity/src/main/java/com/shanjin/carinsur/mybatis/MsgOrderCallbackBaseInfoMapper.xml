@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.MsgOrderCallbackBaseInfoMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgOrderCallbackBaseInfo" id="MsgOrderCallbackBaseInfoBsRstMap">
+		<id property="orderNo" column="orderNo"/>
+		
+		<result property="licenseNo" column="licenseNo"/>
+		<result property="brand" column="brand"/>
+		<result property="engineNo" column="engineNo"/>
+		<result property="registerDate" column="registerDate"/>
+		<result property="ownerName" column="ownerName"/>
+		<result property="ownerMobile" column="ownerMobile"/>
+		<result property="ownerIdNo" column="ownerIdNo"/>
+		<result property="ownerEmail" column="ownerEmail"/>
+		<result property="applicantInfo" column="applicantInfo"/>
+		<result property="applicantName" column="applicantName"/>
+		<result property="applicantMobile" column="applicantMobile"/>
+		<result property="applicantIdNo" column="applicantIdNo"/>
+		<result property="applicantEmail" column="applicantEmail"/>
+		<result property="insuredName" column="insuredName"/>
+		<result property="insuredMobile" column="insuredMobile"/>
+		<result property="insuredIdNo" column="insuredIdNo"/>
+		<result property="insuredEmail" column="insuredEmail"/>
+		<result property="receiverName" column="receiverName"/>
+		<result property="receiverTel" column="receiverTel"/>
+		<result property="address" column="address"/>
+		<result property="unSettlementCost" column="unSettlementCost"/>
+		<result property="vehicleFrameNo" column="vehicleFrameNo"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgOrderCallbackBaseInfo" id="MsgOrderCallbackBaseInfoBsParaMap">
+		<id property="orderNo" column="orderNo"/>
+		
+		<result property="licenseNo" column="licenseNo"/>
+		<result property="brand" column="brand"/>
+		<result property="engineNo" column="engineNo"/>
+		<result property="registerDate" column="registerDate"/>
+		<result property="ownerName" column="ownerName"/>
+		<result property="ownerMobile" column="ownerMobile"/>
+		<result property="ownerIdNo" column="ownerIdNo"/>
+		<result property="ownerEmail" column="ownerEmail"/>
+		<result property="applicantInfo" column="applicantInfo"/>
+		<result property="applicantName" column="applicantName"/>
+		<result property="applicantMobile" column="applicantMobile"/>
+		<result property="applicantIdNo" column="applicantIdNo"/>
+		<result property="applicantEmail" column="applicantEmail"/>
+		<result property="insuredName" column="insuredName"/>
+		<result property="insuredMobile" column="insuredMobile"/>
+		<result property="insuredIdNo" column="insuredIdNo"/>
+		<result property="insuredEmail" column="insuredEmail"/>
+		<result property="receiverName" column="receiverName"/>
+		<result property="receiverTel" column="receiverTel"/>
+		<result property="address" column="address"/>
+		<result property="unSettlementCost" column="unSettlementCost"/>
+		<result property="vehicleFrameNo" column="vehicleFrameNo"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.orderNo as orderNo, 
+			t.licenseNo as licenseNo, 
+			t.brand as brand, 
+			t.engineNo as engineNo, 
+			t.registerDate as registerDate, 
+			t.ownerName as ownerName, 
+			t.ownerMobile as ownerMobile, 
+			t.ownerIdNo as ownerIdNo, 
+			t.ownerEmail as ownerEmail, 
+			t.applicantInfo as applicantInfo, 
+			t.applicantName as applicantName, 
+			t.applicantMobile as applicantMobile, 
+			t.applicantIdNo as applicantIdNo, 
+			t.applicantEmail as applicantEmail, 
+			t.insuredName as insuredName, 
+			t.insuredMobile as insuredMobile, 
+			t.insuredIdNo as insuredIdNo, 
+			t.insuredEmail as insuredEmail, 
+			t.receiverName as receiverName, 
+			t.receiverTel as receiverTel, 
+			t.address as address, 
+			t.unSettlementCost as unSettlementCost, 
+			t.vehicleFrameNo as vehicleFrameNo
+		FROM msg_order_callback_base_info AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM msg_order_callback_base_info AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO msg_order_callback_base_info (
+				orderNo,
+				licenseNo, 
+				brand, 
+				engineNo, 
+				registerDate, 
+				ownerName, 
+				ownerMobile, 
+				ownerIdNo, 
+				ownerEmail, 
+				applicantInfo, 
+				applicantName, 
+				applicantMobile, 
+				applicantIdNo, 
+				applicantEmail, 
+				insuredName, 
+				insuredMobile, 
+				insuredIdNo, 
+				insuredEmail, 
+				receiverName, 
+				receiverTel, 
+				address, 
+				unSettlementCost, 
+				vehicleFrameNo
+			) VALUES (
+				#{orderNo},
+				#{licenseNo}, 
+				#{brand}, 
+				#{engineNo}, 
+				#{registerDate}, 
+				#{ownerName}, 
+				#{ownerMobile}, 
+				#{ownerIdNo}, 
+				#{ownerEmail}, 
+				#{applicantInfo}, 
+				#{applicantName}, 
+				#{applicantMobile}, 
+				#{applicantIdNo}, 
+				#{applicantEmail}, 
+				#{insuredName}, 
+				#{insuredMobile}, 
+				#{insuredIdNo}, 
+				#{insuredEmail}, 
+				#{receiverName}, 
+				#{receiverTel}, 
+				#{address}, 
+				#{unSettlementCost}, 
+				#{vehicleFrameNo}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE msg_order_callback_base_info AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM msg_order_callback_base_info AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY orderNo DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.MsgOrderCallbackBaseInfo">
+
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.MsgOrderCallbackBaseInfo">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=licenseNo and licenseNo!=''">
+				t.licenseNo = #{licenseNo},
+			</if>		
+			<if test="null!=brand and brand!=''">
+				t.brand = #{brand},
+			</if>		
+			<if test="null!=engineNo and engineNo!=''">
+				t.engineNo = #{engineNo},
+			</if>		
+			<if test="null!=registerDate and registerDate!=''">
+				t.registerDate = #{registerDate},
+			</if>		
+			<if test="null!=ownerName and ownerName!=''">
+				t.ownerName = #{ownerName},
+			</if>		
+			<if test="null!=ownerMobile and ownerMobile!=''">
+				t.ownerMobile = #{ownerMobile},
+			</if>		
+			<if test="null!=ownerIdNo and ownerIdNo!=''">
+				t.ownerIdNo = #{ownerIdNo},
+			</if>		
+			<if test="null!=ownerEmail and ownerEmail!=''">
+				t.ownerEmail = #{ownerEmail},
+			</if>		
+			<if test="null!=applicantInfo and applicantInfo!=''">
+				t.applicantInfo = #{applicantInfo},
+			</if>		
+			<if test="null!=applicantName and applicantName!=''">
+				t.applicantName = #{applicantName},
+			</if>		
+			<if test="null!=applicantMobile and applicantMobile!=''">
+				t.applicantMobile = #{applicantMobile},
+			</if>		
+			<if test="null!=applicantIdNo and applicantIdNo!=''">
+				t.applicantIdNo = #{applicantIdNo},
+			</if>		
+			<if test="null!=applicantEmail and applicantEmail!=''">
+				t.applicantEmail = #{applicantEmail},
+			</if>		
+			<if test="null!=insuredName and insuredName!=''">
+				t.insuredName = #{insuredName},
+			</if>		
+			<if test="null!=insuredMobile and insuredMobile!=''">
+				t.insuredMobile = #{insuredMobile},
+			</if>		
+			<if test="null!=insuredIdNo and insuredIdNo!=''">
+				t.insuredIdNo = #{insuredIdNo},
+			</if>		
+			<if test="null!=insuredEmail and insuredEmail!=''">
+				t.insuredEmail = #{insuredEmail},
+			</if>		
+			<if test="null!=receiverName and receiverName!=''">
+				t.receiverName = #{receiverName},
+			</if>		
+			<if test="null!=receiverTel and receiverTel!=''">
+				t.receiverTel = #{receiverTel},
+			</if>		
+			<if test="null!=address and address!=''">
+				t.address = #{address},
+			</if>		
+			<if test="null!=unSettlementCost and unSettlementCost!=''">
+				t.unSettlementCost = #{unSettlementCost},
+			</if>		
+			<if test="null!=vehicleFrameNo and vehicleFrameNo!=''">
+				t.vehicleFrameNo = #{vehicleFrameNo},
+			</if>		
+		</trim>
+		where t.orderNo = #{orderNo}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> where orderNo = #{orderNo}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=licenseNo and licenseNo!=''">
+				and t.licenseNo = #{licenseNo}
+			</if>		
+			<if test="null!=brand and brand!=''">
+				and t.brand = #{brand}
+			</if>		
+			<if test="null!=engineNo and engineNo!=''">
+				and t.engineNo = #{engineNo}
+			</if>		
+			<if test="null!=registerDate and registerDate!=''">
+				and t.registerDate = #{registerDate}
+			</if>		
+			<if test="null!=ownerName and ownerName!=''">
+				and t.ownerName = #{ownerName}
+			</if>		
+			<if test="null!=ownerMobile and ownerMobile!=''">
+				and t.ownerMobile = #{ownerMobile}
+			</if>		
+			<if test="null!=ownerIdNo and ownerIdNo!=''">
+				and t.ownerIdNo = #{ownerIdNo}
+			</if>		
+			<if test="null!=ownerEmail and ownerEmail!=''">
+				and t.ownerEmail = #{ownerEmail}
+			</if>		
+			<if test="null!=applicantInfo and applicantInfo!=''">
+				and t.applicantInfo = #{applicantInfo}
+			</if>		
+			<if test="null!=applicantName and applicantName!=''">
+				and t.applicantName = #{applicantName}
+			</if>		
+			<if test="null!=applicantMobile and applicantMobile!=''">
+				and t.applicantMobile = #{applicantMobile}
+			</if>		
+			<if test="null!=applicantIdNo and applicantIdNo!=''">
+				and t.applicantIdNo = #{applicantIdNo}
+			</if>		
+			<if test="null!=applicantEmail and applicantEmail!=''">
+				and t.applicantEmail = #{applicantEmail}
+			</if>		
+			<if test="null!=insuredName and insuredName!=''">
+				and t.insuredName = #{insuredName}
+			</if>		
+			<if test="null!=insuredMobile and insuredMobile!=''">
+				and t.insuredMobile = #{insuredMobile}
+			</if>		
+			<if test="null!=insuredIdNo and insuredIdNo!=''">
+				and t.insuredIdNo = #{insuredIdNo}
+			</if>		
+			<if test="null!=insuredEmail and insuredEmail!=''">
+				and t.insuredEmail = #{insuredEmail}
+			</if>		
+			<if test="null!=receiverName and receiverName!=''">
+				and t.receiverName = #{receiverName}
+			</if>		
+			<if test="null!=receiverTel and receiverTel!=''">
+				and t.receiverTel = #{receiverTel}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=unSettlementCost and unSettlementCost!=''">
+				and t.unSettlementCost = #{unSettlementCost}
+			</if>		
+			<if test="null!=vehicleFrameNo and vehicleFrameNo!=''">
+				and t.vehicleFrameNo = #{vehicleFrameNo}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.orderNo in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MsgOrderCallbackBaseInfoBsRstMap" parameterType="java.lang.String">
+		<include refid="commSelTpl"/> where t.orderNo = #{orderNo} 
+	</select>
+	
+	<select id="getAll" resultMap="MsgOrderCallbackBaseInfoBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=licenseNo and licenseNo!=''">
+				and t.licenseNo = #{licenseNo}
+			</if>		
+			<if test="null!=brand and brand!=''">
+				and t.brand = #{brand}
+			</if>		
+			<if test="null!=engineNo and engineNo!=''">
+				and t.engineNo = #{engineNo}
+			</if>		
+			<if test="null!=registerDate and registerDate!=''">
+				and t.registerDate = #{registerDate}
+			</if>		
+			<if test="null!=ownerName and ownerName!=''">
+				and t.ownerName = #{ownerName}
+			</if>		
+			<if test="null!=ownerMobile and ownerMobile!=''">
+				and t.ownerMobile = #{ownerMobile}
+			</if>		
+			<if test="null!=ownerIdNo and ownerIdNo!=''">
+				and t.ownerIdNo = #{ownerIdNo}
+			</if>		
+			<if test="null!=ownerEmail and ownerEmail!=''">
+				and t.ownerEmail = #{ownerEmail}
+			</if>		
+			<if test="null!=applicantInfo and applicantInfo!=''">
+				and t.applicantInfo = #{applicantInfo}
+			</if>		
+			<if test="null!=applicantName and applicantName!=''">
+				and t.applicantName = #{applicantName}
+			</if>		
+			<if test="null!=applicantMobile and applicantMobile!=''">
+				and t.applicantMobile = #{applicantMobile}
+			</if>		
+			<if test="null!=applicantIdNo and applicantIdNo!=''">
+				and t.applicantIdNo = #{applicantIdNo}
+			</if>		
+			<if test="null!=applicantEmail and applicantEmail!=''">
+				and t.applicantEmail = #{applicantEmail}
+			</if>		
+			<if test="null!=insuredName and insuredName!=''">
+				and t.insuredName = #{insuredName}
+			</if>		
+			<if test="null!=insuredMobile and insuredMobile!=''">
+				and t.insuredMobile = #{insuredMobile}
+			</if>		
+			<if test="null!=insuredIdNo and insuredIdNo!=''">
+				and t.insuredIdNo = #{insuredIdNo}
+			</if>		
+			<if test="null!=insuredEmail and insuredEmail!=''">
+				and t.insuredEmail = #{insuredEmail}
+			</if>		
+			<if test="null!=receiverName and receiverName!=''">
+				and t.receiverName = #{receiverName}
+			</if>		
+			<if test="null!=receiverTel and receiverTel!=''">
+				and t.receiverTel = #{receiverTel}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=unSettlementCost and unSettlementCost!=''">
+				and t.unSettlementCost = #{unSettlementCost}
+			</if>		
+			<if test="null!=vehicleFrameNo and vehicleFrameNo!=''">
+				and t.vehicleFrameNo = #{vehicleFrameNo}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MsgOrderCallbackBaseInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.orderNo in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.MsgOrderCallbackBaseInfo" resultMap="MsgOrderCallbackBaseInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=licenseNo and licenseNo!=''">
+				and t.licenseNo = #{licenseNo}
+			</if>		
+			<if test="null!=brand and brand!=''">
+				and t.brand = #{brand}
+			</if>		
+			<if test="null!=engineNo and engineNo!=''">
+				and t.engineNo = #{engineNo}
+			</if>		
+			<if test="null!=registerDate and registerDate!=''">
+				and t.registerDate = #{registerDate}
+			</if>		
+			<if test="null!=ownerName and ownerName!=''">
+				and t.ownerName = #{ownerName}
+			</if>		
+			<if test="null!=ownerMobile and ownerMobile!=''">
+				and t.ownerMobile = #{ownerMobile}
+			</if>		
+			<if test="null!=ownerIdNo and ownerIdNo!=''">
+				and t.ownerIdNo = #{ownerIdNo}
+			</if>		
+			<if test="null!=ownerEmail and ownerEmail!=''">
+				and t.ownerEmail = #{ownerEmail}
+			</if>		
+			<if test="null!=applicantInfo and applicantInfo!=''">
+				and t.applicantInfo = #{applicantInfo}
+			</if>		
+			<if test="null!=applicantName and applicantName!=''">
+				and t.applicantName = #{applicantName}
+			</if>		
+			<if test="null!=applicantMobile and applicantMobile!=''">
+				and t.applicantMobile = #{applicantMobile}
+			</if>		
+			<if test="null!=applicantIdNo and applicantIdNo!=''">
+				and t.applicantIdNo = #{applicantIdNo}
+			</if>		
+			<if test="null!=applicantEmail and applicantEmail!=''">
+				and t.applicantEmail = #{applicantEmail}
+			</if>		
+			<if test="null!=insuredName and insuredName!=''">
+				and t.insuredName = #{insuredName}
+			</if>		
+			<if test="null!=insuredMobile and insuredMobile!=''">
+				and t.insuredMobile = #{insuredMobile}
+			</if>		
+			<if test="null!=insuredIdNo and insuredIdNo!=''">
+				and t.insuredIdNo = #{insuredIdNo}
+			</if>		
+			<if test="null!=insuredEmail and insuredEmail!=''">
+				and t.insuredEmail = #{insuredEmail}
+			</if>		
+			<if test="null!=receiverName and receiverName!=''">
+				and t.receiverName = #{receiverName}
+			</if>		
+			<if test="null!=receiverTel and receiverTel!=''">
+				and t.receiverTel = #{receiverTel}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=unSettlementCost and unSettlementCost!=''">
+				and t.unSettlementCost = #{unSettlementCost}
+			</if>		
+			<if test="null!=vehicleFrameNo and vehicleFrameNo!=''">
+				and t.vehicleFrameNo = #{vehicleFrameNo}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

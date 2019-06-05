@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IUserInfoDao">
+    <!-- 验证该手机号是否已经存在 -->
+	<select id="checkUserIsEmpty" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_info 
+        where 
+            phone=#{phone} and 
+            is_del=0 
+    </select>  
+     
+    
+	 <!-- 验证该用户头像是否已经存在 -->
+	<select id="checkUserPortrait" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_attachment 
+        where 
+            attachment_type=1 and 
+            attachment_use=11 and 
+            user_id=#{userId} and
+            is_del=0 
+    </select>  
+	
+	<!-- 注册新用户,填写基本手机号和验证码、验证时间 -->
+	<insert id="insertUserInfoWithVerification" parameterType="java.util.Map" >
+  		insert into 
+  		    user_info(id,phone, verification_code,join_time,last_login_time,verification_time,is_verification,is_del,user_key,ip,province,city) 
+  		values(#{userId},#{phone}, #{verificationCode},now(),now(),now(),1,0,#{userKey},#{ip},#{province},#{city})
+	</insert>
+	
+	<!-- 注册成功之后初始化用户头像 -->
+	<insert id="initUserInfoPortraitDirect" parameterType="java.util.Map">
+	    insert into 
+  		    user_attachment(user_id, attachment_type,attachment_use,path,join_time,is_del) 
+  		values(#{id},1,11,#{filePath},now(),0)
+	</insert>
+	
+		<!-- 注册成功之后初始化用户头像 -->
+	<insert id="initUserInfoPortrait" parameterType="java.util.Map">
+	    insert into 
+  		    user_attachment(user_id, attachment_type,attachment_use,path,join_time,is_del) 
+  		values(#{userId},1,11,#{filePath},now(),0)
+	</insert>
+	
+	<!-- 注册成功之后初始化用户推送信息 
+	<insert id="initUserInfoPush" parameterType="java.util.Map">
+	    insert into 
+  		    user_push(user_id, client_id,app_type,client_type) 
+  		values(#{userId},#{clientId},#{appType},#{clientType})
+	</insert>-->
+	
+	
+	<!-- 注册成功之后初始化用户推送信息
+	<insert id="initUserInfoPushDirect" parameterType="java.util.Map">
+	    insert into 
+  		    user_push(user_id, client_id,client_type,device_id) 
+  		values(#{userId},#{clientId},#{clientType},#{deviceId})
+	</insert> -->
+	
+	 <!-- 清空这条设备ID的记录
+	<delete id="cleanUserInfoPush" parameterType="java.util.Map">
+  		delete from user_push where user_id=#{userId} and app_type=#{appType}
+	</delete>-->
+	
+	 <!-- 用户退出空这个设备ID的记录
+	<delete id="cleanUserInfoPushByClientId" parameterType="java.util.Map">
+  		delete from user_push where  client_id=#{clientId}
+	</delete>-->
+	
+	 <!-- 用户退出空这个设备ID的记录
+	<delete id="cleanUserInfoPushByDeviceId" parameterType="java.util.Map">
+  		delete from user_push where device_id=#{deviceId}
+	</delete>-->
+	
+	 <!-- 获得用户设备id 
+	<select id="selectUserInfoPush" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            client_id,client_type
+        from 
+            user_push 
+        where 
+            user_id=#{userId} and app_type=#{appType}
+    </select>  -->
+	
+	<!-- 更改改手机号对应的验证码和验证时间 -->
+	<update  id="updateUserInfoVerification" parameterType="java.util.Map">
+	    update 
+	        user_info
+        set 
+            verification_code =#{verificationCode},
+            verification_time = now(),
+            is_verification=0
+        where 
+            phone=#{phone} and 
+            is_del=0 
+	</update >
+	
+	<!-- 更新用户的头像 -->
+	<update  id="updateUserInfoPortrait" parameterType="java.util.Map">
+	    update 
+	        user_attachment
+        set 
+            path =#{filePath}
+        where 
+            user_id=#{userId} and 
+            attachment_type=1 and 
+            attachment_use=11 and
+            is_del=0 
+	</update >
+	
+	<!-- 更改用户信息 -->
+	<update  id="updateUserLastLoginTime" parameterType="java.util.Map">
+	    update 
+	        user_info
+        set 
+            last_login_time =now()
+        where 
+            id=#{userId} and 
+            is_del=0 
+	</update >
+	
+	<!-- 更改用户信息 -->
+	<update  id="updateUserInfo" parameterType="java.util.Map">
+	    update 
+	        user_info
+        set 
+            sex = #{sex}
+        where 
+            id=#{userId} and 
+            is_del=0 
+	</update >
+	
+	<!-- 根据手机号和验证码获取验证信息 -->
+	<select id="validateVerificationCode" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            verification_code,
+            verification_time
+        from 
+            user_info 
+        where 
+            phone=#{phone} and
+            verification_code=#{verificationCode} and
+            is_verification=0 and
+            is_del=0 
+    </select>  
+	
+	<!-- 根据手机号获取用户ID -->
+	<select id="getUserIdByPhone" parameterType="java.util.Map" resultType="string">  
+        select 
+            ui.id
+        from 
+            user_info ui
+        where 
+            ui.phone=#{phone} and
+            ui.is_del=0 
+    </select>  
+    
+	<!-- 根据手机号获取用户密钥，密钥信息不可以在网络中明文传递，使用该方法的时候要协商好动态密钥对这个密钥信息进行加密-->
+	<select id="getUserKey" parameterType="java.util.Map" resultType="string">  
+        select 
+            ui.user_key as userKey
+        from 
+            user_info ui
+        where 
+            ui.phone=#{phone} and
+            ui.is_del=0 
+    </select>  
+	
+	<!-- 根据手机号获取用户的信息 -->
+	<select id="getUserInfoByPhone" parameterType="java.util.Map" resultType="java.util.HashMap">  
+	/*master*/
+        select 
+            ui.id as userId,
+            ui.phone,
+            ui.sex,
+            ui.name,
+            ui.user_type as userType,
+            ua.path as portraitPath,
+            ui.rong_cloud_token as rongCloudToken
+        from 
+            user_info ui 
+            left join user_attachment ua 
+        on 
+        	ui.id=ua.user_id and
+            ua.attachment_type=1 and 
+            ua.attachment_use=11 and 
+            ua.is_del=0
+        where 
+            ui.phone=#{phone} and
+            ui.is_del=0 
+    </select>  
+	<!-- 根据手机号获取用户的信息 -->
+	<select id="getUserInfoByUserId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            ui.id as userId,
+            ui.phone,
+            ui.sex,
+            ui.name,
+            ui.user_type as userType,
+            ua.path as portraitPath,
+            ui.rong_cloud_token as rongCloudToken
+        from 
+            user_info ui 
+            left join user_attachment ua 
+        on 
+        	ui.id=ua.user_id and
+            ua.attachment_type=1 and 
+            ua.attachment_use=11 and 
+            ua.is_del=0
+        where 
+            ui.id=#{userId} and
+            ui.is_del=0 
+    </select> 
+	<!-- 用户验证码验证通过之后更新信息 -->
+	<update  id="userInfoLogin" parameterType="java.util.Map">
+	    update 
+	        user_info
+        set 
+            is_verification=1,
+            last_login_time=now()
+        where 
+            phone=#{phone} and  
+            is_verification=0 and 
+            is_del=0 
+	</update >
+	
+	<!-- 上传用户头像 type为1 use为1 表示为图片,并且是用户头像 -->
+	<insert id="uploadUserPortrait" parameterType="java.util.Map">
+	    insert into 
+  		    user_attachment(user_id, attachment_type,attachment_use,path,join_time,is_del) 
+  		values(#{userId},1,11,#{filePath},now(),0)
+	</insert>
+	
+	<!-- 根据手机号获取用户的信息 -->
+	<select id="getUserAddressInfo" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            *
+        from 
+            user_address 
+        where 
+            user_id=#{userId}
+            <if test="addressType != null">
+		        and address_type = #{addressType}
+		    </if>
+		     <if test="appType != null">
+		        and app_type = #{appType}
+		    </if>
+		 order by id 
+    </select>  
+	
+	<!-- 判断所需要插入的地址记录是否存在 -->
+	<select id="checkUserAddressInfo" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(*)
+        from 
+            user_address 
+        where 
+            user_id=#{userId} and 
+            address_type=#{addressType} and 
+            app_type = #{appType}
+    </select>  
+    
+	<!-- 更新用户的地址信息 -->
+	<update  id="updateUserAddressInfo" parameterType="java.util.Map" >
+	    update 
+	        user_address
+        set 
+            latitude=#{latitude},
+            longitude=#{longitude},
+            address_info=#{addressInfo}
+        where 
+            user_id=#{userId} and  
+            address_type=#{addressType} and
+            app_type = #{appType}
+	</update >
+	
+	<!-- 更新用户的地址信息 -->
+	<insert  id="insertUserAddressInfo" parameterType="java.util.Map" >
+	    insert into 
+  		    user_address(user_id, address_type,latitude,longitude,address_info,app_type) 
+  		values(#{userId},#{addressType},#{latitude},#{longitude},#{addressInfo},#{appType})
+	</insert >
+	
+	<!-- 获取用户可以使用的代金券列表 -->
+	<select id="getUserAvailableVouchersInfo" parameterType="java.util.Map" resultType="java.util.HashMap">  
+      
+	    SELECT
+			vi.id,
+			st.service_type_name AS couponsType,
+			vi.price,
+			date_format(
+				vi.cutoff_time,
+				'%Y-%m-%d'
+			) AS cutoffTime,
+			vi.icon_path AS couponsTypePicPath,
+			st.app_type AS appType
+		FROM
+			vouchers_info vi,
+			service_type st,
+			user_vouchers_info uvi
+		WHERE
+			(
+				vi.cutoff_time IS NULL
+				OR now() &lt; vi.cutoff_time
+			)
+		AND vi.is_del = 0
+		AND vi.id = uvi.vouchers_id
+		AND uvi.user_id = #{userId}
+		AND uvi.is_use = 0
+		AND uvi.is_del = 0
+		AND vi.service_type_id = st.id
+	    limit #{startNum},#{pageSize}
+	  
+    </select>
+    
+	<!-- 获取用户可以使用的代金券的个数 -->
+	<select id="getUserAvailableVouchersCount" parameterType="java.util.Map" resultType="int">  
+	   
+	    select 
+	        count(1)
+	    FROM
+			vouchers_info vi,
+			service_type st,
+			user_vouchers_info uvi
+		WHERE
+			(
+				vi.cutoff_time IS NULL
+				OR now() &lt; vi.cutoff_time
+			)
+		AND vi.is_del = 0
+		<!-- AND st.app_type = vi.app_type -->
+		AND vi.id = uvi.vouchers_id
+		AND uvi.user_id = #{userId}
+		AND uvi.is_use = 0
+		AND uvi.is_del = 0
+		AND vi.service_type_id = <!-- st.service_type_id -->st.id
+	   
+    </select>  
+    
+	<!-- 获取用户历史的代金券列表 -->
+	<select id="getUserHistoryVouchersInfo" parameterType="java.util.Map" resultType="java.util.HashMap">  
+      
+	     SELECT
+			 *
+		FROM
+			(
+				SELECT
+					 vi.id,
+					 st.service_type_name as couponsType ,
+					 vi.price,
+					 vi.icon_path as couponsTypePicPath,
+					 date_format(vi.cutoff_time ,'%Y-%m-%d') as cutoffTime,
+					 1 AS type,
+				     st.app_type AS appType
+				FROM
+					vouchers_info vi,service_type st
+				WHERE
+					now() > vi.cutoff_time
+				AND vi.is_del = 0
+				<!-- and st.app_type=vi.app_type -->
+				AND vi.id IN (
+					SELECT
+						vouchers_id
+					FROM
+						user_vouchers_info
+					WHERE
+						user_id = #{userId}
+					AND is_use = 0
+					AND is_del = 0
+				)
+				AND vi.service_type_id=<!-- st.service_type_id -->st.id
+				UNION ALL
+					SELECT
+						 uvi.id,
+						 st.service_type_name as couponsType ,
+						 uvi.price,
+						 uvi.icon_path as couponsTypePicPath,
+						 date_format(uvi.cutoff_time ,'%Y-%m-%d') as cutoffTime,
+						 2 AS type,
+						 st.app_type AS appType
+					FROM
+						vouchers_info uvi,service_type st
+					WHERE
+						uvi.id IN (
+							SELECT
+								vouchers_id
+							FROM
+								user_vouchers_info
+							WHERE
+								user_id = #{userId}
+							AND is_use = 1
+							AND is_del = 0
+						)
+						<!-- and st.app_type=uvi.app_type -->
+						<!-- and uvi.app_type=#{appType} -->
+						AND uvi.service_type_id=<!-- st.service_type_id -->st.id
+			) tmp 
+			limit #{startNum},#{pageSize}
+	   
+    </select>
+	
+	<!-- 获取用户历史的代金券的个数 -->
+	<select id="getUserHistoryVouchersCount" parameterType="java.util.Map" resultType="int">  
+	 
+	     SELECT
+			 count(1)
+		FROM
+			(
+				SELECT
+					 vi.id,
+					 st.service_type_name as couponsType ,
+					 vi.price,
+					 vi.icon_path as couponsTypePicPath,
+					 date_format(vi.cutoff_time ,'%Y-%m-%d') as cutoffTime,
+					  1 AS type
+				FROM
+					vouchers_info vi,service_type st
+				WHERE
+					now() > vi.cutoff_time
+				AND vi.is_del = 0
+				and st.app_type=vi.app_type
+				AND vi.id IN (
+					SELECT
+						vouchers_id
+					FROM
+						user_vouchers_info
+					WHERE
+						user_id = #{userId}
+					AND is_use = 0
+					AND is_del = 0
+				)
+				AND vi.service_type_id=<!-- st.service_type_id -->st.id
+				UNION ALL
+					SELECT
+						 uvi.id,
+						 st.service_type_name as couponsType ,
+						 uvi.price,
+						 uvi.icon_path as couponsTypePicPath,
+						 date_format(uvi.cutoff_time ,'%Y-%m-%d') as cutoffTime,
+						 2 AS type
+					FROM
+						vouchers_info uvi,service_type st
+					WHERE
+						uvi.id IN (
+							SELECT
+								vouchers_id
+							FROM
+								user_vouchers_info
+							WHERE
+								user_id = #{userId}
+							AND is_use = 1
+							AND is_del = 0
+						)
+						and st.app_type=uvi.app_type
+						and uvi.app_type=#{appType}
+						AND uvi.service_type_id=<!-- st.service_type_id -->st.id
+			) tmp 
+	  
+    </select>  
+	
+	<!-- 删除用户代金券 -->
+	<update  id="deleteVouchersInfo" parameterType="java.util.Map" >
+	    update 
+	        user_vouchers_info
+        set 
+            is_del=1
+        where 
+            vouchers_id=#{vouchersId}
+        and user_id=#{userId}
+        and is_del=0
+	</update >
+	
+     <!-- 获取轮播图  -->
+    <select id="getSliderPics" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select a.name as name, a.join_time as joinTime, a.link_url as linkUrl, a.pics_path as path from manager_slider_info a 
+			where a.app_type=#{appType} and a.slider_status = 1 and a.overdue_time>= #{now}
+			ORDER BY a.sort
+    </select>  
+    
+     <!-- 验证该用户是否已经登陆 -->
+	<select id="checkClient" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_push 
+        where 
+            user_id=#{userId} and
+            client_id=#{clientId}
+    </select>  
+    
+  <!-- 检查商户的ClientId是否需要更新 -->
+  <select id="checkClientId" parameterType="java.util.Map" resultType="int">  
+	    select 
+	        count(1)
+	    from 
+	        user_push 
+	    where 
+	        user_id=#{userId} and
+	        client_id=#{clientId} and
+	        push_id=#{pushId} 
+	        <!-- app_type=#{appType} -->
+  </select>  
+    
+   <!-- 更改当前使用的设备记录的clientId -->
+  <update id="updateClientId" parameterType="java.util.Map">
+      update
+          user_push
+      set
+          push_id=#{pushId},
+          phone_model=#{phoneModel}
+      where
+          user_id=#{userId}
+          <!-- and app_type=#{appType}  -->
+          and client_type=#{clientType}
+          and client_id=#{clientId} 
+  </update>
+  
+  
+   <!-- 更改用户访问IP 对应的省、市信息 2015.12.10 revoke -->
+  <update id="updateUserLocation" parameterType="java.util.Map">
+       update 
+	        user_info
+        set 
+            province =#{province},
+            cit = #{city}
+        where 
+            id=#{userId}
+  </update>
+  
+      <!-- 根据用户ID获取用户推送设备列表  Long userId-->
+    <select id="selectUserPushList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		SELECT 
+			t.client_id AS clientId,
+			t.client_type AS clientType,
+			t.push_id AS pushId,
+			t.user_id AS userId 
+		FROM 
+			user_push t 
+		WHERE 
+			t.switch!=1 
+		AND t.user_id=#{userId} 
+	</select>  
+	
+	<!-- 根据订单的appType和serviceType,找出能提供服务的商户所有接单用户的设备列表 String appType,String serviceType-->
+    <select id="selectAcceptUserPushList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		SELECT t.id,t.title,t.image,t.show_type AS showType,t.link,t.start_time AS stime,
+        t.end_time AS etime,t.app_type AS appType,t.package_type AS packageType
+        FROM manager_loading t WHERE  t.is_del=0 AND t.is_pub=1
+	</select>  
+	
+    <!-- 删除排除当前访问设备的记录  Long userId -->
+	<delete id="deleteUserPushByUserId" parameterType="java.util.Map">
+	    DELETE FROM user_push WHERE user_id=#{userId}
+	</delete>
+	
+	<!-- 删除排除当前访问设备的记录  String clientId -->
+	<delete id="deleteUserPushByClientId" parameterType="java.util.Map">
+	    DELETE FROM user_push WHERE client_id=#{clientId} or user_id=#{userId}
+	</delete>
+	
+    <!-- 保存用户推送设备记录信息 -->
+    <insert id="insertUserPush" parameterType="java.util.Map" >
+       INSERT INTO user_push
+           (
+           user_id
+           ,client_id
+           ,client_type
+           ,push_id
+           )
+       VALUES
+           (#{userId},
+            #{clientId},
+            #{clientType},
+            #{pushId}
+           )
+    </insert>
+    
+    <!-- 更新融云token -->
+	<update  id="updateRongCloudToken" parameterType="java.util.Map">
+	    update 
+	        user_info
+        set 
+            rong_cloud_token =#{rongCloudToken}
+        where 
+            id=#{userId}
+	</update >
+	<!-- 我的店铺列表 -->
+	<select id="myMerchantList" parameterType="java.util.Map"
+	resultType="java.util.HashMap">
+		SELECT
+			me.user_id AS userId,
+			m.id AS merchantId,
+			m.`name`,
+			m.location_address AS address,
+			m.app_type AS appType,
+			m.catalog_id AS catalogId,
+			ma.path,
+			me.employees_type AS employeesType,
+			me.id AS employeesId,
+			m.is_private_assistant as isPrivateAssistant,
+			(select name from catalog where id = m.catalog_id and status = 1) as catalogName,
+			(select auth_type from merchant_auth where merchant_id = m.id and auth_status = 1 order by join_time DESC limit 1) as authType 
+		FROM
+			merchant_employees me
+		LEFT JOIN merchant_info m ON me.merchant_id = m.id
+		AND m.is_del = 0
+		LEFT JOIN merchant_attachment ma ON me.merchant_id = ma.merchant_id
+		AND ma.attachment_type = 1
+		AND ma.attachment_use = 11
+		WHERE
+			me.is_del = 0
+		AND me.user_id = #{userId}
+		and m.`name` is not null
+		and m.location_address is not null
+		and
+		(
+			SELECT
+				group_CONCAT(service_type_id)
+			FROM
+				merchant_service_type
+			WHERE
+				merchant_id = me.merchant_id
+		) is not null
+		order by me.join_time desc
+		   
+</select>
+	<!-- <select id="getmerchantFromUser" parameterMap="java.util.Map" resultType="java.util.Map" >
+		select 
+			merchant_id 
+		from 
+			merchant_employees 
+		where 
+			user_id=#{userId} 
+		and is_del=0
+	</select> -->
+	<update id="updLastActiveTime" parameterType="java.util.Map">
+		update 
+			merchant_info
+		set 
+			last_active_time=now()
+		where id in (${merchantIds})
+	</update>
+	
+	    
+    <!-- 统计用户今日银行卡银联认证次数 -->
+    <select id="countTodayComVerifyBg" parameterType="java.lang.Long" resultType="java.lang.Integer">
+      select  count(1)
+      from user_unionpay_verify unv
+      where unv.user_id =#{userId} 
+       and verfiy_type = 2  
+       and verify_status = 0
+       and date_format(unv.create_time ,'%Y-%m-%d') = date_format(now(),'%Y-%m-%d')
+    </select>
+    
+    <!-- 统计本地是否存在认证失败信息 -->
+    <select id="selectUserVeifyBgInfo"  parameterType="java.util.Map" resultType="java.util.HashMap">
+     select 
+     	unv.verify_status as verifyStatus,
+     	unv.remark as verfiyMsg,
+     	unv.respCode as respCode
+     	 from 
+     	 user_unionpay_verify unv 
+     	where unv.user_id = #{userId} and unv.is_del = 1
+     <if test="certNo != null and  certNo !='' ">
+		  and unv.certNo = #{certNo}
+	 </if>
+	  <if test="cardNo != null and  cardNo !='' ">
+		  and unv.cardNo = #{cardNo}
+	 </if>
+	  <if test="realName != null and  realName !='' ">
+		  and unv.realName = #{realName}
+	 </if>
+	 <if test="verfiy_type != null and  verfiy_type !='' ">
+		  and unv.verfiy_type = #{verfiyType}
+	 </if> 
+	 <if test="timeLimit != null and timeLimit != 0 ">
+	 	  and unv.create_time > DATE_SUB(now(),INTERVAL #{timeLimit} DAY) 
+	 </if> 
+	 limit 0,1
+    </select>
+    
+    <!-- 保存用户银行卡认证信息 -->
+    <insert id="insertConVerifyBgInfo">
+    	insert into user_unionpay_verify(
+    	      user_id,certNo,cardNo,realName,verfiy_type,
+    	      transNo,verify_status,is_del,create_time,remark,respCode
+            )
+    	 values(#{userId},#{certNo},#{cardNo},#{realName},#{verfiyType},
+    	 		#{transNo},#{verifyStatus},1,now(),#{remark},#{respCode})
+    </insert>
+    
+      
+    <!-- 根据用户的userId统计该用户在业务是否合法存在 -->
+    <select id="countAvaliablByUserId"  parameterType="java.lang.Long" resultType="java.lang.Integer">
+      select count(1) from user_info ui where ui.id = #{userId} and ui.is_del = 0 
+    </select>
+    
+</mapper>
+

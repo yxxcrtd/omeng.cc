@@ -1,0 +1,156 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.1.xsd
+    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util.xsd
+    http://code.alibabatech.com/schema/dubbo
+    http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+    ">
+
+	<context:component-scan base-package="com.shanjin" />
+	<dubbo:annotation package="com.shanjin.controller" />
+	<dubbo:annotation package="com.shanjin.common.interceptor" />
+	<context:property-placeholder location="classpath:memcached.properties"
+		ignore-unresolvable="true" />
+
+	<util:properties id="appAndBeanIdMap" location="classpath:orderSvrCfg.properties" />
+
+	<bean id="appOrderSrvMgr" class="com.shanjin.controller.AppOrderSvrManager" />
+
+	<bean id="configProperties"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="locations">
+			<list>
+				<value>classpath:encrypt.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+		<property name="properties" ref="configProperties" />
+	</bean>
+
+	<bean id="alipayMerchantInfoService" class="com.alipay.service.AlipayMerchantInfoService">
+		<property name="myMerchantService" ref="myMerchantService" />
+		<property name="myIncomeService" ref="myIncomeService" />
+	</bean>
+
+	<bean id="weChartMerchantInfoService" class="com.tenpay.service.WeChartMerchantInfoService">
+		<property name="myMerchantService" ref="myMerchantService" />
+		<property name="myIncomeService" ref="myIncomeService" />
+	</bean>
+
+	<!-- 增加启动时候执行 <bean class="com.shanjin.common.listener.createIndexListener"/> -->
+
+	<dubbo:application name="web_consumer" />
+
+
+	<!-- 使用zookeeper注册中心暴露服务地址 测试版本与 发布版本
+	<dubbo:registry address="zookeeper://zkmaster:2181?backup=zkslave1:2181,zkslave2:2181" />-->
+
+	<!-- 开发版本注册地址 改最后一个IP地址即可-->
+    <dubbo:registry address="zookeeper://localhost:2181" />
+
+
+	<!-- begin of 订阅 订单服务 -->
+	<dubbo:reference id="userOrderService" group="default"
+		retries="0" interface="com.shanjin.service.IUserOrderService" />
+	<!-- end of 订阅 订单服务 -->
+
+
+	<!-- begin of 订阅商户 订单服务 -->
+
+	<dubbo:reference id="merchantOrderManageService" group="defaultMerchant"
+		retries="0" interface="com.shanjin.service.IMerchantOrderManageService" />
+
+
+	<!-- begin of 订阅 通用服务 -->
+
+	<dubbo:reference id="commonService" retries="0"
+		interface="com.shanjin.service.ICommonService" />
+
+	<dubbo:reference id="validateService" retries="0"
+		interface="com.shanjin.service.IValidateService" />
+
+
+	<dubbo:reference id="dictionaryService" retries="0"
+		interface="com.shanjin.service.IDictionaryService" />
+
+
+	<dubbo:reference id="myIncomeService" retries="0"
+		interface="com.shanjin.service.IMyIncomeService" />
+
+
+	<dubbo:reference id="myMerchantService" retries="0"
+		interface="com.shanjin.service.IMyMerchantService" />
+
+
+	<dubbo:reference id="statisticsService" retries="0"
+		interface="com.shanjin.service.IStatisticsService" />
+
+
+	<dubbo:reference id="userService" retries="0"
+		interface="com.shanjin.service.IUserInfoService" />
+
+	<dubbo:reference id="userManageService" retries="0"
+		interface="com.shanjin.service.IUserManageService" />
+
+	<dubbo:reference id="userMerchantService" retries="0"
+		interface="com.shanjin.service.IUserMerchantService" />
+
+	<dubbo:reference id="elasticSearchService" retries="0"
+		interface="com.shanjin.service.IElasticSearchService" />
+
+	<dubbo:reference id="messageCenterService" retries="0"
+		interface="com.shanjin.service.IMessageCenterService" />
+
+	<dubbo:reference id="pushService" retries="0"
+		interface="com.shanjin.service.IPushService" />
+
+	<dubbo:reference id="customOrderService" retries="0"
+		interface="com.shanjin.service.ICustomOrderService" />
+
+	<dubbo:reference id="customPriceService" retries="0"
+		interface="com.shanjin.service.ICustomPriceService" />
+	<!--<dubbo:reference id="activityService" retries="0" interface="com.shanjin.service.IActivityService" 
+		/> -->
+	<dubbo:reference id="userCPlanService" retries="0"
+		interface="com.shanjin.service.IUserCPlanService" />
+
+	<dubbo:reference id="cplanService" interface="com.shanjin.service.CplanSerive" />
+
+
+	<!--好评奖励接口-->
+	<dubbo:reference id="goodRewardService" interface="com.shanjin.service.IGoodRewardService"/>
+
+
+
+<!-- 		好评奖励跑批任务 -->
+		<dubbo:reference id="iMerEvalStatiService"
+		retries="0" interface="com.shanjin.service.IMerEvalStatiService" />
+
+
+	<!-- <dubbo:reference id="transoutService" retries="0" interface="com.shanjin.service.ITransOutService" 
+		/> -->
+<!--开票申请 -->
+	<dubbo:reference id="merchantInvoiceService" retries="0" interface="com.shanjin.service.IMerchantInvoiceService" />	
+	<!--王牌计划 -->
+	<dubbo:reference id="kingService" retries="0" interface="com.shanjin.service.IKingService" />
+	<!--王牌计划 -->
+	<dubbo:reference id="cplanKingService" retries="0" interface="com.shanjin.service.ICplanKingService" />
+	<!-- 联合营销接口 -->
+	<dubbo:reference id="unitedMarketingService" retries="0"  interface="com.shanjin.service.IUnitedMarketingService" timeout="20000" />
+	<!-- 一对一支付授权 静默登录参数 -->
+	<dubbo:reference id="silenceLoginService"  retries="0"  interface="com.shanjin.service.ISilenceLoginService" timeout="20000"/>
+
+</beans>

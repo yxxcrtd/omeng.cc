@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IDictionaryDao">
+
+  <!-- 
+  	表	名：dictionary			字典表
+  	表描述：
+  		id						主键
+  		dict_type				字典类型
+  		dict_key				字典key值
+  		dict_value				字典value值
+  		remark					备注
+  		parent_dict_id			父字典id
+  		is_del					是否删除
+  		dict_level				字典级别。top：O盟大应用级别；app：行业级别；service：服务级别
+  		dict_domain				字典领域。如：行业级别的字典项，领域值应该为 {cbt、sxd、ydc、yd、等}
+								                                         服务级别的字典项，领域值应该为serviceType值
+		icon_path				图标地址
+		is_leaves				是否叶子节点，需要回馈给客户端，客户端可以根据该属性判断是否需要再读子字典项
+		sort					排序字段
+   -->
+
+  <!-- 查询一级字典项-->
+  <select id="getParentDict" resultType="java.util.HashMap" parameterType="java.util.Map">
+     SELECT
+			a.id as id,
+			a.dict_key as dictKey,
+			a.dict_value as dictValue,
+			a.is_leaves as isLeaves,
+			b.attachment_type as attachmentType,
+			b.attachment_style as attachmentStyle,
+			b.path as path
+		FROM
+			dictionary a left join dictionary_attachment b on a.id = b.dictionary_id
+		WHERE
+			a.is_del = 0
+		AND a.dict_type = #{dictType}
+		AND a.parent_dict_id IS NULL
+		ORDER BY
+			sort
+  </select>
+  
+  <!-- 查询子字典项  -->
+  <select id="getChildDict" resultType="java.util.HashMap" parameterType="java.util.Map">
+     SELECT
+			a.id as id,
+			a.dict_key as dictKey,
+			a.dict_value as dictValue,
+			a.is_leaves as isLeaves,
+			b.attachment_type as attachmentType,
+			b.attachment_style as attachmentStyle,
+			b.path as path
+		FROM
+			dictionary a left join dictionary_attachment b on a.id = b.dictionary_id
+		WHERE
+			a.is_del = 0
+			<if test="dictType != null and dictType != '' " >	
+			AND a.dict_type = #{dictType}
+			</if>
+			AND a.parent_dict_id = #{parentId}
+			ORDER BY
+				sort
+  </select>
+  
+  <select id="getAllDict" resultType="java.util.HashMap">
+  		SELECT
+			a.id as id,
+			a.dict_type as dictType,
+			a.dict_key as dictKey,
+			a.dict_value as dictValue,
+			a.is_leaves as isLeaves
+		FROM
+			dictionary a 
+		WHERE
+			a.is_del = 0
+		ORDER BY
+			sort
+  </select>
+
+  <select id="getDictByValue" resultType="java.util.LinkedHashMap">
+  		SELECT
+			a.id as id,
+			a.dict_type as dictType,
+			a.dict_key as dictKey,
+			a.dict_value as dictValue,
+			a.remark as remark,
+			a.parent_dict_id as parentDictId,
+			a.dict_level as dictLevel,
+			a.is_leaves as isLeaves
+		FROM
+			dictionary a 
+		WHERE
+			a.is_del = 0
+		  <if test="id != null and id != ''" >
+            and a.id = #{id}
+          </if>
+          <if test="dict_type != null and dict_type != ''" >
+            and a.dict_type = #{dict_type}
+          </if>
+          <if test="dict_key != null and dict_key != ''" >
+            and a.dict_key = #{dict_key}
+          </if>
+          <if test="dict_value != null and dict_value != ''" >
+            and a.dict_value = #{dict_value}
+          </if>
+          <if test="remark != null and remark != ''" >
+            and a.remark = #{remark}
+          </if>
+          <if test="parent_dict_id != null and parent_dict_id != ''" >
+            and a.parent_dict_id = #{parent_dict_id}
+          </if>
+          <if test="dict_level != null and dict_level != ''" >
+            and a.dict_level = #{dict_level}
+          </if>
+          <if test="is_leaves != null and is_leaves != ''" >
+            and a.is_leaves = #{is_leaves}
+          </if>
+		
+		<choose>
+	        <when test="sort !=null and sort != ''">
+	           ORDER BY ${orderby} ${sort}
+	        </when>
+	        <otherwise>
+	 			
+	        </otherwise>
+    	</choose>
+  </select>
+  
+  <!-- 用于查询汽车信息 -->
+  <select id="getCarsInfo" resultType="java.util.LinkedHashMap">
+		SELECT
+			a.id AS id,
+			a.dict_type AS dictType,
+			a.dict_value AS dictValue,
+			a.remark AS remark,
+			a.parent_dict_id AS parentDictId
+		FROM
+			dictionary a
+		WHERE
+			a.is_del = 0
+		AND (
+			a.dict_type = 'carBrand'
+			OR a.dict_type = 'carModel'
+		)
+		ORDER BY
+			id
+  </select>
+  
+  <!-- 获取表单通用链接列表 -->
+  <select id="getFormDictList" resultType="java.util.LinkedHashMap" parameterType="java.util.Map">
+       SELECT t.id,t.dict_type AS dictType,t.dict_value AS title,
+         t.parent_dict_id AS parentId,da.path AS image 
+       FROM dictionary t
+        LEFT JOIN dictionary_attachment da ON t.id=da.dictionary_id AND da.is_del=0 AND da.attachment_type=1
+        AND da.attachment_style='image'
+        WHERE t.is_del=0 AND t.dict_type = #{dictType}
+        ORDER BY t.sort DESC
+  </select>
+  
+  <select id="getDataVersion" resultType="java.util.HashMap">
+  		SELECT
+			a.data_type AS dataType,
+			a.version
+		FROM
+			data_version a
+		WHERE
+			a.is_del=0
+  </select>
+  
+  <update id="updateDataVersion" parameterType="java.lang.String">
+  		update data_version a set a.version = a.version + 1 where a.data_type = #{dataType}
+  </update>
+  
+  <select id="getMultistageDict" resultType="Map" parameterType="Map">
+		  	select 
+		  		d.id,
+				d.dict_type as dictType,
+  				d.dict_key as dictKey,
+				d.dict_value as dictValue,
+				d.parent_dict_id as parentDictId,
+				(select GROUP_CONCAT(attachment_style,":",path) from dictionary_attachment da where da.dictionary_id=d.id and is_del = 0) as path		
+			from dictionary d 
+			
+			where 
+				<if test="parentDictId == null or dictType == ''" >
+					d.parent_dict_id is null
+				</if>
+				<if test="parentDictId != null and dictType != ''" >
+					d.parent_dict_id=#{parentDictId}
+				</if>
+				
+          		<if test="dictType != null and dictType != ''" >
+				 and d.dict_type=#{dictType}  
+				</if> 
+  		 	order by d.sort asc 
+  		 	<!-- select 
+  			d.id,
+  			d.dict_type as dictType,
+  			d.dict_key as dictKey,
+  			d.dict_value as dictValue,
+  			d.parent_dict_id as parentDictId,
+  			(select GROUP_CONCAT(attachment_style,":",path) from dictionary_attachment da where da.dictionary_id=d.id and is_del = 0) as path
+  			
+  		from
+  			dictionary d
+  		 where 
+				 d.dict_type=#{dictType} or d.parent_dict_id in (select id from dictionary where dict_type=#{dictType})
+		order by d.id -->
+  		 </select>
+</mapper>
+

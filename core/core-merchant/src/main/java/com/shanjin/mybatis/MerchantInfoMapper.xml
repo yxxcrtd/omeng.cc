@@ -1,0 +1,753 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantInfoDao">
+	<!-- 查询店铺基本信息FOR用户 -->
+	<select id="selectMerchantBasicInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT t.id,t.app_type AS appType,t.`name`,t.detail,m.path
+		FROM merchant_info t
+		LEFT JOIN merchant_attachment m
+		ON t.id=m.merchant_id
+		WHERE t.is_del=0 AND t.id=#{merchantId}
+		AND m.attachment_type=1 AND m.attachment_use=11
+	</select>
+
+	<!-- 查询店铺基本信息 -->
+	<select id="selectMerchantInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+			mi.id,
+			mi.name,
+			mi.province,
+			mi.city,
+			mi.longitude,
+			mi.latitude,
+			mi.map_type as mapType,
+			mi.location_address as locationAddress,
+			mi.detail_address as detailAddress,
+			mi.micro_website_url as microWebsiteUrl,
+			mi.detail,
+			mc.telephone AS phone,
+			mi.vip_level as vipLevel,
+			mi.app_type as appType,
+			mi.catalog_id as catalogId,
+			<!-- mi.auth_type as authType,
+			mi.auth_status as authStatus, -->
+			mi.max_employee_num as maxEmployeeNum,
+			mi.last_active_time as lastActiveTime,
+			mi.business_type as businessType,
+			mi.is_private_assistant as isPrivateAssistant,
+			(select name from catalog where id = mi.catalog_id and status = 1) as catalogName,
+			(select order_surplus_price from merchant_statistics where merchant_id = mi.id ) as orderSurplusPrice,
+			(SELECT ma.path FROM merchant_attachment ma WHERE ma.merchant_id=#{merchantId} AND ma.attachment_type = 1 and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+			vip_background_url vipBackgroundUrl,
+			IFNULL(mi.invitation_code,0) invitationCode
+		from
+			merchant_info mi
+		LEFT JOIN 
+			merchant_contact mc ON mi.id=mc.merchant_id
+		where
+			mi.id = #{merchantId}
+			and mi.is_del = 0
+	</select>
+
+<!-- 	查询vip背景模板 -->
+	<select id="selectVipBackgroundUrlList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT id,
+	       theme,
+	       grade,
+	       is_default isDefault,
+	       image
+	  FROM homepage_backgroud
+	  where is_pub = 1
+	  <if test="isDefault != null and isDefault==1">
+	  	and is_default = 1
+	  </if>
+	</select>
+	
+	<!-- 设置店铺vip背景 -->
+	<update id="setVipBackgroundUrl" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		vip_background_url = #{vipBackgroundUrl}
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+	<!-- 查询店铺基本信息 
+	<select id="selectMerchantInfoV23" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+		mi.id,
+		mi.name,
+		mi.micro_website_url as microWebsiteUrl,
+		mi.vip_level as vipLevel,
+		(SELECT ma.path FROM merchant_attachment ma WHERE
+		ma.merchant_id=#{merchantId} AND ma.attachment_type = 1
+		and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+		(select total_count_evaluation from merchant_statistics where merchant_id =
+		#{merchantId}) as totalCountEvaluation
+		from
+		merchant_info mi
+		where
+		mi.id = #{merchantId}
+		and mi.is_del = 0
+	</select> 待删除
+-->
+	<!-- 查询店铺基本信息 
+	<select id="selectMerchantInfoV24" parameterType="java.util.Map" resultType="java.util.HashMap">
+		select
+			mi.name,
+			(SELECT ma.path FROM merchant_attachment ma WHERE ma.merchant_id=#{merchantId} AND ma.attachment_type = 1
+				and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl
+		from
+			merchant_info mi
+		where
+			mi.id = #{merchantId}
+			and mi.is_del = 0
+	</select> 待删除
+-->
+	<!-- 查询店铺详细信息 
+	<select id="selectMerchantDetailInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+		select
+			mi.name,
+			mi.detail,
+			mi.longitude,
+			mi.latitude,
+			mi.location_address as locationAddress,
+			mc.telephone AS phone,
+			(SELECT ma.path FROM merchant_attachment ma WHERE ma.merchant_id = #{merchantId} AND ma.attachment_type = 1
+				and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl
+		from
+			merchant_info mi
+			left join merchant_contact mc ON mi.id = mc.merchant_id
+		where
+			mi.id = #{merchantId}
+			and mi.is_del = 0
+	</select> 待删除
+-->
+	<!-- 注册新商户 -->
+	<insert id="insertMerchantInfo" parameterType="java.util.Map">
+		insert into
+		merchant_info
+		(
+		id,
+		<if test="name != null">
+			name,
+		</if>
+		province,
+		city,
+		ip,
+		join_time,
+		app_type,
+		is_del,
+		catalog_id,
+		last_active_time
+		)
+		values
+		(
+		#{merchantId},
+		<if test="name != null">
+			#{name},
+		</if>
+		#{province},
+		#{city},
+		#{ip},
+		now(),
+		#{appType},
+		0,
+		#{catalogId},
+		now()		
+		)
+	</insert>
+
+	<update id="updateMerchantVipPushStauts" parameterType="java.lang.Long">
+			update merchant_info set vip_status=2 where id=#{mertchantId}
+	</update>
+
+	<!-- 查询店铺名称,地址,详情介绍 
+	<select id="selectNameAndAddress" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+		name,
+		longitude,
+		latitude,
+		location_address as locationAddress,
+		detail,
+		vip_level as vipLevel
+		from
+		merchant_info
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</select> 待删除-->
+
+	<!-- 查询店铺名称,地址,详情介绍 -->
+	<select id="selectNameAndAddressForUser" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+		name,
+		longitude,
+		latitude,
+		location_address as locationAddress,
+		detail
+		from
+		merchant_info
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</select>
+
+	<!-- 检查店铺名称是否已被使用 -->
+	<select id="checkNameSingle" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select
+		count(1)
+		from
+		merchant_info
+		where
+		id != #{merchantId}
+		and name = #{name}
+		and app_type = #{appType}
+		and is_del = 0
+	</select>
+
+	<!-- 注册时检查店铺名称是否已被使用 -->
+	<select id="checkNameForReg" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select
+		count(1)
+		from
+		merchant_info
+		where
+		name = #{name}
+		and app_type = #{appType}
+		and is_del = 0
+	</select>
+
+	<!-- 更新店铺名称,店铺详情介绍,微官网 -->
+	<update id="updateNameAndDetail" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		name = #{name},
+		detail = #{detail}
+		<if test="invitationCode != null">
+			,invitation_code = #{invitationCode}
+		</if>
+		<!-- , micro_website_url = #{microWebsiteUrl} -->
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+
+	<!-- 更新店铺详情介绍-->
+	<update id="updateMerchantDetail" parameterType="java.util.Map">
+		update
+			merchant_info
+		set		
+			detail = #{detail}
+		where
+			id = #{merchantId}
+			and is_del = 0
+	</update>
+
+	<!-- 更新店铺的省份城市 -->
+	<update id="updateProvinceCity" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		province = #{province},
+		city = #{city}
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+
+	<!-- 更新店铺地理位置 -->
+	<update id="updateLocation" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		province = #{province},
+		city = #{city},
+		latitude = #{latitude},
+		longitude = #{longitude},
+		map_type = #{mapType},
+		location_address = #{locationAddress},
+		detail_address = #{detailAddress}
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+
+	<!-- 更新提现信息 -->
+	<update id="updateWithdrawInfo" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		money_password = #{moneyPassword}<!--, money_real_name = #{moneyRealName}, money_id_no 
+			= #{moneyIdNo} -->
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+
+	<!-- 查询商户提现密码 -->
+	<select id="selectPayPassword" parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select
+		money_password as moneyPassword
+		from
+		merchant_info
+		where
+		id = #{merchantId}
+		<!-- and (select verification_status from merchant_employees where merchant_id 
+			= #{merchantId} and employees_type = 1 and is_del = 0) = 1 -->
+		and is_del = 0
+	</select>
+
+	<!-- 根据经纬度计算用户与商户之间的距离 -->
+	<select id="selectCalcDistance" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select
+		count(1)
+		from
+		(
+		select
+		distinct (6371.393 * acos(cos(radians(#{latitude})) *
+		cos(radians(mi.latitude)) * cos(radians(mi.longitude) -
+		radians(#{longitude})) + sin(radians(#{latitude})) *
+		sin(radians(mi.latitude)))) as distance
+		from
+		merchant_info mi
+		inner join merchant_service_type mst on mi.id = mst.merchant_id
+		where
+		(select verification_status from merchant_employees where merchant_id =
+		#{merchantId} and employees_type = 1 and is_del = 0) = 1
+		and mi.is_del = 0
+		and mst.app_type = #{appType}
+		) tmp0
+		where
+		tmp0.distance &lt;= #{range}
+	</select>
+
+	<!-- 将商户记录的is_del设置成1 -->
+	<update id="deleteMerchant" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		is_del = 1
+		where
+		merchant_id = #{merchantId}
+	</update>
+
+	<!-- 查询商户的最大员工数 -->
+	<select id="selectMaxEmployeeNum" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select
+		max_employee_num
+		from
+		merchant_info
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</select>
+
+	<!-- 根据商户ID查询商户信息 王瑞 -->
+	<select id="selectMerchantInfoById" parameterType="Long"
+		resultType="java.util.Map">
+		SELECT
+		mi.id as merchantId,
+		mi.money_real_name as realName,
+		mi.money_id_no as IDNo,
+		(SELECT GROUP_CONCAT(withdraw_no) FROM merchant_withdraw WHERE is_del=0 AND
+		INSTR(CONCAT(',',mi.id,','),CONCAT(',', merchant_id, ','))) AS cardNo
+		FROM
+		merchant_info mi
+		WHERE
+		mi.id = #{merchantId}
+		and mi.is_del = 0
+	</select>
+
+	<!-- 更新微官网url -->
+	<update id="updateMicroWebsiteUrl" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		micro_website_url = #{microWebsiteUrl}
+		where
+		id = #{merchantId}
+		and is_del = 0
+	</update>
+
+	<!-- 检查邀请码是否有效 -->
+	<select id="checkInvitationCode" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		select
+		count(1)
+		from
+		agent_employee
+		where
+		invite_code = #{invitationCode}
+		and is_del = 0
+	</select>
+
+	<!-- 查找商户消息中心当前最大的消息ID -->
+	<select id="getMerchantMaxMsgId" resultType="Object"
+		parameterType="Long">
+		select
+		max_msg_id
+		from
+		merchant_info
+		where
+		id = #{merchantId}
+	</select>
+
+	<!-- 查询店铺基本信息 -->
+	<select id="checkMerchantInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		select
+		mi.id,
+		mi.name,
+		mi.longitude,
+		mi.latitude,
+		mi.location_address as locationAddress,
+		mi.detail_address as detailAddress,
+		mi.detail,
+		mi.micro_website_url as microWebsiteUrl,
+		mc.telephone AS phone,
+		(SELECT ma.path FROM merchant_attachment ma WHERE
+		ma.merchant_id=#{merchantId} AND ma.attachment_type = 1 and
+		ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+		mi.vip_level as vipLevel,
+		(SELECT count(mp.id) FROM merchant_photo mp,merchant_album ma WHERE
+		ma.merchant_id = #{merchantId} AND mp.album_id = ma.id AND mp.is_del =
+		0) AS photo,
+		(SELECT count(1) from merchant_goods where merchant_id = #{merchantId} AND
+		is_del = 0) AS goods
+		from
+		merchant_info mi
+		LEFT JOIN merchant_contact mc ON mi.id=mc.merchant_id
+		where
+		mi.id = #{merchantId}
+		and mi.is_del = 0
+	</select>
+
+	<!-- 我的店铺列表 -->
+	<select id="myMerchantList" parameterType="java.util.Map" resultType="java.util.HashMap">
+		<!-- SELECT
+			me.user_id AS userId,
+			m.id AS merchantId,
+			m.`name`,
+			m.location_address AS address,
+			m.app_type AS appType,
+			m.catalog_id AS catalogId,
+			ma.path,
+			me.employees_type AS employeesType,
+			me.id AS employeesId,
+			(
+				SELECT
+					group_CONCAT(service_type_id)
+				FROM
+					merchant_service_type
+				WHERE
+					merchant_id = me.merchant_id
+			) AS serviceIds,
+			(select name from catalog where id = m.catalog_id and status = 1) as catalogName,
+			(select auth_type from merchant_auth where merchant_id = m.id and auth_status = 1 order by join_time desc limit 1) as authType
+		FROM
+			merchant_employees me
+		LEFT JOIN merchant_info m ON me.merchant_id = m.id
+		AND m.is_del = 0
+		LEFT JOIN merchant_attachment ma ON me.merchant_id = ma.merchant_id
+		AND ma.attachment_type = 1
+		AND ma.attachment_use = 11
+		WHERE
+			me.is_del = 0
+		AND me.user_id = #{userId}
+		and m.`name` is not null
+		and m.location_address is not null
+		and
+		(
+			SELECT
+				group_CONCAT(service_type_id)
+			FROM
+				merchant_service_type
+			WHERE
+				merchant_id = me.merchant_id
+		) is not null
+		order by me.join_time desc -->
+		
+		SELECT
+			m.id AS merchantId,		
+			me.employees_type AS employeesType
+		FROM
+			merchant_employees me
+		LEFT JOIN merchant_info m ON me.merchant_id = m.id AND m.is_del = 0
+		
+		WHERE
+			me.is_del = 0
+		AND me.user_id = #{userId}
+		and m.`name` is not null
+		and m.location_address is not null
+		and
+		(
+			SELECT
+				group_CONCAT(service_type_id)
+			FROM
+				merchant_service_type
+			WHERE
+				merchant_id = me.merchant_id
+		) is not null
+		order by me.join_time desc
+		   
+		   
+</select>
+
+	<!-- 更新appType -->
+	<update id="updateAppType" parameterType="java.util.Map">
+		update
+		merchant_info
+		set
+		appType = #{appType}
+		where
+		id = #{merchantId}
+		and (appType is null or appType != #{appType})
+	</update>
+
+	<!-- 根据商户ID查询catalog_id -->
+	<select id="selectCatalogId" parameterType="java.util.Map" resultType="java.lang.String">
+		select
+			catalog_id as catalogId
+		from
+			merchant_info mi
+		where
+			mi.id = #{merchantId}
+			and mi.is_del = 0
+	</select>
+
+	<!-- 根据appType查询catalog表的主键ID，用于老版本商户入驻，新老版本的过渡性方案 -->
+	<select id="selectCatalogIdFromCatalog" parameterType="java.lang.String" resultType="java.lang.String">
+		select
+			id as catalogId
+		from
+			catalog
+		where
+			alias = #{appType}
+			and level = 0 
+	</select>
+
+	<select id="getCatalogById" parameterType="java.lang.Integer" resultType="java.util.Map">
+	 	select
+	 		id,
+	 		parentid,
+	 		name,
+	 		icon_path as iconPath,
+	 		big_icon_path as bigIconPath,
+	 		alias,
+	 		leaf,
+	 		demand
+	 	from
+	 		catalog
+	 	where
+	 	    id = #{catalogId}
+	</select>
+
+	<select id="getCataLogs" parameterType="java.lang.Integer" resultType="java.util.Map">
+	 	select
+	 		id,
+	 		name,
+	 		icon_path as iconPath,
+	 		big_icon_path as bigIconPath,
+	 		leaf,
+	 		status,
+	 		alias,
+	 		demand
+	 	from
+	 		catalog
+	 	where
+	 		parentid = #{parentId}
+	 		and status = 1
+	 		and is_del = 0
+	</select>
+
+	<select id="getServiceTypeByCatalogs" parameterType="java.util.Map" resultType="java.util.Map">
+		select
+			st.id,
+			st.service_type_name as name,
+			cs.catalog_id catalogId
+		from
+			service_type st
+			inner join catalog_service cs on st.id = cs.service_id
+		where
+			catalog_id in (${catalogIds})
+			and cs.status = 1
+			and st.is_del = 0
+	</select>
+
+	<!-- 查询商户总数 -->
+	<select id="selectMerchantTotal" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			merchant_info
+	</select>
+
+	<!-- 查询商户剪彩次数 -->
+	<select id="selectCuttingNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			ac.cutting_num as cuttingNum
+		from
+			activity_cutting ac
+		where
+			ac.merchant_id = #{merchantId}
+		limit 1
+	</select>
+
+	<!-- 查询商户是否设置过接单计划 -->
+	<select id="selectAlreadySetOrderPlan" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			order_plan_num as orderPlanNum
+		from
+			already_set_order_plan_merchant
+		where
+			merchant_id = #{merchantId}
+	</select>
+
+	<!-- 记录商户已经设置了接单计划 -->
+	<insert id="insertAlreadySetOrderPlanMerchant" parameterType="java.util.Map">
+      insert into
+		already_set_order_plan_merchant
+      values
+        (
+            #{merchantId},
+            #{planNum}
+        )
+	</insert>
+
+	<!-- 查询商户被多少用户收藏 -->
+	<select id="selectCollectionNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			user_merchant_collection
+		where
+			merchant_id = #{merchantId}
+	</select>
+	
+	<!-- 查询用户某页的收藏列表 -->
+	<select id="getCollections" parameterType="java.util.Map" resultType="java.util.Map">
+		select  umc.user_id,date_format(umc.join_time,'%Y-%m-%d') as join_time,ui.phone,ua.path  from user_merchant_collection umc
+		left join user_info ui on umc.user_id = ui.id
+		left  join user_attachment ua on ui.id = ua.user_id
+		where   umc.merchant_id = #{merchantId} 
+		order by join_time desc    limit #{startNo}, #{pageSize}
+	</select>
+	
+	<!-- 商铺转出金额至钱包，操作用户信息校验 -->
+   <select id="checkTransoutMerchantInfo" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) as totalcount 
+		from 
+			merchant_employees 
+		where merchant_id = #{merchantId} 
+		 and user_id =#{userId} 
+		 and app_type =#{appType}
+		 and phone=#{userPhone}
+		 and is_del = 0 
+		 and employees_type = 1 
+		 and verification_status = 1
+	</select>
+	
+	<!-- 插入商户转出金额至钱包日志 -->
+	<insert id="saveTransoutLogs" parameterType="java.util.Map">
+	  insert into merchant_transout_logs(merchant_id,user_id,trans_amount,trans_status,trans_code,trans_desc,
+									  trans_wallet_batch_no,trans_seq,clientFlag,clientType,version,client_ip,model)
+	  values(#{merchantId},#{userId},#{transAmount},#{transStatus},#{transCode},#{transDesc},#{transWalletBatchNo},
+	         #{trasnSeq},#{clientFlag},#{clientType},#{version},#{clientIp},#{model})
+	</insert> 
+	
+	<select id="selectMerchantNameAndAuthStatusById" parameterType="java.lang.Long" resultType="java.util.HashMap">
+	select
+		name,
+		auth_status
+	 from
+		merchant_info
+	where
+		id = #{merchantId}
+		and is_del = 0
+	</select>
+
+    <!-- 开通增值服务 -->
+    <insert id="openIncreaseService" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO inc_pkg_order
+            (pkg_id, user_id, merchant_id, order_no, trade_no, create_time, trade_amount, effictive_time, pay_type, status
+            <if test="effictive != null">, lose_effictive_time</if>,buyer_no)
+        VALUES
+            (#{pkgId}, #{userId}, #{merchantId}, #{orderNo}, #{tradeNo}, now(), #{tradeAmount}, #{effictiveTime}, #{payType}, 1
+            <if test="effictive != null">, #{effictive}</if>,#{buyerNo})
+    </insert>
+    
+    
+     <!-- 开通增值服务  有确认信息版-->
+    <insert id="addIncService" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO inc_pkg_order
+            (pkg_id, user_id, merchant_id, order_no, trade_no, create_time, trade_amount, effictive_time, pay_type, status
+            <if test="effictive != null">, lose_effictive_time</if>,buyer_no,buyConfirm,innerTradeNo,inviteCode)
+        VALUES
+            (#{pkgId}, #{userId}, #{merchantId}, #{orderNo}, #{tradeNo}, now(), #{tradeAmount}, #{effictiveTime}, #{payType}, 1
+            <if test="effictive != null">, #{effictive}</if>,#{buyerNo},#{buyConfirm},#{innerTradeNo},#{inviteCode})
+    </insert>
+    
+	<insert id="confirmIncServiceBuyRecord"  parameterType="java.util.Map">
+	    UPDATE inc_pkg_order
+	    	set  trade_no=#{tradeNo},order_no=#{orderNo},create_time=now(),effictive_time=#{effictiveTime},status=1
+	    	<if test="effictive != null">,lose_effictive_time=#{effictive}</if>,buyer_no=#{buyerNo},buyConfirm=#{buyConfirm}
+	    WHERE	innerTradeNo=#{innerTradeNo} 
+	</insert>
+
+    <!-- 根据包ID获取核心原子项的有效期 -->
+    <select id="getEffictiveByPkgId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT effictive_days FROM inc_item WHERE id IN (SELECT item_id FROM inc_rs_pkg_item WHERE pkg_id = #{pkgId} AND is_coreItem = 1)
+    </select>
+
+    <!-- 检查是否重复支付 -->
+    <select id="checkIsOpenIncreaseServiceByOrderNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM inc_pkg_order WHERE order_no = #{orderNo}
+    </select>
+    
+    <select id="checkIsOpenIncreaseServiceByInnerTradeNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM inc_pkg_order WHERE innerTradeNo = #{innerTradeNo}
+    </select>
+    
+    <!-- 根据包ID获取包的基本信息 -->
+    <select id="getPkgInfoById" parameterType="java.lang.Integer" resultType="java.util.HashMap">
+        SELECT id, name, service_id, charge,
+			(SELECT service_key FROM inc_service WHERE id = p.service_id) AS serviceKey,
+			(SELECT name FROM inc_service WHERE id = p.service_id) AS serviceName
+		FROM inc_pkg p
+		WHERE
+			<choose>
+				<when test="_parameter == null || _parameter == 0">is_default = 1</when>
+				<otherwise>id = #{pkgId}</otherwise>
+			</choose>
+    </select>
+
+    <!-- 获取所有包含私人助理的包ID -->
+    <select id="getConsultantPkgIds" resultType="java.util.Map">
+        SELECT id FROM inc_pkg WHERE service_id IN (SELECT id FROM inc_service WHERE service_key = 'consultant' AND is_del = 0)
+    </select>
+    
+    <select id="pkgRuleItem" parameterType="java.lang.Integer"  resultType="java.util.Map">
+    	select ipkg.id,ipkg.name, rule.name as ruleName,rule.value as ruleValue,rule.rule_code ruleCode from inc_pkg ipkg
+		inner join inc_rs_pkg_item irpi on ipkg.id = irpi.pkg_id
+		inner join inc_item item on  irpi.item_id = item.id
+		inner join inc_rs_item_rule irir  on item.id = irir.item_id
+		inner join  inc_rule rule on   irir.rule_id = rule.id
+		where ipkg.id = #{pkgId} and item.is_del=0 and rule.is_del=0 
+    </select>
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantGoodsClassificationRelationDao">
+
+  <!-- 商品分类关联的保存 -->
+  <insert id="insertGoodsClassificationRelation" parameterType="java.util.List">
+      insert into merchant_goods_classification_relation
+          (
+              merchant_id,
+              classification_id,
+              goods_id
+          )
+      values
+          <foreach collection="list" item="item" index="index" separator=",">
+          (
+              #{item.merchantId},
+              #{item.classificationId},
+              #{item.goodsId}
+          )
+          </foreach>
+  </insert>
+
+  <!-- 一个分类下的商品ID对应的所有商品ID集查询 -->
+  <select id="selectAllGoodsIdByclassificationId" parameterType="java.util.Map" resultType="java.lang.Long">
+      select
+          goods_id
+      from
+          merchant_goods_classification_relation
+      where
+          goods_id in (select goods_id from merchant_goods_classification_relation where classification_id = #{classificationId})
+  </select>
+
+  <!-- 根据分类ID删除商品分类关联 -->
+  <delete id="deleteRelationByClassificationId" parameterType="java.util.Map">
+      delete from
+          merchant_goods_classification_relation
+      where
+          classification_id = #{classificationId}
+  </delete>
+
+  <!-- 根据商品ID删除商品分类关联 -->
+  <delete id="deleteRelationByGoodsId" parameterType="java.util.List">
+      delete from
+          merchant_goods_classification_relation
+      where
+<!--           instr(CONCAT(#{goodsId},','),CONCAT(goods_id,','))>0 -->
+			goods_id in 
+  	<foreach collection="list" item="goodsId" index="index" open="("   
+        separator="," close=")">   
+        #{goodsId}   
+    </foreach>   
+  </delete>
+
+  <!-- 根据分类ID和商品ID删除单个商品分类关联 -->
+  <delete id="deleteRelation" parameterType="java.util.Map">
+      delete from
+          merchant_goods_classification_relation
+      where
+          classification_id = #{classificationId}
+		  and goods_id = goodsId
+  </delete>
+</mapper>
+

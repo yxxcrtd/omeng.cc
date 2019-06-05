@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IFeedbackDao">
+	<!-- 更新用户的地址信息 -->
+	<insert  id="addFeedback" useGeneratedKeys="true" keyProperty="id" parameterType="java.util.Map" >
+	    insert into feedback(
+	    	customer_type, 
+	    	customer_id,
+	    	phone,
+	    	feedback_type,
+	    	content,
+	    	feedback_time,
+	    	app_type
+	    )values(
+	  		#{customerType},
+	  		#{customerId},
+	    	#{phone},
+	  		#{feedbackType},
+	  		#{content},
+	  		now(),
+	  		#{appType}
+  		)
+	</insert >
+	<insert  id="addFeedbackAttachment" parameterType="java.util.Map" >
+	    insert into feedback_attachment(
+	    	feedback_id, 
+	    	path
+	    )values
+	    	<foreach collection="picturePaths" item="path" index="index" separator=",">
+               (#{feedbackId}, #{path})
+           </foreach>
+	</insert >
+    
+  <select id="getBossUserIdByMerchantId" resultType="Long" parameterType="java.util.Map">
+  	select 
+  		user_id as userId 
+  	from
+  		merchant_employees
+  	where 
+  		merchant_id = #{merchantId}
+  		and employees_type=1
+  		and is_del=0
+  </select>
+</mapper>

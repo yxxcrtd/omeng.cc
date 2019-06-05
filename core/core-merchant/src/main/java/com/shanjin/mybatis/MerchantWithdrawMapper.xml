@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantWithdrawDao">
+
+  <!-- 商户已绑定的提现账户数量 -->
+  <select id="selectWithdrawNoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_withdraw mw
+      where
+          mw.merchant_id = #{merchantId}
+          and mw.app_type = #{appType}
+          and is_del=0
+  </select>
+
+  <!-- 商户已绑定的提现账户信息查询 -->
+  <select id="selectWithdrawNo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          d.id as bankId,
+          d.dict_value as bankName,
+          da.path as bankIcon,
+          mw.id as withdrawId,
+          mw.withdraw_no as withdrawNo,
+          right(mw.withdraw_no, 4) as withdrawNoLast4
+      from
+          merchant_withdraw mw
+          inner join dictionary d on mw.withdraw = d.id
+		  left join dictionary_attachment da on da.dictionary_id=d.id
+      where
+          mw.merchant_id = #{merchantId}
+          and mw.app_type = #{appType}
+          and d.is_del = 0
+          and mw.is_del=0
+      order by
+          withdrawNo
+  </select>
+
+  <!-- 绑定提现账户的信息保存 -->
+  <insert id="insertMerchantWithdraw" parameterType="java.util.Map">
+      insert into
+          merchant_withdraw
+      (
+          merchant_id,
+          real_name,
+          ID_No,
+          withdraw,
+          withdraw_no,
+          app_type
+      )
+      values
+      (
+          #{merchantId},
+          #{realName},
+          #{IDNo},
+          #{withdraw},
+          #{withdrawNo},
+          #{appType}
+      )
+  </insert>
+  <!-- 解除银行卡绑定  王瑞-->
+  <update id="unbindBankCard" parameterType="Long">
+  		UPDATE 
+  			merchant_withdraw
+  		SET 
+  			is_del=1
+  		WHERE
+  			id=#{withdrawId}
+  </update>
+  <!-- 修改支付密码  王瑞 -->
+  <update id="updPayPassword" parameterType="java.util.Map">
+  		UPDATE
+  			merchant_info
+  		SET
+  			money_password=#{newPayPassword}
+  		WHERE
+  			id=#{merchantId}
+  </update>
+   <!-- 找回密码基本信息验证  王瑞 -->
+  <select id="isExistOfWithdraw" resultType="Integer" parameterType="java.util.Map">
+  		SELECT 
+  			COUNT(1)
+  		FROM 
+  			merchant_withdraw
+  		WHERE
+  			app_type=#{appType}
+  			AND merchant_id=#{merchantId}
+  			AND real_name=#{realName}
+  			AND ID_No=#{IDNo}
+  			AND withdraw_no=#{cardNo}
+  			AND is_del=0
+  </select>
+  <select id="selectWithdrawNoByCardNo" resultType="Integer" parameterType="Map">
+  	select 
+  		count(1)
+  	from 
+  		merchant_withdraw
+  	where 
+  		app_type=#{appType}
+  		AND merchant_id=#{merchantId}
+  		and withdraw_no=#{withdrawNo}
+  		and is_del = 0
+  </select>
+  
+  <select id="getAllMoney" resultType="java.math.BigDecimal" parameterType="java.util.Map">
+  	select 
+  		IFNULL(sum(payment_price),0) as allMoney
+  	from 
+  		merchant_payment_details
+  	where 
+  		merchant_id=#{merchantId}
+  		and payment_time &lt; #{time}
+  		and payment_type !=1
+  </select> 
+   <select id="getMoneyByTime" resultType="java.math.BigDecimal" parameterType="java.util.Map">
+  	select 
+  		IFNULL(sum(payment_price),0) as allMoney
+  	from 
+  		merchant_payment_details
+  	where 
+  		merchant_id=#{merchantId}
+  		and payment_time >= #{startTime}
+  		and payment_time &lt; #{endTime}
+  		and payment_type !=1
+  </select> 
+  
+  <select id="getAllWithdrawMoney" resultType="java.math.BigDecimal" parameterType="java.util.Map">
+	  	select 
+	  		IFNULL(sum(withdraw_price),0) as allWithdrawMoney
+	  	from 
+	  		merchant_apply_withdraw_record
+	  	where 
+	  		merchant_id=#{merchantId}
+	  		and withdraw_status !=0 
+  </select>
+  
+  
+  <select id="isDisableWithDraw" resultType="Integer">
+	  	select count(1) from configuration_info where config_key="opay_disable_withdraw"  		 
+  </select>
+  
+  
+</mapper>
+

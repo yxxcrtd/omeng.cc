@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IServiceTypeDao">
+
+  <!-- 
+  	表     名：service_type						服务类型
+  	表描述：
+  		id									主键
+  		service_type_name					服务类型名称
+  		app_name							行业名称
+  		app_type							行业类型
+  		icon_path							图片路径
+  		parent_id							父id
+  		is_del								是否删除
+  		is_leaves							是否叶子节点
+   -->
+  
+  <!-- 获得一级服务类型  -->
+  <select id="getParentServiceType" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select 		
+		a.id as serviceType, 
+		a.service_type_name as servicName, 
+		<!-- a.service_type_id as serviceType,  -->
+		a.is_leaves as isLeaves 
+	from service_type a 
+	where a.app_type=#{appType} 
+		and a.is_del=0 
+		and a.parent_id is NULL
+  </select>
+  
+  <!-- 获得子服务类型 -->
+  <select id="getChildServiceType" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select 
+		a.id as serviceType, 
+		a.service_type_name as servicName, 
+		<!-- a.service_type_id as serviceType, --> 
+		a.is_leaves as isLeaves 
+	from service_type a 
+	where a.app_type=#{appType} 
+		and a.is_del=0 
+		and a.parent_id=#{parentId}
+  </select>
+
+  <!-- 获得子服务类型 -->
+  <select id="getYxtServiceType" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select 
+    	a.id as serviceType,
+		a.service_type_name as serviceName, 
+		a.service_type_id as serviceType,
+		(select path from service_type_attachment where service_type_id = a.id and attachment_style = 'showIcon' and is_del = 0) as path,
+		a.parent_id as parentId,
+		a.is_leaves as isLeaves 
+	from service_type a 
+	where a.app_type=#{appType}
+		and a.is_del=0
+		and a.parent_id is not null
+  </select>
+  
+  <select id="getAmsServiceType" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">
+    select  
+    
+    	si.id as service_type_id,
+    	<!-- si.service_type_id, -->
+    	si.service_type_name,
+    	si.app_name,
+    	si.app_type,
+    	attach.attachment_style,
+    	attach.path  
+    from   
+    	service_type  si  
+    inner join service_type_attachment attach on si.id = attach.service_type_id
+    where  
+    	si.app_type=#{appType} 
+    	and si.is_del=0 
+    	and si.parent_id is  null  
+    order by si.id <!-- si.service_type_id -->
+  </select>
+    
+  <!-- 获得订单的服务类型 -->
+  <select id="selectOrderServiceType" parameterType="java.util.Map" resultType="Long">
+      select
+          service_type_id 
+      from
+          order_info 
+      where
+          id=#{orderId} 
+      and 
+          is_del=0
+  </select>
+  <select id="getServiceShowIconImg" parameterType="java.util.Map" resultType="java.util.HashMap">
+  		select 
+  			service_type_id as serviceTypeId,
+  			path 
+  		from 
+  			service_type_attachment 
+  		where 
+  			attachment_style='showIcon'
+  </select>
+  
+  <select id="getServiceByIsearch" parameterType="java.util.Map" resultType="java.lang.Long">
+  		select 
+  			id 
+  		from 
+  			service_type
+  		where 
+  			service_type_id = #{serviceTypeId} and app_type = #{appType} and is_del = 0
+  			
+  </select>
+  <select id="getAllServiceType" resultType="java.util.Map" >
+  	SELECT 
+  		st.id as serviceTypeId,
+  		st.service_type_name as serviceTypeName,
+  		st.service_nick as serviceNick,
+  		sta.path as path
+  	FROM 
+  		service_type st
+  		left join service_type_attachment sta ON sta.service_type_id = st.id  and attachment_type=1 and attachment_style='orderIcon' AND sta.is_del=0  
+  	WHERE 
+  		st.is_del=0
+  </select>
+  
+  <select id="getCatalogByParentId" resultType="java.util.Map" parameterType="java.util.Map">
+  select ca.id,ca.alias,ca.name,ca.parentid from catalog ca
+  		where  ca.parentid=#{parentId}  			  	
+  </select>
+    <select id="getCatalogByAlias" resultType="java.util.Map" parameterType="java.util.Map">
+  select ca.id,ca.alias,ca.name,ca.parentid from catalog ca
+  		where  ca.alias=#{alias}  			  	
+  </select>
+</mapper>
+

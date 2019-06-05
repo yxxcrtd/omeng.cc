@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantGoodsClassificationDao">
+
+  <!-- 商品分类的信息查询 -->
+  <select id="selectGoodsClassificationInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          mgc.id as classificationId,
+          mgc.classification_name as classificationName,
+          (select count(1) from merchant_goods_classification_relation r where classification_id = mgc.id 
+          	and exists(select 1 from merchant_goods g 
+          				where g.id= r.goods_id
+				      	<if test="isAll != null and isAll == 0">
+				      		and g.is_out = 0
+				      	</if>
+          				and g.is_del=0 
+          				and g.merchant_id=#{merchantId})
+          ) as goodsTotal
+      from
+          merchant_goods_classification mgc
+      where
+          mgc.merchant_id = #{merchantId}
+          and mgc.is_del = 0
+      order by join_time asc
+  </select>
+
+	<select id="selectIsOutGoodsCount" parameterType="java.util.Map"
+		resultType="java.lang.Integer">
+		SELECT 
+		  COUNT(1) 
+		FROM
+		  merchant_goods_classification_relation r 
+		WHERE EXISTS 
+		  (SELECT 
+		    1 
+		  FROM
+		    merchant_goods g 
+		  WHERE g.id = r.goods_id 
+		    AND g.is_out = 1 
+		    AND g.is_del = 0 
+		    AND g.merchant_id = #{merchantId})
+	</select>
+
+  <!-- 商品分类数量查询 -->
+  <select id="selectGoodsClassificationNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          COUNT(1)
+      from
+          merchant_goods_classification
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+  </select>
+
+  <!-- 商品分类名字查询 -->
+  <select id="selectGoodsClassificationName" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          classification_name as classificationName
+      from
+          merchant_goods_classification
+      where
+          merchant_id = #{merchantId}
+          <if test="classificationId != null">
+          and id != #{classificationId}
+          </if>
+          and is_del = 0
+  </select>
+
+  <!-- 商品分类的保存 -->
+  <insert id="insertGoodsClassification" parameterType="java.util.Map">
+      insert into merchant_goods_classification
+           (
+               merchant_id,
+               classification_name,
+               join_time,
+               is_del
+           )
+      values
+           (
+               #{merchantId},
+               #{classificationName},
+               now(),
+               0
+           )
+  </insert>
+
+  <!-- 重命名商品分类 -->
+  <update id="updateGoodsClassificationName" parameterType="java.util.Map">
+      update
+          merchant_goods_classification
+      set
+          classification_name = #{classificationName}
+      where
+          id = #{classificationId}
+          and is_del = 0
+  </update>
+
+  <!-- 删除商品分类（将商品分类记录的is_del设置成1）  -->
+  <update id="updateGoodsClassificationStatus" parameterType="java.util.Map">
+      update
+          merchant_goods_classification
+      set
+          is_del = 1
+      where
+          id = #{classificationId}
+  </update>
+</mapper>
+

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>    
+        <!-- 要调用的工作类 -->
+        <bean id="visitLogImportJob" class="com.shanjin.log.analysis.job.VisitLogImportJob"></bean>
+        
+        <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="visitLogImportJobTask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="visitLogImportJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+        <!-- 定义触发时间 -->
+        <bean id="visitLogImportTime" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="visitLogImportJobTask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                <value>${VISIT_LOG_IMPORT_JOB_CRON_EXP}</value>
+            </property>
+        </bean>
+        
+        <!-- 总管理类 如果将lazy-init='false'那么容器启动就会执行调度程序  -->
+        <bean id="startQuertz" lazy-init="false" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+            <property name="triggers">
+                <list>
+                    <ref bean="visitLogImportTime"/>
+                </list>
+            </property>
+        </bean>
+    
+</beans>

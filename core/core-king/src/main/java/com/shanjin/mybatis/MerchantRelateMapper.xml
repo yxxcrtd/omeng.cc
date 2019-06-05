@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.MerchantRelateMapper">
+
+    <select id="getBasicMerchantInfo" resultType="map">
+        select t.name as name,
+                a.path as photoPath
+        from merchant_info t left join merchant_attachment a on a.merchant_id = t.id and  a.attachment_type =1 and a.attachment_use =11
+        where t.id = #{merchantId}
+    </select>
+
+
+    <select id="getDetailMerchantInfo" resultType="map">
+        select
+            t.id as merchantId,
+            e.user_id as userId,
+            t.name as merchantName,
+            t.location_address as merchantAddress,
+            if(t.app_type='gxfw',0,1)as merchantType,
+            e.phone as userPhone,
+            t.province as province,
+            t.city as city,
+            t.longitude as lng,
+            t.latitude as lat,
+            c.name as serviceAppType,
+            a.path as image,
+            t.auth_type as authType,
+            au.auth_time as authTime
+          from merchant_info t
+          join merchant_employees e on t.id=e.merchant_id and e.employees_type =1
+          left join merchant_attachment a on a.merchant_id = t.id and  a.attachment_type =1 and a.attachment_use =11
+          left join merchant_auth au on au.merchant_id = t.id and au.auth_status=1
+          join catalog c on c.alias = t.app_type
+          where t.id=#{merchantId}
+    </select>
+</mapper>

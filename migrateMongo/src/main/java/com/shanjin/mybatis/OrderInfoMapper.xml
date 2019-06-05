@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IOrderDao">
+
+   <!--   查询需要进行迁移的已取消订单XX条  -->
+  <select id="getCancelOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		select id,join_time from order_info 
+		where ((join_time &gt; #{last_migrateTime} and  join_time &lt; #{end_migrateTime} ) 
+			   or   (join_time = #{last_migrateTime} and id &gt; #{lastOrderId} ) ) 
+		      and order_status=7  
+		      order by join_time,id limit #{pageSize}
+  </select>
+  
+  
+  <!--   查询需要进行迁移的无报价方案的订单前xx条  -->
+  <select id="getNoBidOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		select id,service_time from order_info 
+		where ((service_time &gt; #{last_migrateTime} and  service_time &lt; #{end_migrateTime} ) or 
+		      ( service_time = #{last_migrateTime} and id &gt; #{lastOrderId} ) )
+		      and order_status=6  
+		      and not exists (select 1 from merchant_plan where order_id=order_info.id)
+		      order by service_time,id limit #{pageSize}
+  </select>
+  
+  
+  
+   <!--   查询需要进行迁移的未选择报价方案的订单前xx条  -->
+  <select id="getNoChoosedOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+      SELECT DISTINCT * FROM 
+   		(select oi.id,oi.service_time from order_info  oi
+		inner join merchant_plan mp on oi.id = mp.order_id
+		where ((service_time &gt; #{last_migrateTime} and  service_time &lt; #{end_migrateTime} ) or
+			   ( service_time = #{last_migrateTime} and oi.id &gt; #{lastOrderId} ) )
+		      and order_status=6  
+		      order by service_time,id limit #{pageSize}
+		) oderHasPlan
+  </select>
+  
+  
+    <!--   查询需要进行迁移已完成订单前xx条  -->
+  <select id="getNormalOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+		select id,deal_time from order_info 
+		where ((deal_time &gt; #{last_migrateTime} and  deal_time &lt; #{end_migrateTime} ) or
+			   (deal_time = #{last_migrateTime} and  id &gt; #{lastOrderId} ) )
+		      and order_status=5  
+		      order by deal_time,id limit #{pageSize}
+
+  </select>
+  
+  
+  
+  
+  <!--   查询订单概要信息  -->
+  <select id="getOrderSummaryList" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+       SELECT
+		oi.id AS _id,
+		oi.user_id  as userId,
+    	(select phone  from user_info where id = oi.user_id) as userPhone,
+		(select path  from  user_attachment ua  where  ua.user_id = oi.user_id and ua.attachment_use=11  and ua.is_del=0 and ua.attachment_type=1
+    	) as userIcon,
+    	oi.order_no as orderNo,
+		oi.service_type_id AS serviceTypeId,
+		oi.order_status AS orderStatus,
+	  	oi.join_time as joinTime,
+		oi.merchant_id  as merchantId,
+		oi.merchant_plan_id as merchantPlanId,
+	  	oi.receive_employees_id as receiveEmployeeId,
+		oi.confirm_time  as confirmTime,
+		oi.order_pay_type as orderPayType,
+		oi.deal_time  as dealTime,
+		oi.order_price as orderPrice,
+    	oi.deposit,
+		oi.order_actual_price as orderActualPrice,
+		oi.price_unit as priceUnit,
+		merchant_actual_price as merchantActualPrice,
+		(SELECT discount_price from merchant_plan where id=oi.merchant_plan_id) as merchantPlanPrice,
+		oi.vouchers_id  as vouchersId,
+	  	oi.vouchers_price as voucherPrice,
+		(SELECT sta.path FROM service_type_attachment sta,service_type st WHERE sta.service_type_id=st.id AND st.id=oi.service_type_id AND st.app_type=oi.app_type AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0 and st.is_del=0 ) AS appIcon,
+		(SELECT service_type_name FROM service_type WHERE  id = oi.service_type_id AND is_del = 0 ) AS serviceTypeName,
+		(SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+		(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id) AS evaluate,
+		oi.service_time AS serviceTime,
+		oi.address As address,
+    	oi.is_del as isDel,
+	  	oi.app_type as appType,
+    	oi.ip,
+    	oi.province,
+		oi.city,
+    	oi.longitude,
+    	oi.latitude,
+    	oi.catalog_id as catalogId,
+    	oid.json_detail as jsonDetail,
+    	oi.is_immediate as isImmediate
+	  FROM
+		order_info oi
+	  INNER JOIN order_info_detail oid on oid.order_id = oi.id  
+	  LEFT JOIN  merchant_info mi  on oi.merchant_id = mi.id 
+	  WHERE oi.id in ( ${ids} )
+	  ORDER BY	 oi.${orderColumn},oi.id 
+    </select> 
+    
+    
+    
+     <!-- 订单详情附加信息 -->
+  	 <select id="selectOrderAttachment" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+    	  select order_id, attachment_type AS type, path from order_attachment where order_id in ( ${orderId} )
+    	  order by order_id
+  	 </select>
+  	 
+  	 
+  	 
+  	  <!--   查询某次取消状态迁移记录需要清理的订单ids   	 --> 
+  	  <select id="getNeedPurifyCancelOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		select id,join_time,user_id from order_info 
+		where ( join_time &lt; #{last_migrateTime}  or  (join_time = #{last_migrateTime} and id &lt; #{lastOrderId} ) )
+		      and order_status=7 
+  	  </select>
+  	  
+  	  
+  	   <!--   查询某次无报价方案迁移记录需要清理的订单ids   	 --> 
+  	  <select id="getNeedPurifyNobidOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		select id,join_time,user_id from order_info 
+		where ( service_time &lt; #{last_migrateTime}  or  (service_time = #{last_migrateTime} and id &lt; #{lastOrderId} ) )
+		      and order_status=6  and  not exists (select 1 from merchant_plan where order_id=order_info.id)
+  	  </select>
+  	  
+  	  
+  	  <!--   查询某次无报价方案迁移记录需要清理的订单ids   	 --> 
+  	  <select id="getNeedPurifyNochoosedOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		  SELECT DISTINCT id,user_id FROM 
+   			(select oi.id,oi.service_time,oi.user_id from order_info  oi
+			inner join merchant_plan mp on oi.id = mp.order_id
+			where (service_time &lt; #{last_migrateTime}  or
+			   		( service_time = #{last_migrateTime} and oi.id &lt; #{lastOrderId} ) )
+		      and order_status=6  
+		) oderHasPlan
+  	  </select>
+
+
+	  <!--   查询某次正常订单迁移记录需要清理的订单ids   	 --> 
+  	  <select id="getNeedPurifyNormalOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   		 select id,deal_time,user_id from order_info 
+		  where ( deal_time &lt; #{last_migrateTime}  or
+			      (deal_time = #{last_migrateTime} and  id &lt; #{lastOrderId} ) )
+		      and order_status=5  
+  	  </select>
+  	 
+  	 
+  	  <delete id="delUserOrderAttachments" parameterType="java.util.Map">
+  	  		delete from order_attachment where order_id in (${ids})
+  	  </delete>
+  	  
+  	  
+  	  <delete id="delUserOrderDetail" parameterType="java.util.Map">
+  	  		delete from order_info_detail where order_id in (${ids})
+  	  </delete>
+  	  
+  	  
+  	  <delete id="delUserOrderByIds" parameterType="java.util.Map">
+  	  		delete from order_info where id in (${ids})
+  	  </delete>
+</mapper>
+

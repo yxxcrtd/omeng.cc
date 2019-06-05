@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IUserCPlanDao">
+
+	<!-- 注册新用户,填写基本手机号和验证码、验证时间 -->
+	<insert id="insertUserInfoWithVerification" parameterType="java.util.Map" >
+  		insert into 
+  		    user_info(id,name,sex,phone, verification_code,join_time,verification_time,is_verification,is_del,user_key,ip,province,city
+  		    <if test="havePlatform == 1">
+                ,platform
+            </if>) 
+  		values(#{userId},#{name},#{sex},#{phone}, #{verificationCode},now(),now(),1,0,#{userKey},#{ip},#{province},#{city}
+  		  	<if test="havePlatform == 1">
+                ,#{platform}
+            </if>)
+	</insert>
+	
+	<!-- 根据手机号获取用户的信息 -->
+	<select id="getUserInfoByPhone" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            ui.*,
+            ua.path as portraitPath
+        from 
+            user_info ui 
+            left join user_attachment ua 
+        on 
+        	ui.id=ua.user_id and
+            ua.attachment_type=1 and 
+            ua.attachment_use=11 and 
+            ua.is_del=0
+        where 
+            ui.phone=#{phone} and
+            ui.is_del=0 
+    </select>  
+    
+
+</mapper>

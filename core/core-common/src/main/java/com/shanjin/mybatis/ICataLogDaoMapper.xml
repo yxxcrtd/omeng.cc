@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.ICataLogDao">
+  
+  <select id="getCataLogs"   parameterType="java.lang.Integer"  resultType="java.util.Map">
+  	 	select id,name,leaf,alias,demand from catalog where  parentid = #{parentId} and status=1 and is_del=0 order by rank asc
+  </select>
+  
+  <select id="getCataLogsForOrder"   parameterType="java.lang.Integer"  resultType="java.util.Map">
+  	 	select id,name,leaf,alias,demand from catalog_for_order where  parentid = #{parentId} and status=1 and is_del=0 order by rank asc
+  </select>
+  
+  <select id="getServiceTypeByCatalogs"   parameterType="java.util.Map"  resultType="java.util.Map">
+  	 	SELECT
+			st.id,
+			st.service_type_name AS name,
+			cs.catalog_id catalogId
+		FROM
+			service_type st
+		INNER JOIN catalog_service cs ON st.id = cs.service_id
+		WHERE
+			catalog_id IN (${ catalogIds })
+		AND STATUS = 1
+  </select>
+    <select id="getServiceTypeByCatalogsForOrder"   parameterType="java.util.Map"  resultType="java.util.Map">
+  	 	SELECT
+			st.id,
+			st.service_type_name AS name,
+			cs.catalog_id catalogId
+		FROM
+			service_type st
+		INNER JOIN catalog_service_for_order cs ON st.id = cs.service_id
+		WHERE
+			catalog_id IN (${ catalogIds })
+		AND STATUS = 1
+  </select>
+  
+  <select id="getCatalogById"   parameterType="java.lang.Integer"  resultType="java.util.Map">
+  	 	select id,level,parentid,name,alias,leaf,demand from catalog where   id = #{catalogId} 
+  </select>
+  
+  
+  <select id="getCatalogByServiceId"   parameterType="java.lang.Integer"  resultType="java.util.Map">
+  		select id,parentid,name,level,alias,leaf,demand,icon_path as iconPath,big_icon_path as bigIconPath from catalog  where  id 	in (
+  	 				select  catalog_id  from  catalog_service  where   service_id = #{serviceId}
+  	 	 )
+  </select>
+  
+  <select id="getServicesInfoByServiceIds"   parameterType="java.util.Map"  resultType="java.util.Map">
+  		select id as serviceId,service_type_name as serviceName,service_nick alias  from service_type 
+  		 where  id 	in 	( ${ids})
+  </select>  
+  
+  
+   <select id="getCataLogsByAppType"   parameterType="java.util.Map"  resultType="java.util.Map">
+  	 	select id,parentid,name,alias,leaf,demand,icon_path as iconPath,big_icon_path as bigIconPath from catalog where  alias in ( ${appTypes})  and   level=0 and status=1 
+  </select>
+  
+  <select id="getPersonalCatalog"    resultType="java.util.Map">
+  	 	select id,parentid,name,alias,leaf,demand from catalog where   alias = 'gxfw' and level = 0
+  </select>
+  
+  
+   <select id="getMerchantatalog"    resultType="java.util.Map">
+  	 	select id,parentid,name,alias,leaf,demand,icon_path as iconPath,big_icon_path as bigIconPath  from catalog
+  	 	 where   alias != 'gxfw' and level = 0 and  status=1 and is_del=0  order by rank
+  </select>
+   
+  
+  <select id="getTopCatalogNumber"    resultType="java.lang.Long">
+  	 	select count(1) from catalog where parentid =
+ 		(select id from catalog where  alias = 'gxfw' and level = 0 and is_del=0 ) and  status=1 and is_del=0
+  </select>
+  
+  
+  <select id="getPersonalCatalogByPage"     parameterType="java.util.Map"  resultType="java.util.Map">
+  	 	select id,parentid,name,alias,leaf,demand,icon_path as iconPath,big_icon_path as bigIconPath from catalog  where  parentid=
+ 		(select id from catalog where  alias = 'gxfw' and level = 0 and is_del=0) and  status=1 and is_del=0
+  	 	 limit #{rows}, #{pageSize} 
+  </select>
+  
+  
+  <select id="getPersonalCatalogByKeywords"     parameterType="java.util.Map"  resultType="java.util.Map">
+  	 	select id,parentid,name,alias,leaf,demand,icon_path as iconPath,big_icon_path as bigIconPath from catalog  where  parentid=
+ 		(select id from catalog where  alias = 'gxfw' and level = 0 and is_del=0) and  status=1  and name like '%${keyword}%' and is_del=0
+  </select>
+  
+  
+   <select id="getPersonalServiceAndCatalogByKeywords"     parameterType="java.util.Map"  resultType="java.util.Map">
+  	 		select cs.catalog_id  as catalogId, c.name as cataLogName,c.leaf,c.icon_path,c.big_icon_path,c.demand, c.alias,c.parentid, cs.service_id as id, 
+  					st.service_type_name  name from catalog_service cs 
+  				inner join service_type st on cs.service_id=st.id and st.is_del=0
+  				inner join catalog  c  on  cs.catalog_id = c.id
+  				where  cs.catalog_id in  (
+								select id  from catalog  where  parentid=
+ 									(select id from catalog where  alias = 'gxfw' and level = 0 and is_del=0 ) and  status=1 and is_del=0
+  						) and  catalog_id not in (${excludes})
+  						and  st.service_type_name like '%${keyword}%'
+  				order by catalogId,id 
+  </select>
+  
+  
+  
+  
+  <select id="getCatalogList"  parameterType="java.util.Map"   resultType="java.util.Map">
+  	 	select id,name ,icon_path as icon,0 AS isService,is_third AS isThird,link AS url
+        from catalog_for_order where  status=1 
+        <if test="catalogId == ''">
+            and level = -1 
+        </if>
+        <if test="catalogId != ''">
+            and parentid = #{catalogId} 
+        </if>
+  </select>
+  
+  <select id="getServiceList"  parameterType="java.util.Map"   resultType="java.util.Map">
+  	select st.id,st.service_type_name as name,sta.path AS icon,1 AS isService,0 AS isThird
+    from service_type st LEFT JOIN service_type_attachment sta 
+    ON st.id=sta.service_type_id AND sta.attachment_type=1 AND sta.attachment_style='orderIcon'
+	inner join  catalog_service_for_order cs on st.id = cs.service_id where  status=1 and  catalog_id=#{catalogId}
+
+  </select>
+  
+</mapper>
+

@@ -1,0 +1,1100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IUserOrderDao">
+    
+    <!-- 插入订单的附件信息  -->
+	<insert id="insertOrderAttachment" parameterType="java.util.Map" >
+  		insert into 
+  		    order_attachment(order_id, attachment_type,attachment_use,path,join_time,is_del) 
+  		values(#{orderId},#{attachmentType},#{attachmentUse},#{path},now(),0)
+	</insert>
+    
+    <!-- 插入公共的订单信息  -->
+	<insert id="insertCommonOrder" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="orderId">
+  		insert into order_info(
+  			user_id,
+  			order_no,
+  			service_type_id,
+  			merchant_id,
+  			order_status,
+  			join_time,
+  			app_type,
+  			ip,
+  			province,
+  			city,
+  			receive_employees_id,
+  			service_time,
+  			longitude,
+  			latitude,
+  			address,
+  			is_Immediate
+  		) values(
+  			#{userId},
+  			#{orderNo},
+  			#{serviceType},
+  			#{merchantId},
+  			#{orderStatus},
+  			now(),
+  			#{appType},
+  			#{ip},
+  			#{province},
+  			#{city},
+  			#{receiveEmployeesId},
+  			<choose>
+  				<when test="isImmediate != '' and isImmediate == '1'">
+  			now(),
+  				</when><otherwise>
+  			#{serviceTime},
+  				</otherwise>
+  			</choose>
+  			#{longitude},
+  			#{latitude},
+  			#{address},
+  			#{isImmediate}
+  		)
+	</insert>
+	
+	 <!-- 验证该手机号是否已经存在 -->
+	<select id="checkUserStatisticsIsEmpty" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_statistics us,user_info ui
+        where 
+            ui.id=#{userId} and 
+           <!--  us.app_type=#{appType} and -->
+            ui.is_del=0 and
+            us.user_id=ui.id
+    </select>  
+	
+	<!-- 获取订单的用户ID  -->
+    <select id="getOrderUserId" parameterType="java.util.Map" resultType="Long">  
+        select 
+            user_id
+        from 
+            order_info 
+        where 
+            id=#{orderId}
+    </select>
+
+    <!-- 根据订单ID获取订单编号 -->
+    <select id="getOrderNoByOrderId" parameterType="java.util.Map" resultType="String">
+        SELECT order_no FROM order_info WHERE id = #{orderId}
+    </select>
+	
+	<!-- 获取订单的商户ID  -->
+    <select id="getOrderMerchantId" parameterType="java.util.Map" resultType="Long">  
+        select 
+            merchant_id
+        from 
+            order_info 
+        where 
+            id=#{orderId}
+    </select> 
+    
+    <!-- 获取订单的订单类型ID  -->
+    <select id="getOrderServiceTypeId" parameterType="java.util.Map" resultType="Long">  
+        select 
+            service_type_id
+        from 
+            order_info 
+        where 
+            id=#{orderId}
+    </select> 
+	
+	 <!-- 获取订单方案的的接单人ID  -->
+    <select id="getMerchantPlanReceiveEmployeesId" parameterType="java.util.Map" resultType="Long">  
+        select
+          receive_employees_id
+        from 
+          merchant_plan
+        where 
+          id=#{merchantPlanId}
+    </select> 
+	
+	 <!-- 获取订单的代金券ID  -->
+    <select id="getOrderVouchersId" parameterType="java.util.Map" resultType="Long">  
+        select
+          vouchers_id
+        from 
+          order_info
+        where 
+          id=#{orderId}
+    </select> 
+	
+	 <!-- 获得订单金额  -->
+    <select id="getOrderPrice" parameterType="java.util.Map" resultType="Double">  
+        select
+          order_price
+        from 
+          order_info
+        where 
+          id=#{orderId}
+    </select> 
+	
+	<!-- 获得订单实际支付金额  -->
+    <select id="getOrderActualPrice" parameterType="java.util.Map" resultType="Double">  
+        select
+          order_actual_price
+        from 
+          order_info
+        where 
+          id=#{orderId}
+    </select> 
+	
+	<!-- 注册成功之后初始化用户统计信息表 -->
+	<insert id="initUserInfoStatistics" parameterType="java.util.Map">
+  		INSERT INTO user_statistics (
+			user_id,
+			bespeak_frequency,
+			service_frequency,
+			total_pay_price,
+			total_actual_price,
+			app_type
+		) values(
+			#{userId},
+			0,
+			0,
+			0,
+			0,
+			#{appType})
+	</insert>
+	
+	<!-- 更改用户的预约次数统计-->
+	<update id="updateUserSstatisticsBespeak" parameterType="java.util.Map">
+	    update 
+	        user_statistics
+        set 
+            bespeak_frequency =bespeak_frequency+1
+        where 
+            user_id=#{userId}
+            <!--and app_type=#{appType}-->
+	</update>
+    
+	
+	<!-- 获取订单供应商列表  -->
+    <select id="getOrderMerchantPlan" parameterType="java.util.Map" resultType="java.util.HashMap">
+        SELECT
+            DISTINCT 
+			mi.id AS merchantId,
+			mp.id AS planId, 
+			mi.NAME AS merchantName,
+			mi.location_address AS merchantAddress,
+			ma.path AS icoPath,
+			mi.app_type as appType,
+			mi.is_private_assistant as isPrivateAssistant,
+			mp.content as content,
+			mp.price as price,
+			mp.price_unit as priceUnit,
+			mp.deposit,
+			DATE_FORMAT(mp.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+			mp.join_time AS origJoinTime,
+			mp.promise,
+			if(mp.is_offer=1,mp.discount_price,0) as discountPrice,
+			mp.distance as distance,
+			mp.total_count as totalCount,
+			mp.praise_count as praiseCount,
+			CASE
+			WHEN (
+				SELECT
+					count(vouchers_id)
+				FROM
+					merchant_vouchers_permissions 
+				WHERE
+					merchant_id = mi.id
+					and cutoff_time  >  now()
+					and is_del = 0
+			) > 0 THEN
+				1
+			ELSE
+				0
+			END AS useVouchers,
+			(SELECT ms.service_frequency FROM merchant_statistics ms WHERE ms.merchant_id=mi.id <!-- and ms.app_type=#{appType} -->) AS serviceFrequency,
+			(SELECT group_concat(telephone) FROM merchant_contact WHERE merchant_id = mi.id ) AS telephone,
+			(SELECT SUM(total_attitude_evaluation) AS totalAttitudeEvaluation FROM merchant_statistics WHERE merchant_id = mi.id <!-- and app_type=#{appType} -->) AS totalAttitudeEvaluation,
+			(SELECT SUM(total_quality_evaluation) AS totalQualityEvaluation FROM merchant_statistics WHERE merchant_id = mi.id <!-- and app_type=#{appType} -->) AS totalQualityEvaluation,
+			(SELECT SUM(total_speed_evaluation) AS totalSpeedEvaluation FROM merchant_statistics WHERE merchant_id = mi.id <!-- and  app_type=#{appType} -->) AS totalSpeedEvaluation,
+			(select group_CONCAT(path) from merchant_plan_attachment where merchant_plan_id = mp.id and attachment_type = 1 and attachment_use = 11 and is_del = 0) as picturePath,
+			(select group_CONCAT(path) from merchant_plan_attachment where merchant_plan_id = mp.id and attachment_type = 2 and attachment_use = 21 and is_del = 0) as voicePath,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=1 and auth_status=1 ) as enterpriseAuth,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=2 and auth_status=1 ) as personalAuth,
+			mp.receive_employees_id as receiveEmployeesId,
+			(select is_have_goods from catalog where id=mi.catalog_id) as isHaveGoods,
+			mp.is_offer isOffer,
+			mp.is_read isRead,
+			if(mi.app_type='gxfw',1,0) isPersion
+			FROM
+				merchant_info mi
+			INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id and ma.attachment_type = 1 and ma.attachment_use = 11
+			INNER JOIN merchant_plan mp ON mi.id = mp.merchant_id
+			<if test="isOther != null and isOther == 1">
+				and not exists (select 1 from order_info o where o.id=#{orderId} and o.merchant_plan_id=mp.id)
+			</if>
+			WHERE
+				 mp.order_id = #{orderId}
+			<if test="planId != null and planId != ''">
+				and mp.id=#{planId}
+			</if>
+		    <choose>
+	        <when test="sort !=null and sort != ''">
+<!-- 	        20101017需求：按照订单报价价格排序，不管价格单位  CUIJIAJUN-->
+	           ORDER BY mp.discount_price asc,${orderby} ${sort}
+	        </when>
+	        <otherwise>
+	        </otherwise>
+    	    </choose>
+			limit #{startNum}, #{pageSize}
+    </select>  
+    
+    <!-- 获取订单供应商列表总页数  -->
+    <select id="getOrderMerchantPlanTotalPage" parameterType="java.util.Map" resultType="int">  
+      <!-- <![CDATA[
+        SELECT
+            count(1)
+			FROM
+				merchant_info mi
+			INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id
+			INNER JOIN merchant_plan mp ON mi.id = mp.merchant_id
+			WHERE
+				 mp.order_id = #{orderId}
+	]]>  -->
+	
+		SELECT
+	           count(1)
+		FROM
+			merchant_plan mp			
+		WHERE
+			 mp.order_id = #{orderId}
+    </select>  
+    
+    <!-- 获取订单评价信息  -->
+    <select id="getAssessOrder" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            attitude_evaluation as attitudeEvaluation,
+            quality_evaluation as qualityEvaluation,
+            speed_evaluation as speedEvaluation,
+            text_evaluation as textEvaluation
+        from 
+            evaluation 
+        where 
+            order_id=#{orderId}
+    </select>  
+    
+     <!-- 更改商户的统计-->
+	<insert  id="assessOrder" useGeneratedKeys="true" keyProperty="id" parameterType="java.util.Map">
+		insert into evaluation(user_id,order_id,merchant_id,service_type_id,attitude_evaluation,quality_evaluation,speed_evaluation,text_evaluation,join_time,app_type) 
+  		values(#{userId},#{orderId},#{merchantId},#{serviceTypeId},#{attitudeEvaluation},#{qualityEvaluation},#{speedEvaluation},#{textEvaluation}, now(), #{appType})
+	</insert >
+	
+    <!-- 更改商户的服务统计-->
+	<update  id="updateAssessMerchantStatistics" parameterType="java.util.Map">
+	    update 
+	        merchant_statistics
+        set 
+            total_attitude_evaluation=total_attitude_evaluation+#{attitudeEvaluation},
+            total_quality_evaluation=total_quality_evaluation+#{qualityEvaluation},
+            total_speed_evaluation=total_speed_evaluation+#{speedEvaluation},
+            total_count_evaluation=total_count_evaluation+1
+        where 
+            merchant_id=#{merchantId} <!-- and app_type=#{appType} -->
+	</update >
+    
+	<!-- 为订单选择商户方案-->
+	<update  id="chooseMerchantPlan" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+            merchant_id =#{merchantId},
+            merchant_plan_id=#{merchantPlanId},
+            order_status=#{orderStatus},
+            receive_employees_id=#{receiveEmployeesId},
+            confirm_time=now(),
+            order_price=#{orderPrice},
+            price_unit=#{priceUnit}
+        where 
+            id=#{orderId}
+            and merchant_id is null
+            and merchant_plan_id is null
+            and is_del=0
+            and order_status=2
+	</update >
+    
+     <!-- 获取用户此次订单可以使用的代金券的内容 -->
+	<select id="getUserAvailablePayVouchersInfo" parameterType="java.util.Map" resultType="java.util.HashMap">  
+      	SELECT
+			uvi.id,
+			vi.price,
+			st.service_type_name AS couponsType,
+			date_format(vi.cutoff_time, '%Y-%m-%d') AS cutoffTime,
+			vi.icon_path AS couponsTypePicPath,
+			uvi.vouchers_id AS vouchersId
+		FROM
+			user_vouchers_info uvi
+		LEFT JOIN vouchers_info vi ON uvi.vouchers_id = vi.id AND vi.is_del = 0
+		INNER JOIN merchant_vouchers_permissions mvp ON vi.id = mvp.vouchers_id
+			AND mvp.merchant_id =  #{merchantId}
+			AND now() &lt; vi.cutoff_time
+			AND (mvp.count - mvp.user_count > 0)
+			AND mvp.is_del = 0
+		LEFT JOIN service_type st ON st.id = vi.service_type_id
+		WHERE
+			uvi.is_use = 0
+			AND uvi.user_id = #{userId}		
+			AND vi.service_type_id = #{serviceType}
+			AND now() &lt; vi.cutoff_time
+		GROUP BY
+		    uvi.id
+		ORDER BY
+			uvi.id
+		LIMIT 
+			#{startNum}, #{pageSize}
+			
+			
+		
+    </select>  
+    <!-- 获取用户此次订单可以使用的代金券的总页数 -->
+    <select id="getUserAvailablePayVouchersInfoTotalPage" parameterType="java.util.Map" resultType="int">  
+      		SELECT
+				count(1)
+			FROM
+				user_vouchers_info uvi
+			INNER JOIN vouchers_info vi ON uvi.vouchers_id = vi.id
+			INNER JOIN (
+				SELECT DISTINCT
+					vouchers_id
+				FROM
+					merchant_vouchers_permissions
+				WHERE
+					merchant_id = #{merchantId}
+					AND (
+						cutoff_time IS NULL
+						OR now() &lt; cutoff_time
+					)AND (
+						count-user_count>0
+					)AND is_del = 0
+			) mvp ON (vi.id = mvp.vouchers_id)
+			WHERE
+				uvi.is_use = 0
+			AND uvi.user_id = #{userId}
+			AND vi.is_del = 0
+			AND vi.service_type_id = #{serviceType}
+			<!-- AND vi.app_type = #{appType} -->
+			AND (
+				vi.cutoff_time IS NULL
+				OR now() &lt; vi.cutoff_time
+			)
+			<!-- and vi.price &lt; ${orderPayPrice}  -->
+			<!-- AND NOT EXISTS (
+				SELECT
+					1
+				FROM
+					order_info oi
+				WHERE
+					oi.user_id = #{userId}
+				AND oi.vouchers_id = vi.id
+			) --> ORDER BY uvi.id
+		
+    </select> 
+    
+	<!-- 确认订单金额-->
+	<update  id="confirmOrderPrice" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+            <!-- order_price =#{price}, -->
+            vouchers_price =#{vouchersPrice},
+            order_actual_price=#{actualPrice},
+            <!-- order_status=4, -->
+            vouchers_id=#{userVouchersId},
+            confirm_time=now()
+        where 
+            id=#{orderId}
+	</update >
+	
+	<!-- 完成支付宝订单-->
+	<update  id="finishPayOrder" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+        	order_pay_type=#{orderPayType},
+            order_status=#{orderStatus},
+            deal_time=now(),
+            order_actual_price=#{actualPrice}
+        where 
+            id=#{orderId}
+            and order_status=4
+	</update >
+	
+	<!-- 完成微信订单-->
+	<update  id="finishWeChatOrder" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+        	order_pay_type=2,
+            order_status=5,
+            deal_time=now()
+        where 
+            id=#{orderId}
+	</update >
+	
+	<!-- 完成现金订单-->
+	<update  id="finishCashOrder" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+        	order_pay_type=3,
+            order_status=5,
+            deal_time=now()
+        where 
+            id=#{orderId}
+	</update >
+	
+	
+	<!-- 完成纯消费金的订单支付-->
+	<update  id="setOrderFinished" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+        	order_pay_type=9,
+            order_status=5,
+            deal_time=now()
+        where 
+            id=#{orderId}
+	</update >
+	
+	
+	
+	 <!-- 更改用户的统计-->
+	<update  id="updateUserStatisticsService" parameterType="java.util.Map">
+	    update 
+	        user_statistics
+        set 
+            service_frequency =service_frequency+1,
+            total_pay_price=total_pay_price+#{orderPrice},
+            total_actual_price=total_actual_price+#{actualPrice}
+        where 
+            user_id=#{userId} <!-- and app_type=#{appType} -->
+	</update >
+	
+	 <!-- 现金完成订单更改商户的统计-->
+	<update  id="updateUserStatisticsCashService" parameterType="java.util.Map">
+	    update 
+	        user_statistics
+        set 
+            service_frequency =service_frequency+1
+        where 
+            user_id=#{userId} <!-- and app_type=#{appType} -->
+	</update >
+	
+	 <!-- 更改商户的统计-->
+	<update  id="updateMerchantStatisticsService" parameterType="java.util.Map">
+	    update 
+	        merchant_statistics
+        set 
+            service_frequency =service_frequency+1,
+            total_income_price=total_income_price+#{actualPrice},
+            surplus_price=surplus_price+#{actualPrice}
+        where 
+            merchant_id=#{merchantId} <!-- and app_type=#{appType} -->
+	</update >
+	
+	 <!-- 更改商户的统计-->
+	<update  id="updateMerchantStatisticsCashService" parameterType="java.util.Map">
+	    update 
+	        merchant_statistics
+        set 
+            service_frequency =service_frequency+1
+        where 
+            merchant_id=#{merchantId} <!-- and app_type=#{appType} -->
+	</update >
+	
+	 <!-- 更新代金券内容-->
+	<update  id="updateUserVouchersInfo" parameterType="java.util.Map">
+	    update 
+	        user_vouchers_info
+        set 
+            is_use=1
+        where 
+            user_id=#{userId} and
+            id=#{userVouchersId} and is_use=0
+	</update >
+	
+	 <!-- 插入商户的收支明细记录-->
+	<insert id="insertMerchantPaymentDetails" parameterType="java.util.Map" >
+  		INSERT INTO merchant_payment_details (
+			merchant_id,
+			payment_type,
+			trade_no,
+			business_id,
+			payment_price,
+			payment_time,
+			is_del,
+			buyer_no,
+            consume_price
+        )
+		VALUES
+        (
+           #{merchantId},#{orderPayType},#{tradeNo},#{orderId},#{actualPrice},#{nowTime},0,#{buyerNo}, #{consumePrice}
+		)
+	</insert>
+	
+	
+	
+	<!-- 删除订单-->
+	<update  id="deleteOrder" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+            is_del=1
+        where 
+            id=#{orderId} and is_del=0
+	</update >
+	
+	<!-- 更改订单状态-->
+	<update  id="updateOrderStatus" parameterType="java.util.Map">
+	    update 
+	        order_info
+        set 
+            order_status=#{orderStatus}
+        where 
+            id=#{orderId} and is_del=0
+	</update >
+	
+	<!-- 获取所有商户的clentid -->
+	<select id="getMerchantClientIds" parameterType="java.util.Map" resultType="java.util.HashMap">  
+	    SELECT
+			mp.client_id,mp.client_type,mp.merchant_id as midd,mp.phone,mp.app_type
+		FROM
+			merchant_push mp
+		WHERE
+			mp.merchant_id IN (
+				SELECT
+					mst.merchant_id
+				FROM
+					merchant_service_type mst LEFT JOIN merchant_info mi on mst.merchant_id=mi.id
+				WHERE
+					mst.service_type_id = (
+						SELECT
+							oi.service_type_id
+						FROM
+							order_info oi
+						WHERE
+							oi.id = #{orderId}
+					) and LENGTH(mi.location_address)>0 and LENGTH(mi.`name`)>0
+					AND mst.app_type = #{appType}
+			)
+		
+	</select>
+	
+	<!-- 获取订单指定的商户clentId-->
+	<select id="getMerchantOneClientId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+	    SELECT
+			mp.push_id as pushId,
+			mp.client_type as clientType,
+			mp.merchant_id as merchantId,
+			mp.phone,
+			mp.app_type as appType
+		FROM
+			merchant_push mp
+		WHERE
+			mp.merchant_id=(select oi.merchant_id from order_info oi where oi.id=#{orderId})
+		<!-- AND mp.app_type = #{appType}-->
+	</select>
+	
+	<!-- 根据订单ID获得用户的clentid -->
+	<select id="getUserClientIdsByOrderId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		select DISTINCT up.client_id as clientId,up.client_type as clientType,up.user_id as userId from user_push up INNER JOIN order_info oi on up.user_id=oi.user_id  where  oi.id=#{orderId}
+		 <!-- and up.app_type=#{appType}-->
+	</select>
+	
+	<!-- 根据订单ID获得订单的serviceType -->
+	<select id="getServiceType" parameterType="java.util.Map" resultType="int">  
+		select oi.service_type_id from order_info oi where oi.id=#{orderId}
+	</select>
+	
+	<!-- 根据订单ID获得订单的状态 -->
+	<select id="getOrderPushType" parameterType="java.util.Map" resultType="int">  
+		select oi.order_status from order_info oi where oi.id=#{orderId}
+	</select>
+	
+	<!-- 判断订单是否被评价 -->
+	<select id="checkIsEvaluation" parameterType="java.util.Map" resultType="int">  
+		SELECT count(1) from evaluation where order_id=#{orderId} 
+	</select>
+	
+	
+	 <!-- 判断商户是否存在该客户-->
+	<select id="checkMerchantUsers" parameterType="java.util.Map" resultType="int">
+  		SELECT count(1) from merchant_users where merchant_id=#{merchantId} and user_id=(select user_id from order_info where id=#{orderId}) <!-- and app_type=#{appType} -->
+	</select>
+	
+	 <!-- 给商户新增客户信息-->
+	<insert id="insertMerchantUsers" parameterType="java.util.Map" >
+  		insert into 
+  		    merchant_users(merchant_id,user_id,service_frequency<!-- ,app_type -->) 
+  		values(#{merchantId},#{userId},1<!-- ,#{appType} -->)
+	</insert>
+	
+	<!-- 更改商户的客户信息-->
+	<update  id="updateMerchantUsers" parameterType="java.util.Map">
+	    update 
+	        merchant_users
+        set 
+            service_frequency=service_frequency+1
+        where 
+            merchant_id=#{merchantId} and user_id=#{userId} <!-- and app_type=#{appType} -->
+	</update >
+	
+	
+	 <!-- 判断该订单是否被评价-->
+	<select id="checkAssessOrder" parameterType="java.util.Map" resultType="int">
+  		SELECT count(1) from evaluation where order_id=#{orderId}
+	</select>
+	
+	 <!-- 判断该订单是否被选中-->
+	<select id="checkChooseMerchantPlan" parameterType="java.util.Map" resultType="int">
+  		SELECT 
+  			count(1) 
+  		from 
+  			order_info 
+  		where 
+  			merchant_plan_id is null 
+  			and id=#{orderId}
+	</select>
+	
+	<!-- 获取订单的基础订单信息 -->
+	<select id="getBasicOrderInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+      		 SELECT
+				cast(oi.id AS CHAR) AS orderId,
+				cast(oi.user_id AS CHAR) as userId,
+				oi.service_type_id AS serviceType,
+				oi.order_status AS orderStatus,
+				(SELECT dict_value FROM dictionary WHERE dict_type = 'userOrderStatus' AND dict_key = oi.order_status AND is_del = 0 ) AS orderStatusName,
+				oi.app_type AS appType,
+				date_format(oi.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+				unix_timestamp(oi.join_time) as joinTimeStamp,
+				oi.merchant_id  as merchantId,
+				oi.merchant_plan_id as merchantPlanId,
+				unix_timestamp(oi.confirm_time)  as confirmTime,
+				oi.order_pay_type as orderPayType,
+				unix_timestamp(oi.deal_time)  as dealTime,
+				oi.order_price as orderPrice,
+				oi.order_actual_price as orderActualPrice,
+				oi.vouchers_id  as vouchersId,
+				oi.receive_employees_id as receiveEmployeesId,
+				(SELECT sta.path FROM service_type_attachment sta,service_type st WHERE sta.service_type_id=st.id AND <!-- st.service_type_id -->st.id=oi.service_type_id AND st.app_type=oi.app_type AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0 AND st.is_del=0 ) AS appIcon,
+				(SELECT service_type_name FROM service_type WHERE <!-- app_type = oi.app_type AND service_type_id -->id = oi.service_type_id AND is_del = 0 ) AS serviceTypeName,
+				(SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+				(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id ) AS evaluate,
+				date_format(oi.service_time,'%Y-%m-%d %H:%i') as serviceTime,
+				unix_timestamp(oi.service_time) as serviceTimeStamp,
+				(SELECT name from merchant_info where id=oi.merchant_id) as merchantName,
+	    		oi.is_immediate isImmediate
+			  FROM
+				order_info oi
+			  WHERE
+				oi.id = #{orderId}
+    </select>
+    
+    <!-- 获取订单详情中的订单信息 -->
+    <select id="getOrderInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+		SELECT
+			oi.id AS id,
+			oi.service_type_id as serviceType,
+			oi.order_status AS orderStatus,
+			date_format(oi.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+			(SELECT dict_value FROM dictionary WHERE dict_type = 'userOrderStatus' AND dict_key = oi.order_status AND is_del = 0 ) AS orderStatusName,
+			(SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+			(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id ) AS evaluate,			
+            oi.receive_employees_id as receiveEmployeesId,
+	    	oi.is_immediate isImmediate
+		FROM
+			order_info oi
+			left join merchant_employees me on me.id=oi.receive_employees_id
+			
+		WHERE
+			oi.id = #{orderId} and oi.is_del=0
+    </select> 
+    
+    <select id="getOrderMerchantInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+      	select 
+			mi.id as merchantId,
+			mi.name as merchantName,
+			group_concat(mc.telephone) AS merchantPhone, 
+			mi.location_address as merchantAddress,
+			ma.path as merchantIcon  
+		from merchant_info mi 
+		inner join merchant_contact mc on mc.merchant_id=mi.id
+		left join merchant_attachment ma on ma.merchant_id=mi.id
+		where 
+			ma.attachment_type = 1
+			AND  ma.attachment_use = 11
+			AND mi.id = (select merchant_id from order_info where id=#{orderId})
+
+    </select>
+    
+    
+     <select id="getOrderMerchantInfoById" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">  
+      	select 
+			mi.id as merchantId,
+			mi.name as merchantName,
+			group_concat(mc.telephone) AS merchantPhone, 
+			mi.location_address as merchantAddress,
+			ma.path as merchantIcon  
+		from merchant_info mi 
+		inner join merchant_contact mc on mc.merchant_id=mi.id
+		left join merchant_attachment ma on ma.merchant_id=mi.id
+		where 
+			ma.attachment_type = 1
+			AND  ma.attachment_use = 11
+			AND mi.id = #{merchantId}
+    </select>
+    
+    
+    
+	
+<!-- 获取基础订单列表信息 -->
+    <select id="getBasicOrderListInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+       SELECT
+		oi.id AS orderId,
+		oi.service_type_id AS serviceType,
+		oi.order_status AS orderStatus,
+		(SELECT dict_value FROM dictionary WHERE dict_type = 'userOrderStatus' AND dict_key = oi.order_status AND is_del = 0 ) AS orderStatusName,
+		oi.app_type AS appType,
+		date_format(oi.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+		(SELECT sta.path FROM service_type_attachment sta,service_type st WHERE sta.service_type_id=st.id AND <!-- st.service_type_id -->st.id=oi.service_type_id AND st.app_type=oi.app_type AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0 AND st.is_del=0) AS appIcon,
+		(SELECT service_type_name FROM service_type WHERE app_type = oi.app_type AND <!-- service_type_id -->id = oi.service_type_id AND is_del = 0 ) AS serviceTypeName,
+		(SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+		(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id ) AS evaluate,
+	    oi.is_immediate isImmediate
+	  FROM
+		order_info oi
+	  WHERE
+		oi.user_id = #{userId}
+	  <if test="orderStatus != null and orderStatus != ''" >
+          AND oi.order_status = #{orderStatus}
+      </if>
+      <if test="appType != null and appType != ''">
+          AND #{appType} LIKE concat(concat('%',oi.app_type),'%')
+      </if>
+	  ORDER BY
+		oi.join_time desc
+      limit #{startNum},#{pageSize}
+    </select> 
+	
+	<!-- 获取TOP n 基础订单列表信息 -->
+	<select id="getTopnBasicOrderListInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">  
+       SELECT
+		cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) as userId,
+		oi.service_type_id AS serviceType,
+		oi.order_status AS orderStatus,
+		<!-- oi.app_type AS appType, -->
+		date_format(oi.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+		<!-- oi.service_time as serviceTime, -->
+		unix_timestamp(oi.join_time) as joinTimeStamp,
+		oi.merchant_id  as merchantId,
+		oi.merchant_plan_id as merchantPlanId,
+		unix_timestamp(oi.confirm_time)  as confirmTime,
+		oi.order_pay_type as orderPayType,
+		unix_timestamp(oi.deal_time)  as dealTime,
+		oi.order_price as orderPrice,
+		oi.order_actual_price as orderActualPrice,
+		(SELECT price from merchant_plan where id=oi.merchant_plan_id) as merchantPlanPrice,
+		oi.vouchers_id  as vouchersId,
+		(SELECT sta.path FROM service_type_attachment sta,service_type st WHERE sta.service_type_id=st.id AND <!-- st.service_type_id -->st.id=oi.service_type_id AND st.app_type=oi.app_type AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0 and st.is_del=0 ) AS appIcon,
+		(SELECT service_type_name FROM service_type WHERE <!-- app_type = oi.app_type AND  service_type_id -->id = oi.service_type_id AND is_del = 0 ) AS serviceTypeName,
+		(SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+		(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id) AS evaluate,
+		(SELECT name from merchant_info where id=oi.merchant_id) as merchantName,
+	    oi.is_immediate isImmediate,
+		(select count(1) from push_merchant_order mo where mo.order_id=oi.id) pushCount
+	  FROM
+		order_info oi
+	  WHERE
+		oi.user_id = #{userId} and oi.is_del=0
+	  ORDER BY
+		 oi.join_time desc
+      limit #{startNum},#{pageSize}
+    </select> 
+	
+	 <!-- 获取基础订单列表信息总页数  -->
+    <select id="getBasicOrderListInfoTotalPage" parameterType="java.util.Map" resultType="int">  
+       SELECT
+		count(1)
+	  FROM
+		order_info oi
+	  WHERE
+		oi.user_id = #{userId}
+	  <if test="orderStatus != null and orderStatus != ''" >
+          AND oi.order_status = #{orderStatus}
+      </if>
+      <if test="appType != null and appType != ''">
+          AND #{appType} LIKE concat(concat('%',oi.app_type),'%')
+      </if>
+    </select> 
+    
+    <!-- 根据城市得到商家ClientId -->
+	<select id="getClientIdsByCity" parameterType="java.util.Map" resultType="java.util.HashMap">
+		<![CDATA[  
+	    SELECT
+			DISTINCT mp.client_id,mp.client_type,mp.merchant_id as midd,mp.phone,mp.app_type
+		FROM
+			merchant_push mp
+		WHERE
+			mp.merchant_id IN (
+				SELECT
+					mst.merchant_id
+				FROM
+					merchant_service_type mst,merchant_info mi
+				WHERE
+					mst.service_type_id = (
+						SELECT
+							oi.service_type_id
+						FROM
+							order_info oi
+						WHERE
+							oi.id = #{orderId}
+					) and LENGTH(mi.location_address)>0 and LENGTH(mi.`name`)>0
+					and mst.merchant_id=mi.id 
+					and (mi.province LIKE concat(#{province},'%') 
+					and mi.city LIKE concat(#{city},'%'))
+					and mst.app_type = #{appType}
+			)
+		
+		]]> 
+	</select>
+    
+    
+     <!-- 记录推送的订单和商户ID-->
+	<insert id="insertPushMerchantOrder" parameterType="java.util.Map" >
+  		insert into 
+  		    push_merchant_order(order_id,user_id,merchant_id,join_time,client_id,client_type) 
+  		values
+  		 <foreach collection="clientIdList" item="item" index="index" separator=",">
+           (
+               #{orderId},
+               #{item.userId},
+               #{item.merchantId},
+               now(),
+               #{item.client_id},
+               #{item.client_type}
+           )
+           </foreach>
+	</insert>
+
+    <!-- 插入订单的商品信息  -->
+	<insert id="insertOrderGoods" parameterType="java.util.List">
+  		insert into order_goods_info
+  			(
+  				order_id,
+  				goods_id,
+  				goods_num,
+  				join_time,
+  				is_del
+			) values
+			<foreach collection="list" item="item" index="index" separator=",">
+			(
+				#{item.orderId},
+				#{item.goodsId},
+				#{item.goodsNum},
+				now(),
+				0
+			)
+			</foreach>
+	</insert>
+	
+	<!-- 获得易学堂的订单图标  -->
+    <select id="getYxtAppIcon" parameterType="String" resultType="String">  
+        SELECT
+			sta.path
+		FROM
+			service_type_attachment sta,
+			service_type st
+		WHERE
+			sta.service_type_id = st.id
+		AND <!-- st.service_type_id -->st.id = (SELECT ico_type from yxt_order_info where order_id=#{orderId})
+		AND st.app_type = (SELECT app_type from order_info where id=#{orderId})
+		AND sta.attachment_type = 1
+		AND sta.attachment_style = 'orderIcon'
+		AND sta.is_del = 0
+		AND st.is_del=0       
+    </select> 
+	
+	<!-- 获得易学堂的订单图标  -->
+    <select id="getAllYxtAppIcon" resultType="java.util.HashMap">  
+        SELECT
+			sta.path,
+            <!-- st.service_type_id -->st.id as serviceType
+		FROM
+			service_type_attachment sta,
+			service_type st
+		WHERE
+			sta.service_type_id = st.id
+		AND st.app_type like 'yxt%'
+		AND sta.attachment_type = 1
+		AND sta.attachment_style = 'orderIcon'
+		AND sta.is_del = 0
+		AND st.is_del=0
+		order by <!-- st.service_type_id  -->st.id
+    </select> 
+	
+	<!-- 获得易学堂的订单图标  -->
+    <select id="getYxtOrderInfo" parameterType="java.util.List" resultType="java.util.HashMap">  
+        SELECT
+        order_id as orderId,
+			ico_type as icoType
+		FROM
+			yxt_order_info
+		WHERE
+			order_id in
+			<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+	          #{item}
+	        </foreach>
+    </select> 
+    <select id="getYxtServiceTypeByOrderId" parameterType="java.util.Map" resultType="java.util.Map">
+    	select 
+    		st.service_type_id as serviceTypeId,
+			st.service_type_name as serviceTypeName,
+  			sta.path  
+    	from 
+    		yxt_order_info yoi
+    		left join service_type st on <!-- st.service_type_id -->st.id=yoi.ico_type
+    		left join service_type_attachment sta on sta.service_type_id=st.id and sta.attachment_style='orderIcon'
+    	where 
+    		order_id=#{orderId}
+    		
+  			and st.app_type like CONCAT(#{appType},'%')
+    </select>
+    
+     <!-- 更新代金券内容-->
+	<update  id="updateMerchantVouchersInfo" parameterType="java.util.Map">
+	    UPDATE merchant_vouchers_permissions
+		SET user_count = user_count + 1
+		WHERE
+			id = (
+				SELECT
+					id
+				FROM
+					(
+						SELECT
+							mvpt.id
+						FROM
+							merchant_vouchers_permissions mvpt
+						WHERE
+							mvpt.merchant_id = #{merchantId}
+					    AND mvpt.vouchers_id=(select vouchers_id from user_vouchers_info where id=#{userVouchersId})
+						AND datediff(mvpt.cutoff_time, now()) > 0
+						ORDER BY
+							datediff(mvpt.cutoff_time, now()) ASC
+						LIMIT 0,1
+					) a
+			)
+	</update >
+	
+	<select id="getReceiveEmployeesIdFromMerchantPlan" resultType="Long" parameterType="java.util.Map"> 
+		select 
+			receive_employees_id
+		from
+			merchant_plan 
+		where
+			order_id=#{orderId}
+		and merchant_id=#{merchantId}			
+	</select>
+	<select id="getServiceTypeIdsByCatalogId" parameterType="Long" resultType="java.util.Map">
+		select 
+			st.id
+		from 
+			catalog_service cs 
+			inner join service_type st on st.id=cs.service_id
+		where 
+			cs.catalog_id=#{catalogId}
+	</select>
+	
+	<select id="getRongYunToken" parameterType="Long" resultType="java.lang.String">
+		select 
+			rong_cloud_token
+		from 
+			user_info
+		where 
+			id = #{userId}
+	</select>
+	
+	
+	<select id="getAliasByOrderId" parameterType="Long" resultType="String">
+		SELECT
+			alias
+		FROM
+			catalog ca
+		INNER JOIN catalog_service cs ON ca.id = cs.catalog_id
+		AND cs.service_id = (
+			SELECT
+				service_type_id
+			FROM
+				order_info
+			WHERE
+				id = #{orderId}
+		)
+
+	</select>
+	
+	<select id="getOrderPayRecord" parameterType="java.util.Map" resultType="Integer">
+		/*master*/ 
+		select 
+			count(1) as count
+		from 
+			merchant_payment_details
+		where
+			merchant_id=#{merchantId}
+			and business_id=#{orderId}
+	
+	</select>
+  <!-- 根据订单Id查询订单的状态 -->
+  <select id="selectOrderStatus" parameterType="java.util.Map" resultType="java.lang.Integer">
+      /*master*/ 
+      SELECT
+          order_status
+      FROM
+          order_info
+      WHERE
+          id = #{orderId}
+  </select>
+
+    <!-- 查询支付时间 -->
+    <select id="getPaymentTime" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(payment_time, '%Y-%m-%d %H:%i:%s') AS payTime
+        FROM
+            merchant_payment_details
+        WHERE
+            trade_no = #{tradeNo}
+    </select>
+
+
+    <!-- 订单金额累加-->
+    <update id="accumulateOrderPrice" parameterType="java.util.Map">
+        UPDATE
+            order_info
+        SET
+            order_actual_price = order_actual_price + #{paymentPrice}
+        WHERE
+            id = #{orderId}
+    </update>
+
+
+    <!-- 根据订单查询推送记录ids -->
+    <select id="getOrderPushIds" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+        	p.id pushId,
+            p.merchant_id merchantId
+        FROM
+            push_merchant_order p
+        WHERE
+          p.order_id = #{orderId}
+<!--           and p.merchant_id = #{merchantId} -->
+    </select>
+
+</mapper>
+

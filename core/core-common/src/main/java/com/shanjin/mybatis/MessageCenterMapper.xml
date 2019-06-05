@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMessageCenterDao">
+	<!-- 消息列表数量 -->
+	<select id="msgListCount" resultType="Integer" parameterType="Map">
+		SELECT 
+			count(1) 
+		FROM
+			
+			<if test="isRead == 0 "><!-- 未读 -->
+			customer_message_center cmc
+			</if>
+			
+			<if test="isRead == 1 "><!-- 已读 -->
+			customer_message_center_history cmc
+			</if>
+		WHERE
+			cmc.customer_type=#{customerType}
+		AND 
+			cmc.customer_id=#{customerId}
+		AND 
+			cmc.is_del=0
+	</select>
+	<!-- 消息列表 -->
+	<select id="msgList" resultType="Map" parameterType="Map">
+		SELECT 
+			cmc.id,
+			cmc.message_id as messageId,
+			cmc.title,
+			cmc.content,
+			date_format(cmc.join_time,'%Y-%m-%d %H:%i:%s') as joinTime
+		FROM
+			
+			<if test="isRead == 0 "> <!-- 未读 -->
+			customer_message_center cmc
+			</if>
+			
+			<if test="isRead == 1 "><!-- 已读 -->
+			customer_message_center_history cmc 
+			</if>
+			
+		WHERE
+			cmc.customer_type=#{customerType}
+			and cmc.customer_id=#{customerId}
+			and cmc.is_del=0
+		ORDER BY 
+			cmc.join_time DESC 		
+     	LIMIT 
+     		#{rows}, #{pageSize}
+	</select>
+	<!-- 将已读信息插入到历史表中 -->
+	<insert id="insertToHistoryMsg">
+		insert into 
+			customer_message_center_history (
+				message_id,
+				customer_type,
+				customer_id,
+				title,
+				content,
+				message_type,
+				join_time,
+				read_time,is_del
+			) (
+				select 
+					message_id,
+					customer_type,
+					customer_id,
+					title,
+					content,
+					message_type,
+					join_time,
+					NOW() as read_time,
+					is_del 
+				from 
+					customer_message_center 
+				where id=#{id}
+			)
+	</insert>
+	<!-- 删除已读信息 -->
+	<delete id="delMarkRead" parameterType="Long">
+		delete 
+		from
+			customer_message_center
+		where
+			id=#{id}
+	</delete>
+	<!-- 查询未读消息数量 -->
+	<!-- <select id="getUnreadMsgCount" resultType="Integer" parameterType="Map">
+		select 
+			count(1)
+		from
+			customer_message_center cmc
+		where
+			cmc.customer_type=#{customerType}
+			and cmc.customer_id=#{customerId}
+			and cmc.is_read=0
+			and cmc.is_del=0
+	</select> -->
+	<select id="getUnreadMsgCount" resultType="Integer" parameterType="Map">
+		select 
+			count(1)
+		from
+			customer_message_center
+		where
+			id > #{maxMsgId}
+		and
+			customer_id=#{merchantId}
+	</select>
+	<!-- 未读标记为已读 -->
+	<update id="markReadMsg" parameterType="Long">
+		update customer_message_center
+			set is_read=1
+		where
+			id=#{id}
+	</update>
+	<!-- 删除消息 -->
+	<update id="delMsg" parameterType="Map">
+		update 
+			<if test="isRead == 0 "> <!-- 未读 -->
+			customer_message_center
+			</if>
+			<if test="isRead == 1 "> <!-- 已读 -->
+			customer_message_center_history
+			</if>
+			set is_del=1
+		where
+			id in (
+				${ids}
+			)
+	</update>
+	
+	<select id="getMaxMsgId" resultType="Long" parameterType="String">
+		SELECT 
+			id 
+		FROM 
+			customer_message_center 
+		WHERE 
+			customer_type=1 
+		AND 
+			customer_id=#{customer_id} 
+		ORDER BY 
+			id DESC 
+		LIMIT 1
+	</select>
+	<!-- 保存最大消息ID -->
+	<update id="saveMaxMsgId" parameterType="Map">
+		update 
+			merchant_info 
+		set
+			max_msg_id=#{maxMsgId}
+		where 
+			id=#{customerId}
+	</update>
+
+    <!-- 开通增值服务后，添加提醒消息 -->
+    <insert id="saveCustomerMessageCenter">
+        INSERT INTO
+            customer_message_center
+            (message_id, customer_type, customer_id, title, content, message_type, join_time, is_del)
+        VALUE
+            (#{messageId}, #{customerType}, #{customerId}, #{title}, #{content}, #{messageType}, now(), 0)
+    </insert>
+
+</mapper>

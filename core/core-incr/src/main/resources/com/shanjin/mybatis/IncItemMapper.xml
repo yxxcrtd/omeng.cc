@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.IncItemMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.IncItem" id="IncItemBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="effictiveDays" column="effictive_days"/>
+		<result property="createTime" column="create_time"/>
+		<result property="creater" column="creater"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifer" column="modifer"/>
+		<result property="isDel" column="is_del"/>
+		<result property="picsPath" column="pics_path"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.IncItem" id="IncItemBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="effictiveDays" column="effictive_days"/>
+		<result property="createTime" column="create_time"/>
+		<result property="creater" column="creater"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifer" column="modifer"/>
+		<result property="isDel" column="is_del"/>
+		<result property="picsPath" column="pics_path"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.name as name, 
+			t.effictive_days as effictiveDays, 
+			t.create_time as createTime, 
+			t.creater as creater, 
+			t.modify_time as modifyTime, 
+			t.modifer as modifer, 
+			t.is_del as isDel, 
+			t.pics_path as picsPath
+		FROM inc_item AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM inc_item AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO inc_item (
+				
+				name, 
+				effictive_days, 
+				create_time, 
+				creater, 
+				modify_time, 
+				modifer, 
+				is_del, 
+				pics_path
+			) VALUES (
+				
+				#{name}, 
+				#{effictiveDays}, 
+				#{createTime}, 
+				#{creater}, 
+				#{modifyTime}, 
+				#{modifer}, 
+				#{isDel}, 
+				#{picsPath}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE inc_item AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM inc_item AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.IncItem" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.IncItem">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>		
+			<if test="null!=effictiveDays">
+				t.effictive_days = #{effictiveDays},
+			</if>		
+			<if test="null!=createTime">
+				t.create_time = #{createTime},
+			</if>		
+			<if test="null!=creater and creater!=''">
+				t.creater = #{creater},
+			</if>		
+			<if test="null!=modifyTime">
+				t.modify_time = #{modifyTime},
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				t.modifer = #{modifer},
+			</if>		
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				t.pics_path = #{picsPath},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=effictiveDays">
+				and t.effictive_days = #{effictiveDays}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="IncItemBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="IncItemBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=effictiveDays">
+				and t.effictive_days = #{effictiveDays}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="IncItemBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.IncItem" resultMap="IncItemBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=effictiveDays">
+				and t.effictive_days = #{effictiveDays}
+			</if>		
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>		
+			<if test="null!=creater and creater!=''">
+				and t.creater = #{creater}
+			</if>		
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>		
+			<if test="null!=modifer and modifer!=''">
+				and t.modifer = #{modifer}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=picsPath and picsPath!=''">
+				and t.pics_path = #{picsPath}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<select id="findItemsByPkgId" resultMap="IncItemBsRstMap">
+		<include refid="commSelTpl"/>
+		join inc_rs_pkg_item pi on pi.item_id = t.id and pi.pkg_id=#{pkgId} and t.is_del =#{isDel}
+	</select>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

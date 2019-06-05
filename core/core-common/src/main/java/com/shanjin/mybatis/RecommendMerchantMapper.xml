@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IRecommendMerchantDao">
+ 
+   <!-- 首页推荐服务商查询，根据省份和城市-->  
+  <select id="getRecommendMerchantListByPC" parameterType="java.util.Map" resultType="java.util.HashMap">  
+    select
+	id,
+	merchant_id as merchantId,
+	province,
+	city,
+	app_type as appType,
+	advantage,
+	reason,
+	back_image as backImage,
+	status 
+	from recommend_merchant where status=1
+	<if test="null!=province and province!=''">
+		and province = #{province}
+	</if>	
+	<if test="null!=city and city!=''">
+		and city = #{city}
+	</if>	
+	order by id desc 
+  </select>
+  
+   <select id="getRecommendMerchantListByPCount" parameterType="java.util.Map" resultType="int">  
+    select
+	count(id) as pcount
+	from recommend_merchant where status=1
+	<if test="null!=province and province!=''">
+		and province = #{province}
+	</if>	
+	<if test="null!=city and city!=''">
+		and city = #{city}
+	</if>	
+	order by id desc 
+  </select>
+  
+  <!-- 推荐服务商列表查询，根据省份、城市、行业-->  
+  <select id="recommendMerchantList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+   SELECT
+	rm.id,
+	CAST(rm.merchant_id AS CHAR) AS merchantId,
+	rm.advantage,
+	rm.reason,
+	rm.back_image AS image,
+	rm.rule_code AS rule,
+	mi.`name`,
+	mi.province,
+	mi.city,
+	mi.app_type AS appType,
+	CAST(me.user_id AS CHAR) AS employeeUserId,
+	ma.path AS pic,
+	ms.total_attitude_evaluation AS attitude,
+	ms.total_quality_evaluation AS quality,
+	ms.total_speed_evaluation AS speed,
+    ms.total_count_evaluation AS countEva
+FROM
+	recommend_merchant rm
+LEFT JOIN merchant_info mi ON rm.merchant_id = mi.id
+LEFT JOIN merchant_employees me ON rm.merchant_id=me.merchant_id AND
+me.is_del=0 AND me.employees_type=1
+LEFT JOIN merchant_attachment ma ON rm.merchant_id = ma.merchant_id
+AND ma.is_del = 0
+AND ma.attachment_type = 1
+AND ma.attachment_use = 11
+LEFT JOIN merchant_statistics ms ON rm.merchant_id = ms.merchant_id
+WHERE
+	rm.`status` = 1
+	<if test="null!=appType and appType!=''">
+		and mi.app_type = #{appType}
+	</if>	
+	<if test="null!=province and province!=''">
+		and mi.province = #{province}
+	</if>	
+	<if test="null!=city and city!=''">
+		and mi.city = #{city}
+	</if>	
+ORDER BY
+	rm.rule_code,
+	rm.effictive_time
+LIMIT #{start},#{pageSize} 
+  </select>
+   <!-- 推荐服务商行业列表-->  
+  <select id="getRecommendAppList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+    SELECT id,name,alias as appType from catalog where  parentid = 0 and status=1 and is_del=0
+    AND alias in(select rm.app_type FROM recommend_merchant rm WHERE rm.`status`=1
+    <if test="null!=province and province!=''">
+		and rm.province = #{province}
+	</if>	
+	<if test="null!=city and city!=''">
+		and rm.city = #{city}
+	</if>	
+    GROUP BY rm.app_type)
+  </select>
+  
+  
+</mapper>
+

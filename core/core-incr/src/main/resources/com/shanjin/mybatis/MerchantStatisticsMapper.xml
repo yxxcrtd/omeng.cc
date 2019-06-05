@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.MerchantStatisticsMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantStatistics" id="MerchantStatisticsBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="grabFrequency" column="grab_frequency"/>
+		<result property="serviceFrequency" column="service_frequency"/>
+		<result property="totalIncomePrice" column="total_income_price"/>
+		<result property="totalWithdrawPrice" column="total_withdraw_price"/>
+		<result property="surplusPrice" column="surplus_price"/>
+		<result property="orderSurplusPrice" column="order_surplus_price"/>
+		<result property="totalAttitudeEvaluation" column="total_attitude_evaluation"/>
+		<result property="totalQualityEvaluation" column="total_quality_evaluation"/>
+		<result property="totalSpeedEvaluation" column="total_speed_evaluation"/>
+		<result property="totalCountEvaluation" column="total_count_evaluation"/>
+		<result property="appType" column="app_type"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantStatistics" id="MerchantStatisticsBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="grabFrequency" column="grab_frequency"/>
+		<result property="serviceFrequency" column="service_frequency"/>
+		<result property="totalIncomePrice" column="total_income_price"/>
+		<result property="totalWithdrawPrice" column="total_withdraw_price"/>
+		<result property="surplusPrice" column="surplus_price"/>
+		<result property="orderSurplusPrice" column="order_surplus_price"/>
+		<result property="totalAttitudeEvaluation" column="total_attitude_evaluation"/>
+		<result property="totalQualityEvaluation" column="total_quality_evaluation"/>
+		<result property="totalSpeedEvaluation" column="total_speed_evaluation"/>
+		<result property="totalCountEvaluation" column="total_count_evaluation"/>
+		<result property="appType" column="app_type"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.merchant_id as merchantId, 
+			t.grab_frequency as grabFrequency, 
+			t.service_frequency as serviceFrequency, 
+			t.total_income_price as totalIncomePrice, 
+			t.total_withdraw_price as totalWithdrawPrice, 
+			t.surplus_price as surplusPrice, 
+			t.order_surplus_price as orderSurplusPrice, 
+			t.total_attitude_evaluation as totalAttitudeEvaluation, 
+			t.total_quality_evaluation as totalQualityEvaluation, 
+			t.total_speed_evaluation as totalSpeedEvaluation, 
+			t.total_count_evaluation as totalCountEvaluation, 
+			t.app_type as appType
+		FROM merchant_statistics AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM merchant_statistics AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO merchant_statistics (
+				
+				merchant_id, 
+				grab_frequency, 
+				service_frequency, 
+				total_income_price, 
+				total_withdraw_price, 
+				surplus_price, 
+				order_surplus_price, 
+				total_attitude_evaluation, 
+				total_quality_evaluation, 
+				total_speed_evaluation, 
+				total_count_evaluation, 
+				app_type
+			) VALUES (
+				
+				#{merchantId}, 
+				#{grabFrequency}, 
+				#{serviceFrequency}, 
+				#{totalIncomePrice}, 
+				#{totalWithdrawPrice}, 
+				#{surplusPrice}, 
+				#{orderSurplusPrice}, 
+				#{totalAttitudeEvaluation}, 
+				#{totalQualityEvaluation}, 
+				#{totalSpeedEvaluation}, 
+				#{totalCountEvaluation}, 
+				#{appType}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE merchant_statistics AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM merchant_statistics AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.MerchantStatistics" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.MerchantStatistics">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=merchantId">
+				t.merchant_id = #{merchantId},
+			</if>		
+			<if test="null!=grabFrequency">
+				t.grab_frequency = #{grabFrequency},
+			</if>		
+			<if test="null!=serviceFrequency">
+				t.service_frequency = #{serviceFrequency},
+			</if>		
+			<if test="null!=totalIncomePrice">
+				t.total_income_price = #{totalIncomePrice},
+			</if>		
+			<if test="null!=totalWithdrawPrice">
+				t.total_withdraw_price = #{totalWithdrawPrice},
+			</if>		
+			<if test="null!=surplusPrice">
+				t.surplus_price = #{surplusPrice},
+			</if>		
+			<if test="null!=orderSurplusPrice">
+				t.order_surplus_price = #{orderSurplusPrice},
+			</if>		
+			<if test="null!=totalAttitudeEvaluation">
+				t.total_attitude_evaluation = #{totalAttitudeEvaluation},
+			</if>		
+			<if test="null!=totalQualityEvaluation">
+				t.total_quality_evaluation = #{totalQualityEvaluation},
+			</if>		
+			<if test="null!=totalSpeedEvaluation">
+				t.total_speed_evaluation = #{totalSpeedEvaluation},
+			</if>		
+			<if test="null!=totalCountEvaluation">
+				t.total_count_evaluation = #{totalCountEvaluation},
+			</if>		
+			<if test="null!=appType and appType!=''">
+				t.app_type = #{appType},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=grabFrequency">
+				and t.grab_frequency = #{grabFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalIncomePrice">
+				and t.total_income_price = #{totalIncomePrice}
+			</if>		
+			<if test="null!=totalWithdrawPrice">
+				and t.total_withdraw_price = #{totalWithdrawPrice}
+			</if>		
+			<if test="null!=surplusPrice">
+				and t.surplus_price = #{surplusPrice}
+			</if>		
+			<if test="null!=orderSurplusPrice">
+				and t.order_surplus_price = #{orderSurplusPrice}
+			</if>		
+			<if test="null!=totalAttitudeEvaluation">
+				and t.total_attitude_evaluation = #{totalAttitudeEvaluation}
+			</if>		
+			<if test="null!=totalQualityEvaluation">
+				and t.total_quality_evaluation = #{totalQualityEvaluation}
+			</if>		
+			<if test="null!=totalSpeedEvaluation">
+				and t.total_speed_evaluation = #{totalSpeedEvaluation}
+			</if>		
+			<if test="null!=totalCountEvaluation">
+				and t.total_count_evaluation = #{totalCountEvaluation}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MerchantStatisticsBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="MerchantStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=grabFrequency">
+				and t.grab_frequency = #{grabFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalIncomePrice">
+				and t.total_income_price = #{totalIncomePrice}
+			</if>		
+			<if test="null!=totalWithdrawPrice">
+				and t.total_withdraw_price = #{totalWithdrawPrice}
+			</if>		
+			<if test="null!=surplusPrice">
+				and t.surplus_price = #{surplusPrice}
+			</if>		
+			<if test="null!=orderSurplusPrice">
+				and t.order_surplus_price = #{orderSurplusPrice}
+			</if>		
+			<if test="null!=totalAttitudeEvaluation">
+				and t.total_attitude_evaluation = #{totalAttitudeEvaluation}
+			</if>		
+			<if test="null!=totalQualityEvaluation">
+				and t.total_quality_evaluation = #{totalQualityEvaluation}
+			</if>		
+			<if test="null!=totalSpeedEvaluation">
+				and t.total_speed_evaluation = #{totalSpeedEvaluation}
+			</if>		
+			<if test="null!=totalCountEvaluation">
+				and t.total_count_evaluation = #{totalCountEvaluation}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MerchantStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.MerchantStatistics" resultMap="MerchantStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=grabFrequency">
+				and t.grab_frequency = #{grabFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalIncomePrice">
+				and t.total_income_price = #{totalIncomePrice}
+			</if>		
+			<if test="null!=totalWithdrawPrice">
+				and t.total_withdraw_price = #{totalWithdrawPrice}
+			</if>		
+			<if test="null!=surplusPrice">
+				and t.surplus_price = #{surplusPrice}
+			</if>		
+			<if test="null!=orderSurplusPrice">
+				and t.order_surplus_price = #{orderSurplusPrice}
+			</if>		
+			<if test="null!=totalAttitudeEvaluation">
+				and t.total_attitude_evaluation = #{totalAttitudeEvaluation}
+			</if>		
+			<if test="null!=totalQualityEvaluation">
+				and t.total_quality_evaluation = #{totalQualityEvaluation}
+			</if>		
+			<if test="null!=totalSpeedEvaluation">
+				and t.total_speed_evaluation = #{totalSpeedEvaluation}
+			</if>		
+			<if test="null!=totalCountEvaluation">
+				and t.total_count_evaluation = #{totalCountEvaluation}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

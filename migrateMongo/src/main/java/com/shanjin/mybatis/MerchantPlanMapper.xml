@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPlanDao">
+
+    <select id="getPlanListByOrderIds" parameterType="java.util.Map" resultType="java.util.LinkedHashMap"> 
+     SELECT
+		  mp.id AS _id, 
+			mi.id AS merchantId,
+			mi.NAME AS merchantName,
+			ma.path AS iconPath,
+			mi.app_type as appType,
+			mi.location_address as merchantAddress,
+			mi.vip_status as vipStatus,
+     		mi.is_private_assistant as isPrivateAssistant,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=1 and auth_status=1 ) as enterpriseAuth,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=2 and auth_status=1 ) as personalAuth,
+			mp.order_id as orderId,
+      		mp.receive_employees_id as receiveEmployeesId,
+			mp.price,
+      		mp.discount_price as discountPrice,
+			mp.price_unit  as priceUnit,
+		  	mp.content,
+      		mp.plan_type as planType,
+			mp.distance,
+			mp.join_time as joinTime,
+		  	mp.is_del as isDel,
+			mp.deposit,
+		  	mp.promise,
+			mp.version,
+			mp.total_count as totalCount,
+			mp.praise_count as praiseCount,
+			mp.is_offer as isOffer,
+			(SELECT group_concat(telephone) FROM merchant_contact WHERE merchant_id = mi.id ) AS telephone,
+			(SELECT SUM(total_attitude_evaluation) AS totalAttitudeEvaluation FROM merchant_statistics WHERE merchant_id = mi.id) AS totalAttitudeEvaluation,
+			(SELECT SUM(total_quality_evaluation) AS totalQualityEvaluation FROM merchant_statistics WHERE merchant_id = mi.id ) AS totalQualityEvaluation,
+			(SELECT SUM(total_speed_evaluation) AS totalSpeedEvaluation FROM merchant_statistics WHERE merchant_id = mi.id ) AS totalSpeedEvaluation,
+			(SELECT total_count_evaluation AS totalEval FROM merchant_statistics WHERE merchant_id = mi.id ) AS totalEval
+ 	 FROM merchant_plan mp
+ 	 INNER JOIN merchant_info mi on mp.merchant_id=mi.id
+ 	 INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id and ma.attachment_type = 1 and ma.attachment_use = 11
+     WHERE mp.order_id in ( ${ids} )
+     order by mp.order_id
+    </select>
+    
+   <select id="getPlanAttachmentListByPlanIds" parameterType="java.util.Map" resultType="java.util.LinkedHashMap"> 
+    	SELECT merchant_plan_id,attachment_type as type,path 
+    	FROM  merchant_plan_attachment mpa 
+    	WHERE mpa.merchant_plan_id in ( ${ids} ) and is_del=0
+    	ORDER BY mpa.merchant_plan_id
+    </select>
+    
+    <select id="getPlanGoodsListByPlanIds" parameterType="java.util.Map" resultType="java.util.LinkedHashMap"> 
+    	SELECT mpg.plan_id,mgh.id as goodsHistoryId,mgh.goods_name as goodsName,mgh.goods_price as goodsPrice,
+        	   mgh.goods_price_unit as goodsPriceUnit,goods_picture_url as goodsPictureUrl  
+        FROM merchantPlan_goods mpg 
+        INNER JOIN merchant_goods_history mgh on mpg.goods_history_id=mgh.id
+		where plan_id in ( ${ids} ) 
+		order by  mpg.plan_id,mgh.id
+    </select>
+    
+     <select id="getWinnerInfos" parameterType="java.util.Map" resultType="java.util.LinkedHashMap"> 
+    	SELECT
+    		oi.id as order_id,
+			mi.id as merchantId,
+			mi.name as merchantName,
+			mi.location_address as locationAddress,
+			mc.telephone AS phone,
+			mi.vip_level as vipLevel,
+			mi.app_type as appType,
+			mi.catalog_id as catalogId,
+			mi.is_private_assistant as isPrivateAssistant,
+			(SELECT ma.path FROM merchant_attachment ma WHERE ma.merchant_id=mi.id AND ma.attachment_type = 1 and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+			oi.receive_employees_id as receiveEmployeeId,
+      		oi.merchant_plan_id as merchantPlanId
+		FROM
+			merchant_info mi
+    	INNER JOIN order_info oi on  oi.merchant_id = mi.id
+		LEFT JOIN merchant_contact mc ON mi.id=mc.merchant_id
+		WHERE oi.id in ( ${orderId} )
+    </select>
+    
+   <select id="getIncBookNum" parameterType="java.util.Map"  resultType="java.lang.Integer">
+    	select count(1)	from inc_pkg ipkg
+		inner join inc_rs_pkg_item irpi on ipkg.id = irpi.pkg_id
+		inner join inc_item item on  irpi.item_id = item.id
+		inner join inc_rs_item_rule irir  on item.id = irir.item_id
+		inner join  inc_rule rule on   irir.rule_id = rule.id
+		inner join  inc_pkg_order ipo on ipkg.id = ipo.pkg_id
+		where rule.rule_code='ruleCode' and ipo.merchant_id=#{merchantId} and item.is_del=0 and rule.is_del=0 
+		      and #{joinTime} between  ipo.effictive_time and ipo.lose_effictive_time 
+   </select>
+    
+    
+  <select id="getMerchantPlanIds" parameterType="java.util.Map" resultType="java.lang.String">
+  			select  group_concat(id) from merchant_plan where order_id in (${ids}) 
+  </select>
+  
+  
+   <delete id="delMerchantPlansAttachmentsIds" parameterType="java.util.Map">
+  	  		delete from merchant_plan_attachment where merchant_plan_id in (${ids})
+   </delete>
+   
+   
+    <delete id="delMerchantPlansDetailsByIds" parameterType="java.util.Map">
+  	  		delete from merchant_plan_detail where merchant_plan_id in (${ids})
+    </delete>
+   
+    <delete id="delMerchantPlansGoods" parameterType="java.util.Map">
+  	  		delete from merchantPlan_goods where plan_id in (${ids})
+    </delete>
+   
+    <delete id="delMerchantPlansByIds" parameterType="java.util.Map">
+  	  		delete from merchant_plan where order_id in (${ids})
+    </delete>
+</mapper>
+

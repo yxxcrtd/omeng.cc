@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.UserStatisticsMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.UserStatistics" id="UserStatisticsBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="userId" column="user_id"/>
+		<result property="bespeakFrequency" column="bespeak_frequency"/>
+		<result property="serviceFrequency" column="service_frequency"/>
+		<result property="totalPayPrice" column="total_pay_price"/>
+		<result property="totalActualPrice" column="total_actual_price"/>
+		<result property="appType" column="app_type"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.UserStatistics" id="UserStatisticsBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="userId" column="user_id"/>
+		<result property="bespeakFrequency" column="bespeak_frequency"/>
+		<result property="serviceFrequency" column="service_frequency"/>
+		<result property="totalPayPrice" column="total_pay_price"/>
+		<result property="totalActualPrice" column="total_actual_price"/>
+		<result property="appType" column="app_type"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.user_id as userId, 
+			t.bespeak_frequency as bespeakFrequency, 
+			t.service_frequency as serviceFrequency, 
+			t.total_pay_price as totalPayPrice, 
+			t.total_actual_price as totalActualPrice, 
+			t.app_type as appType
+		FROM user_statistics AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM user_statistics AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO user_statistics (
+				
+				user_id, 
+				bespeak_frequency, 
+				service_frequency, 
+				total_pay_price, 
+				total_actual_price, 
+				app_type
+			) VALUES (
+				
+				#{userId}, 
+				#{bespeakFrequency}, 
+				#{serviceFrequency}, 
+				#{totalPayPrice}, 
+				#{totalActualPrice}, 
+				#{appType}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE user_statistics AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM user_statistics AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.UserStatistics" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.UserStatistics">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=userId">
+				t.user_id = #{userId},
+			</if>		
+			<if test="null!=bespeakFrequency">
+				t.bespeak_frequency = #{bespeakFrequency},
+			</if>		
+			<if test="null!=serviceFrequency">
+				t.service_frequency = #{serviceFrequency},
+			</if>		
+			<if test="null!=totalPayPrice">
+				t.total_pay_price = #{totalPayPrice},
+			</if>		
+			<if test="null!=totalActualPrice">
+				t.total_actual_price = #{totalActualPrice},
+			</if>		
+			<if test="null!=appType and appType!=''">
+				t.app_type = #{appType},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=bespeakFrequency">
+				and t.bespeak_frequency = #{bespeakFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalPayPrice">
+				and t.total_pay_price = #{totalPayPrice}
+			</if>		
+			<if test="null!=totalActualPrice">
+				and t.total_actual_price = #{totalActualPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="UserStatisticsBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="UserStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=bespeakFrequency">
+				and t.bespeak_frequency = #{bespeakFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalPayPrice">
+				and t.total_pay_price = #{totalPayPrice}
+			</if>		
+			<if test="null!=totalActualPrice">
+				and t.total_actual_price = #{totalActualPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="UserStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.UserStatistics" resultMap="UserStatisticsBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=bespeakFrequency">
+				and t.bespeak_frequency = #{bespeakFrequency}
+			</if>		
+			<if test="null!=serviceFrequency">
+				and t.service_frequency = #{serviceFrequency}
+			</if>		
+			<if test="null!=totalPayPrice">
+				and t.total_pay_price = #{totalPayPrice}
+			</if>		
+			<if test="null!=totalActualPrice">
+				and t.total_actual_price = #{totalActualPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

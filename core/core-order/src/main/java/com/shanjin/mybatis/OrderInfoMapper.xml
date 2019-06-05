@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IOrderInfoDao">
+
+  <!-- 查询已评价的订单的数量1 -->
+  <select id="selectEvaluationOrderNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          total_count_evaluation
+      from
+          merchant_statistics
+      where
+          merchant_id = #{merchantId}
+          <!-- and app_type = #{appType} -->
+  </select>
+
+  <!-- 查看顾客评价1 -->
+  <select id="selectUserEvaluation" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          oi.attitude_evaluation AS attitudeEvaluation,
+          oi.quality_evaluation AS qualityEvaluation,
+          oi.speed_evaluation AS speedEvaluation,
+          oi.text_evaluation AS textEvaluation,
+          date_format(oi.deal_time,'%Y-%m-%d %H:%i') AS time,
+          (select phone from user_info where id = oi.user_id and is_del = 0) AS phone,
+          (select path from user_attachment where user_id = oi.user_id and attachment_type = 1 and attachment_use = 11 and is_del = 0) AS path
+      from
+          order_info oi
+      where
+          oi.merchant_id = #{merchantId}
+          and oi.attitude_evaluation != 0
+          and oi.quality_evaluation != 0
+          and oi.speed_evaluation != 0
+          and oi.app_type = #{appType}
+      order by
+          oi.deal_time desc
+      limit #{rows}, #{pageSize}
+  </select>
+
+  <!-- 验证这个单有没有被抢过 -->
+  <select id="checkImmediatelyOrder" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_plan
+      where
+          order_id = #{orderId} and merchant_id=#{merchantId} and is_del = 0
+  </select>
+  
+  <!-- 获取订单服务时间 -->
+  <select id="getOrderServiceTime" parameterType="java.util.Map" resultType="String">
+     SELECT t.service_time FROM order_info t WHERE t.is_del=0 AND t.id=#{orderId}
+  </select>
+
+  <!-- 根据订单Id查询订单的状态1 -->
+  <select id="selectOrderStatus" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          order_status
+      from
+          order_info
+      where
+          id = #{orderId}
+  </select>
+
+  <!-- 更新订单的状态1 -->
+  <update id="updateOrderStatus" parameterType="java.util.Map">
+      update
+          order_info
+      set
+          order_status = #{orderStatus}
+      where
+          id = #{orderId}
+          and order_status != 0
+          and is_del=0
+  </update>
+
+  <!-- 更新商户订单的状态1 -->
+  <update id="updateMerchantOrderStatus" parameterType="java.util.Map">
+      update
+          push_merchant_order
+      set
+          order_status = #{orderStatus}
+      where
+          order_id = #{orderId}
+          <if test="merchantId!=null and merchantId!='' ">
+          and merchant_id = #{merchantId}
+          </if>
+  </update>
+
+  <!-- 更新商户订单的状态1 -->
+  <update id="updateOtherMerchantOrderStatus" parameterType="java.util.Map">
+      update
+          push_merchant_order
+      set
+          order_status = #{otherOrderStatus}
+      where
+          order_id = #{orderId}
+          and id in 
+			<foreach collection="pushInfos" index="index" item="item" open="(" separator="," close=")">
+	          #{item.pushId}
+	        </foreach>
+  </update>
+
+  <!-- 更新订单接单人,订单的状态 
+  <update id="updateReceiveEmployee" parameterType="java.util.Map">
+      update
+          order_info
+      set
+          order_status = #{orderStatus},
+          receive_employees_id = (select id from merchant_employees where merchant_id = #{merchantId} and phone = #{phone} and verification_status = 1 and is_del = 0)
+      where
+          id = #{orderId}
+          and receive_employees_id is null
+  </update>-->
+
+  <!-- 根据订单Id查询订单的类型1 -->
+  <select id="selectServiceType" parameterType="java.util.Map" resultType="java.lang.Long">
+      select
+          service_type_id
+      from
+          order_info
+      where
+          id = #{orderId}
+  </select>
+
+  <!-- 根据订单Id查询订单状态和商户Id1 -->
+  <select id="selectStatusAndMerchantId" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          merchant_id AS merchantId,
+          order_status AS orderStatus 
+      from
+          order_info
+      where
+          id = #{orderId}
+  </select>
+
+  <!-- 查看当前订单的客户评价
+  <select id="lookEvaluation" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          attitude_evaluation AS attitudeEvaluation,
+          quality_evaluation AS qualityEvaluation,
+          speed_evaluation AS speedEvaluation
+      from
+          order_info
+      where
+          id = #{id}
+  </select> -->
+  
+  <!-- 处理过期订单1 -->
+  <update id="handleBackOrders" parameterType="java.util.Map" >
+   update
+       order_info
+   set
+       order_status = #{orderStatus}
+   where 
+  		order_status =1 and (select datediff(now(), service_time) &gt; (select config_value from configuration_info where config_key='expires_day'))
+  </update>
+  
+  
+  
+   <!-- 按id 批更新用户端状态 -->
+  <update id="batchUpdateClientOrderStatus" parameterType="java.util.Map" >
+   update
+       order_info
+   set
+       order_status = #{orderStatus}
+   where 
+  	   id in ( ${ids} )
+  </update>
+  
+  
+   <!-- 按id 批更新服务端状态 -->
+  <update id="batchUpdateMerchantOrderStatus" parameterType="java.util.Map" >
+   update
+       push_merchant_order
+   set
+       order_status = #{orderStatus}
+   where 
+  	   order_id in ( ${ids} )
+  </update>
+  
+
+  
+  
+  <!--  过期未选择报价方案  -->
+  <select id="getNoChoosedExpiredOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   /*master*/ select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		order_status =2  and service_time &lt; #{curr_time}  limit 100
+  </select>
+  <!--  过期未选择报价方案20161014  -->
+  <select id="selectNoChoosedExpiredOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   /*master*/ 
+   (select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		is_immediate=0 and order_status =2  and  service_time &lt; #{check_time}  limit 100)
+   		union all
+   		 (select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		is_immediate=1 and order_status =2   and service_time &lt; #{immediate_check_time}  limit 100)
+  </select>
+  
+  
+   <!-- 过期无报价方案  -->
+  <select id="getNoBidExpiredOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   /*master*/ 
+   select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		order_status =1  and  service_time &lt; #{curr_time}   limit 100
+  </select>
+     <!-- 过期无报价方案20161014  -->
+  <select id="selectNoBidExpiredOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   /*master*/ 
+   (select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		order_status =1 and is_immediate=0  and  service_time &lt; #{curr_time}   limit 100)
+   		union all
+   		 (select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		order_status =1 and is_immediate=1  and  service_time &lt; #{immediate_check_time}   limit 100)
+  </select>
+  
+  
+  
+  <!--  查询用户取消的订单且已到清理期的  -->
+  <select id="getPurifyCancelOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	   /*master*/ 
+   		select orderId,actionTime from timeline 
+		where ((actionTime &gt; #{purify_time}  and actionTime &lt; #{end_PurifyTime} ) or  
+		      (actionTime = #{purify_time} and orderId &gt; #{maxOrderId} ) )
+		      and  actionCode=250 order by actionTime,orderId limit 100
+  </select>
+  
+  
+  <!--  已到清理期的无报价方案的过期订单   由于手工触发的两种过期，都是actionCode=330，这里忽略，留到未选定报价方案中处理 -->
+  <select id="getPurifyExpireNoBidOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	   /*master*/ 
+   		select orderId,actionTime from timeline 
+		where ( (actionTime &gt; #{purify_time} and  actionTime &lt; #{end_PurifyTime}  ) or 
+		      (actionTime = #{purify_time} and orderId &gt; #{maxOrderId} ) )
+		 and actionCode=280  order by actionTime,orderId limit 100
+  </select>
+  
+  
+  <!--  已到清理期的未选定报价方案的过期订单  -->
+  <select id="getPurifyExpireNoChoosedOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	   /*master*/ 
+   		select orderId,actionTime from timeline 
+		where (( actionTime &gt; #{purify_time} and  actionTime &lt; #{end_PurifyTime} ) or 
+		      (actionTime = #{purify_time} and orderId &gt; #{maxOrderId} ) )
+		 and (actionCode=290 or actionCode=330) order by actionTime,orderId limit 100
+  </select>
+  
+  
+   <!--  进行中或已完成的订单  -->
+  <select id="getPurifyInProcessOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	   /*master*/ 
+   		select orderId,actionTime from timeline 
+		where ((actionTime &gt; #{purify_time} and  actionTime &lt; #{end_PurifyTime} ) or
+		      (actionTime = #{purify_time}  and orderId &gt; #{maxOrderId} )) 
+		      and actionCode=210 order by actionTime,orderId limit 100
+  </select>
+  
+  
+   <!-- 已有报价方案的过期订单  -->
+  <select id="getNeedReturnBidFeeOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	    /*master*/ 
+   		select orderId,actionTime from timeline 
+		where ((actionTime &gt; #{process_time} and  actionTime &lt; #{end_ProcessTime} ) or
+		      (actionTime = #{process_time}  and orderId &gt; #{maxOrderId} )) 
+		      and actionCode=290 order by actionTime,orderId limit 100
+  </select>
+  
+     <!-- 已有报价方案的过期订单和取消订单  -->
+  <select id="selectNeedReturnBidFeeOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+	    /*master*/ 
+   		(select orderId,actionTime,'NOCHOOSED' as catalog from timeline 
+		where ((actionTime &gt; #{nprocess_time} and  actionTime &lt; #{nend_ProcessTime} ) or
+		      (actionTime = #{nprocess_time}  and orderId &gt; #{nmaxOrderId} )) 
+		      and actionCode=290 order by actionTime,orderId limit 100)
+		      union all
+		 (select orderId,actionTime,'CANCEL' as catalog from timeline 
+		where ((actionTime &gt; #{cprocess_time} and  actionTime &lt; #{cend_ProcessTime} ) or
+		      (actionTime = #{cprocess_time}  and orderId &gt; #{cmaxOrderId} )) 
+		      and actionCode=260 order by actionTime,orderId limit 100)
+		      
+  </select>
+  
+  
+  
+  
+  
+  
+  <!-- 处理过期订单1 -->
+  <update id="handleChoiceBackOrders" parameterType="java.util.Map" >
+   update
+       order_info
+   set
+       order_status = #{orderStatus}
+   where 
+  		order_status =2 and (select datediff(now(), service_time) &gt; (select config_value from configuration_info where config_key='expires_choice_day'))
+  </update>
+  
+  <select id="getChoiceExpiredLongerOrders" parameterType="java.util.Map"  resultType="java.util.LinkedHashMap">
+   select
+        cast(oi.id AS CHAR) AS orderId,
+		cast(oi.user_id AS CHAR) AS userId
+   from order_info oi
+   where 
+   		order_status =2  and (select datediff(now(), service_time) &gt; (select config_value from configuration_info where config_key='expires_choice_day'))
+  </select>
+  
+  <!-- 订单基础信息记录数查询1 -->
+  <select id="selectBasicOrderCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      /*master*/ 
+      select
+          COUNT(1)
+      from
+          order_info oi
+          inner join push_merchant_order pmo ON   pmo.order_id=oi.id         
+          and pmo.merchant_id = #{merchantId}
+          
+      where
+          oi.id not in (select order_id from merchant_order_abandon where merchant_id = #{merchantId} and order_id is not null) 
+          <if test="serviceType != 0">
+          and oi.service_type_id = #{serviceType}
+          </if>
+          <if test="serviceType == 0">
+          <!-- 2015年12月4日 搜索全部的时候，把之前的服务类型的订单也搜索出来 -->
+          <!--and oi.service_type_id in (select service_type_id from merchant_service_type where merchant_id = #{merchantId} and app_type = #{appType}) -->
+          and oi.service_type_id in (${catalogIds})
+          </if>
+         <!--  and oi.app_type = #{appType} -->
+          <!-- and (select count(1) from push_merchant_order where order_id = oi.id and user_id = #{userId}) > 0 -->
+  </select>
+
+  <!-- 订单基础信息查询1 -->  
+  <!-- <select id="selectBasicOrder" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          oi.id AS orderId,
+          oi.merchant_id AS merchantId,
+          oi.service_type_id AS serviceType,
+          <if test="appTypeFlg != 'yxt'">
+      	  (select service_type_name from service_type where service_type_id=oi.service_type_id and app_type= #{appType} and is_del = 0) AS serviceTypeName,
+      	  </if>   
+          oi.order_status AS orderStatus,
+          DATE_FORMAT(oi.join_time, '%Y-%m-%d %H:%i') AS joinTime,
+          (select phone from user_info where id = oi.user_id) AS userPhone,
+          (select COUNT(1) from evaluation where order_id = oi.id and attitude_evaluation > 0 and quality_evaluation > 0 and speed_evaluation > 0) AS evaluate,
+          <if test="appTypeFlg != 'yxt'">
+          (select path from service_type_attachment where service_type_id = (select id from service_type where app_type= #{appType} and service_type_id = oi.service_type_id and is_del = 0) and attachment_type = 1 and attachment_style = 'orderIcon' and is_del = 0) AS serviceTypePath
+          </if>
+      	  <if test="appTypeFlg == 'yxt'">
+      	  (select path from service_type_attachment where service_type_id = (select id from service_type where app_type= #{appType} and service_type_id = yxtoi.ico_type     and is_del = 0) and attachment_type = 1 and attachment_style = 'orderIcon' and is_del = 0) AS serviceTypePath,
+      	  st1.service_type_name AS serviceTypeName1,
+      	  st1.service_type_id AS serviceTypeId1,
+		  st2.service_type_name AS serviceTypeName2,
+      	  st2.service_type_id AS serviceTypeId2,
+		  st3.service_type_name AS serviceTypeName
+      	  </if>
+      from
+          order_info oi          
+          inner join push_merchant_order pmo ON   pmo.order_id=oi.id and pmo.user_id = #{userId}
+           <if test="appTypeFlg == 'yxt'">
+                left join yxt_order_info yxtoi ON   oi.id = yxtoi.order_id
+       			left join service_type st3 ON   oi.service_type_id=st3.service_type_id 
+				and st3.app_type = #{appType}
+				left join service_type st2 ON   st2.service_type_id=st3.parent_id 
+				and st2.app_type = #{appType}
+				left join service_type st1 ON   st1.service_type_id=st2.parent_id
+				and st1.app_type = #{appType}
+           </if>
+      where
+          oi.id not in (select order_id from merchant_order_abandon where merchant_id = #{merchantId} and order_id is not null)
+          <if test="serviceType != 0">
+          and oi.service_type_id = #{serviceType}
+          </if>
+          <if test="serviceType == 0">
+          and oi.service_type_id in (select service_type_id from merchant_service_type where merchant_id = #{merchantId} and app_type = #{appType})
+          </if>
+          and oi.app_type = #{appType}
+          and (select count(1) from push_merchant_order where order_id = oi.id and user_id = #{userId}) > 0
+      order by
+          oi.join_time desc
+      limit #{rows}, #{pageSize}
+  </select> -->
+  
+  <select id="selectBasicOrder" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      /*master*/ 
+	  SELECT 
+			orderId,
+			orderNo,
+			merchantId,
+			serviceType,
+			st.service_type_name AS serviceTypeName,
+			orderStatus,
+			joinTime,
+			<!-- ui.phone AS userPhone, -->
+			(SELECT COUNT(1) FROM evaluation WHERE order_id = temp.orderId AND attitude_evaluation > 0 AND quality_evaluation > 0 AND speed_evaluation > 0) AS evaluate,
+			sta.path AS serviceTypePath,
+			serviceTime<!-- ,
+			serviceTimeStamp -->
+	  FROM (
+			SELECT
+				oi.id AS orderId,
+				oi.order_no as orderNo,
+				oi.merchant_id AS merchantId,
+				oi.service_type_id AS serviceType,
+				oi.order_status AS orderStatus,
+				oi.user_id AS userId,
+				DATE_FORMAT(oi.join_time, '%Y-%m-%d %H:%i:%s') AS joinTime,
+				<!-- unix_timestamp(oi.service_time) as serviceTimeStamp, -->
+				DATE_FORMAT(oi.service_time, '%Y-%m-%d %H:%i') AS serviceTime	 
+			FROM
+				order_info oi          
+				INNER JOIN  push_merchant_order pmo ON   pmo.order_id=oi.id
+          		and pmo.merchant_id = #{merchantId}          		
+			WHERE
+				oi.id not in (select order_id from merchant_order_abandon where merchant_id =#{merchantId})		 
+			  <if test="serviceType != 0">
+		        AND oi.service_type_id = #{serviceType}
+		      </if>
+		      <if test="serviceType == 0">
+		      	<!-- 2015年12月4日 搜索全部的时候，把之前的服务类型的订单也搜索出来 -->
+		        <!--AND oi.service_type_id in (select service_type_id from merchant_service_type where merchant_id = #{merchantId} and app_type = #{appType}) -->
+		        AND oi.service_type_id in (${catalogIds})
+		      </if>
+				<!-- AND oi.app_type = #{appType} -->
+			ORDER BY
+				oi.join_time DESC
+			LIMIT 
+				#{rows}, #{pageSize}
+	  ) temp 
+	  <!-- <if test="appTypeFlg != 'yxt'"> -->
+	  LEFT JOIN service_type st ON <!-- st.service_type_id -->st.id=temp.serviceType <!-- AND st.app_type= #{appType} --> AND st.is_del = 0
+	  <!-- </if> -->
+	  <!-- <if test="appTypeFlg == 'yxt'">
+	  LEFT JOIN yxt_order_info yxtoi ON temp.orderId = yxtoi.order_id
+	  LEFT JOIN service_type st ON st.service_type_idst.id=yxtoi.ico_type AND st.app_type= #{appType} AND st.is_del = 0
+	  </if> -->
+	  LEFT JOIN service_type_attachment sta ON sta.service_type_id=st.id  AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0
+	  <!-- LEFT JOIN user_info ui ON ui.id=temp.userId  -->
+	  ORDER BY joinTime DESC
+  </select>
+
+  <!-- 订单详情通用信息 -->
+  <select id="selectOrderGeneral" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      /*master*/ 
+      SELECT 
+          oi.id AS orderId,
+          oi.order_no as orderNo,
+          oi.user_id as userId,
+          oi.merchant_id AS merchantId,
+          oi.service_type_id AS serviceType,
+          st.service_type_name as serviceTypeName,
+          oi.order_status AS orderStatus,
+          <if test="merchantId != null and merchantId != '' " >
+          (select order_status from push_merchant_order where order_id=#{orderId} and merchant_id=#{merchantId}) as merchantOrderStatus,
+          </if>
+          DATE_FORMAT(oi.join_time, '%Y-%m-%d %H:%i:%s') AS joinTime,
+          (select COUNT(1) from evaluation where order_id = oi.id and attitude_evaluation > 0 and quality_evaluation > 0 and speed_evaluation > 0) AS evaluate,
+          <!-- (select COUNT(1) from merchant_plan where merchant_id = oi.merchant_id and order_id = oi.id and is_del = 0) AS planCount, -->
+          <!-- (select COUNT(1) from merchant_service_record where merchant_id = oi.merchant_id and order_id = oi.id and is_del = 0) AS serviceRecordCount, -->
+          
+         <!--  sta.path AS serviceTypePath,          -->
+          DATE_FORMAT(oi.service_time, '%Y-%m-%d %H:%i') AS serviceTime,   
+		  unix_timestamp(oi.service_time) as serviceTimeStamp,
+		  oi.address,
+		  (SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS sorPlanCount,
+<!-- 		  oi.order_price as planPrice, -->
+<!-- 		  oi.merchant_actual_price as merchantActualPrice, -->
+		  IFNULL(oi.order_price,'') as planPrice,
+		  IFNULL(oi.merchant_actual_price,'') as merchantActualPrice,
+		  IFNULL(oi.vouchers_price,'') as vouchersPrice,
+		  IFNULL(oi.order_actual_price,'') as orderActualPrice,
+		  oi.price_unit as priceUnit,
+		  oi.merchant_plan_id as merchantPlanId,
+		  oi.order_pay_type as orderPayType,
+		  oi.receive_employees_id as receiveEmployeesId,
+		  oi.is_immediate isImmediate,
+		  IFNULL((select is_offer from merchant_plan p where p.order_id = oi.id and p.is_del = 0 limit 1),1) isOffer,
+		  oi.longitude,oi.latitude,
+		  (select count(1) from push_merchant_order mo where mo.order_id=oi.id) pushCount
+      FROM
+          order_info oi
+          LEFT JOIN service_type st ON  st.id=oi.service_type_id and st.is_del=0
+	  	  <!--LEFT JOIN service_type_attachment sta ON   sta.service_type_id=st.id  AND sta.attachment_type = 1 AND sta.attachment_style = 'orderIcon' AND sta.is_del = 0	 -->
+
+      WHERE
+          oi.id = #{orderId}
+  </select>
+
+  <!-- 订单详情附加信息1 -->
+  <select id="selectOrderAttachment" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select attachment_type AS type, path from order_attachment where order_id=#{orderId}
+  </select>
+
+  <!-- 订单详情的用户信息 -->
+  <select id="selectOrderUserInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      SELECT
+          ui.phone AS userPhone,
+          ua.path AS userPortrait
+      FROM
+          user_info ui
+          LEFT JOIN user_attachment ua
+          ON   ui.id = ua.user_id and
+             ua.attachment_type = 1 and 
+             ua.attachment_use = 11 and 
+             ua.is_del = 0
+      WHERE
+          ui.id = #{userId}
+          and ui.is_del = 0
+  </select>
+
+  <!-- 订单的方案信息 -->
+  <select id="selectOrderPlanInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      SELECT
+          mi.id AS merchantId,
+          mi.name AS merchantName,
+          mi.app_type as appType,
+          ma.path AS icoPath,
+      	  mp.id AS planId,
+          mp.price AS planPrice,
+          if(mp.is_offer=1,mp.discount_price,0) AS discountPrice,
+          mp.price AS planPrice,
+          mp.deposit,
+          mp.promise,
+          mp.content,
+          mp.distance,
+		  mp.total_count as totalCount,
+		  mp.praise_count as praiseCount,
+          DATE_FORMAT(mp.join_time,'%Y-%m-%d %H:%i:%s') AS joinTime,
+          mp.receive_employees_id as receiveEmployeesId,
+          mp.price_unit as priceUnit,
+          CASE
+			WHEN (
+				SELECT
+					count(vouchers_id)
+				FROM
+					merchant_vouchers_permissions 
+				WHERE
+					merchant_id = mi.id
+					and cutoff_time  >  now()
+					and is_del = 0
+			) > 0 THEN
+				1
+			ELSE
+				0
+			END AS useVouchers,
+			(SELECT ms.service_frequency FROM merchant_statistics ms WHERE ms.merchant_id=mi.id ) AS serviceFrequency,
+			(SELECT group_concat(telephone) FROM merchant_contact WHERE merchant_id = mi.id ) AS telephone,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=1 and auth_status=1 ) as enterpriseAuth,
+			(select count(1) from merchant_auth ma where ma.merchant_id = mi.id and ma.auth_type=2 and auth_status=1 ) as personalAuth,
+			(SELECT SUM(total_attitude_evaluation) AS totalAttitudeEvaluation FROM merchant_statistics WHERE merchant_id = mi.id) AS totalAttitudeEvaluation,
+			(SELECT SUM(total_quality_evaluation) AS totalQualityEvaluation FROM merchant_statistics WHERE merchant_id = mi.id ) AS totalQualityEvaluation,
+			(SELECT SUM(total_speed_evaluation) AS totalSpeedEvaluation FROM merchant_statistics WHERE merchant_id = mi.id ) AS totalSpeedEvaluation,
+          	(SELECT group_concat(path) FROM merchant_plan_attachment WHERE merchant_plan_id = mp.id and attachment_type = 1 and attachment_use = 11 and is_del = 0) AS planPicturePath,
+          	(SELECT group_concat(path) FROM merchant_plan_attachment WHERE merchant_plan_id = mp.id and attachment_type = 2 and attachment_use = 21 and is_del = 0) AS planVoicePath ,
+			(select apply_status from merchant_vip_apply where merchant_id = mi.id and is_del=0 ORDER BY apply_time DESC limit 1) as vipStatus,
+			mp.is_offer isOffer
+      FROM
+          merchant_plan mp 
+          INNER JOIN merchant_info mi ON mi.id = mp.merchant_id
+          INNER JOIN merchant_attachment ma ON mi.id = ma.merchant_id and ma.attachment_type = 1 and ma.attachment_use = 11
+      WHERE
+          mp.merchant_id = #{merchantId}
+          and mp.order_id = #{orderId}
+          and mp.is_del = 0
+  </select>
+
+  <!-- 商户抢单次数查询 -->
+  <select id="selectGrabFrequency" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          grab_frequency AS grabFrequency
+      from
+          merchant_statistics
+      where
+          merchant_id = #{merchantId}
+          and app_type = #{appType}
+  </select>
+
+  <!-- 订单详情的商品信息 -->
+  <select id="selectOrderGoodsInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          mg.goods_name AS goodsName,
+          ogi.goods_num AS goodsNum,
+          mg.goods_price AS goodsPrice
+      from
+          order_goods_info ogi
+          inner join merchant_goods mg ON   ogi.goods_id = mg.id
+      where
+          ogi.order_id = #{orderId}
+          and ogi.is_del = 0
+      order by
+          ogi.join_time asc
+  </select>  
+  
+  <!-- 获取订单过期时间 -->
+  <select id="getExpiredTime" parameterType="java.lang.String" resultType="java.lang.Integer">
+     		select config_value from configuration_info where config_key=#{expires_day}
+  </select>  
+  
+   <!-- 获取配置表中制定配置项信息 -->
+  <select id="getConfigByKey" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">
+     		select *  from configuration_info where config_key=#{key}
+  </select> 
+  
+  <update id="testAuthPass" parameterType="Long">
+		update 
+			merchant_auth 
+		set 
+			auth_type=1,
+			auth_status=1 
+		where 
+			merchant_id=#{merchantId} 		
+  </update>
+  
+  <update id="testUpdateMerchant">
+  		update	
+  			merchant_info
+  		set 
+  			auth_status=1
+  		where 
+  			id =#{merchantId}
+  </update>
+  
+<!--   更新方案状态已读 -->
+  <update id="readMerchantPlan" parameterType="java.util.Map">
+      update merchant_plan set is_read=1 where id=#{planId}
+  </update>
+  
+  <select id="getMerchantsForSpeicalOrder"  parameterType="java.util.Map" resultType="java.util.HashMap">
+  	 /*master*/ select merchant_id   from  push_merchant_order where order_id= #{orderId}
+  </select>  
+  
+  <!-- 查询某个商户的评价信息 -->
+  <select id="getEvaluateByOrderId" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      SELECT
+			a.text_evaluation as textEvaluation,
+			a.attitude_evaluation as attitudeEvaluation,
+			a.quality_evaluation as qualityEvaluation,
+			a.speed_evaluation as speedEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as joinTime,
+			(select GROUP_CONCAT(path) from evaluation_attachment  where evaluation_id=a.id and is_del = 0) as attachmentPaths	
+		FROM
+			evaluation a
+		WHERE 
+			a.order_id = #{orderId}
+		ORDER BY
+		    a.join_time DESC
+		LIMIT 1
+  </select>
+</mapper>
+

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantApplyWithdrawRecordDao">
+
+  <!-- 商户申请提现记录的保存 -->
+  <insert id="insertMerchantApplyWithdrawRecord" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="businessId">
+    insert into
+        merchant_apply_withdraw_record
+    (
+        merchant_id,
+        withdraw,
+        withdraw_no,
+        withdraw_price,
+        withdraw_time,
+        withdraw_status,
+        remark,
+        app_type
+    )
+    values
+    (
+        #{merchantId},
+        #{withdraw},
+        #{withdrawNo},
+        #{withdrawPrice},
+        now(),
+        2,
+        '',
+        #{appType}
+    )
+  </insert>
+  
+    <!-- 查看最新一条提现记录 -->
+  <select id="selectLastWithdrawRecord" parameterType="java.util.Map" resultType="java.util.Map">
+      SELECT
+          withdraw_status as withdrawStatus,
+          withdraw_time as  withdrawTime        
+      FROM
+          merchant_apply_withdraw_record
+      WHERE
+          merchant_id = #{merchantId}
+      ORDER BY
+          withdraw_time DESC
+      LIMIT 1
+  </select> 
+</mapper>
+

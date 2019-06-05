@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantTransoutDao">
+
+	<!-- 保存转出资金至钱包记录 -->
+	<insert id="saveTransoutRecord" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="id">
+		insert into
+		merchant_transout_record(merchant_id,user_id,is_del,trans_date,app_type,trans_status,
+		trans_amount,remark,trans_seq,opay_trans_seq)
+		values(#{merchantId},#{userId}, 1, #{transDate},
+		#{appType},#{transStatus},#{moneyAmount}, #{remark}, #{transSeq},#{opayTransSeq} )
+	</insert>
+	
+	<!-- 保存转出资金至钱包记录 -->
+	<insert id="saveSystemErrorLogs" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="errorId">
+		insert into
+		merchant_transout_system_error_logs(transout_seq,user_id,merchant_id,transout_money,avaliable_money)
+		values(#{transoutSeq},#{userId}, #{merchantId}, #{transoutMoney},#{avaliableMoney})
+	</insert>
+	
+	<!-- 删除系统异常日志记录 -->
+	<delete id="deleteSystemErrorLogs" parameterType="java.lang.Long">
+	   delete from merchant_transout_system_error_logs where error_id =#{errorId}
+	</delete>
+	
+	
+	<!-- 更新收入转出记录状态 -->
+	<update id="updateTransoutRecordStatus" parameterType="java.util.HashMap">
+	   update merchant_transout_record set trans_status =#{transStatus} 
+	   <if test="remark !=null and remark!=''">
+	      ,remark =#{remark} 
+	   </if>
+	   <if test="opayTransSeq!=null and opayTransSeq!=''">
+	      ,opay_trans_seq =#{opayTransSeq} 
+	   </if>
+	   where id=#{transoutId}
+	</update>
+</mapper>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+    <bean id="poolingConnectionManager"
+          class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager">
+        <constructor-arg name="socketFactoryRegistry">
+            <bean class="com.shanjin.common.SockFactoryRegistryFactory"></bean>
+        </constructor-arg>
+        <property name="maxTotal" value="200"/>
+        <property name="defaultMaxPerRoute" value="5"/>
+    </bean>
+
+    <bean id="httpClientBuilder" class="org.apache.http.impl.client.HttpClientBuilder"
+          factory-method="create">
+        <property name="connectionManager" ref="poolingConnectionManager"/>
+    </bean>
+
+    <bean id="httpClient" factory-bean="httpClientBuilder"
+          factory-method="build"/>
+    <!-- -->
+    <bean id="clientHttpRequestFactory"
+          class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
+        <constructor-arg ref="httpClient"/>
+        <property name="connectTimeout" value="30000"/>
+        <property name="readTimeout" value="30000"/>
+    </bean>
+
+    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+        <constructor-arg ref="clientHttpRequestFactory"/>
+
+        <property name="messageConverters">
+            <list>
+                <bean class="org.springframework.http.converter.StringHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
+                <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter"/>
+            </list>
+        </property>
+    </bean>
+
+
+</beans>

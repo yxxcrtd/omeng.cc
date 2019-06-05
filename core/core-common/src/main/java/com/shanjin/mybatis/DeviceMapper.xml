@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IDeviceDao">
+    
+  <!-- 检查记录是否添加过 -->
+  <select id="checkDeviceInfo" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          device_info
+      where
+          1=1 
+      <if test="phone!=null and phone!=''">
+			AND phone = #{phone}
+	  </if>
+	  <if test="appType!=null and appType!=''">
+			AND app_type = #{appType}
+	  </if>
+	  <if test="clientType!=null and clientType!=''">
+			AND client_type = #{clientType}
+	  </if>
+	  <if test="version!=null and version!=''">
+			AND version = #{version}
+	  </if>
+	   <if test="osVersion!=null and osVersion!=''">
+			AND os_version = #{osVersion}
+	  </if>
+	  <if test="model!=null and model!=''">
+			AND model = #{model}
+	  </if>
+	  <if test="userType!=null and userType!=''">
+			AND user_type = #{userType}
+	  </if>
+	   <if test="clientId!=null and clientId!=''">
+			AND client_id = #{clientId}
+	  </if>
+  </select>
+  
+  <!-- 记录设备信息 -->
+  <insert id="recordDeviceInfo" parameterType="java.util.Map" >
+      insert into device_info
+           (
+               phone,
+               app_type,
+               client_type,
+               version,
+               os_version,
+               model,
+               user_type,
+               join_time,
+               client_id
+           )
+      values
+           (
+               #{phone},
+               #{appType},
+               #{clientType},
+               #{version},
+               #{osVersion},
+               #{model},
+               #{userType},
+               now(),
+               #{clientId}
+           )
+  </insert>
+  
+</mapper>
+

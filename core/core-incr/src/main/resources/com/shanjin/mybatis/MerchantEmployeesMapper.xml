@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.MerchantEmployeesMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantEmployees" id="MerchantEmployeesBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="name" column="name"/>
+		<result property="phone" column="phone"/>
+		<result property="employeesType" column="employees_type"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="password" column="password"/>
+		<result property="verificationCode" column="verification_code"/>
+		<result property="verificationTime" column="verification_time"/>
+		<result property="verificationStatus" column="verification_status"/>
+		<result property="lastLoginTime" column="last_login_time"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="employeeKey" column="employee_key"/>
+		<result property="userId" column="user_id"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantEmployees" id="MerchantEmployeesBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="name" column="name"/>
+		<result property="phone" column="phone"/>
+		<result property="employeesType" column="employees_type"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="password" column="password"/>
+		<result property="verificationCode" column="verification_code"/>
+		<result property="verificationTime" column="verification_time"/>
+		<result property="verificationStatus" column="verification_status"/>
+		<result property="lastLoginTime" column="last_login_time"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="employeeKey" column="employee_key"/>
+		<result property="userId" column="user_id"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.merchant_id as merchantId, 
+			t.name as name, 
+			t.phone as phone, 
+			t.employees_type as employeesType, 
+			t.join_time as joinTime, 
+			t.password as password, 
+			t.verification_code as verificationCode, 
+			t.verification_time as verificationTime, 
+			t.verification_status as verificationStatus, 
+			t.last_login_time as lastLoginTime, 
+			t.app_type as appType, 
+			t.is_del as isDel, 
+			t.employee_key as employeeKey, 
+			t.user_id as userId
+		FROM merchant_employees AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM merchant_employees AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO merchant_employees (
+				
+				merchant_id, 
+				name, 
+				phone, 
+				employees_type, 
+				join_time, 
+				password, 
+				verification_code, 
+				verification_time, 
+				verification_status, 
+				last_login_time, 
+				app_type, 
+				is_del, 
+				employee_key, 
+				user_id
+			) VALUES (
+				
+				#{merchantId}, 
+				#{name}, 
+				#{phone}, 
+				#{employeesType}, 
+				#{joinTime}, 
+				#{password}, 
+				#{verificationCode}, 
+				#{verificationTime}, 
+				#{verificationStatus}, 
+				#{lastLoginTime}, 
+				#{appType}, 
+				#{isDel}, 
+				#{employeeKey}, 
+				#{userId}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE merchant_employees AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM merchant_employees AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.MerchantEmployees" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.MerchantEmployees">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=merchantId">
+				t.merchant_id = #{merchantId},
+			</if>		
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>		
+			<if test="null!=phone and phone!=''">
+				t.phone = #{phone},
+			</if>		
+			<if test="null!=employeesType">
+				t.employees_type = #{employeesType},
+			</if>		
+			<if test="null!=joinTime">
+				t.join_time = #{joinTime},
+			</if>		
+			<if test="null!=password and password!=''">
+				t.password = #{password},
+			</if>		
+			<if test="null!=verificationCode and verificationCode!=''">
+				t.verification_code = #{verificationCode},
+			</if>		
+			<if test="null!=verificationTime">
+				t.verification_time = #{verificationTime},
+			</if>		
+			<if test="null!=verificationStatus">
+				t.verification_status = #{verificationStatus},
+			</if>		
+			<if test="null!=lastLoginTime">
+				t.last_login_time = #{lastLoginTime},
+			</if>		
+			<if test="null!=appType and appType!=''">
+				t.app_type = #{appType},
+			</if>		
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>		
+			<if test="null!=employeeKey and employeeKey!=''">
+				t.employee_key = #{employeeKey},
+			</if>		
+			<if test="null!=userId">
+				t.user_id = #{userId},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>		
+			<if test="null!=employeesType">
+				and t.employees_type = #{employeesType}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=password and password!=''">
+				and t.password = #{password}
+			</if>		
+			<if test="null!=verificationCode and verificationCode!=''">
+				and t.verification_code = #{verificationCode}
+			</if>		
+			<if test="null!=verificationTime">
+				and t.verification_time = #{verificationTime}
+			</if>		
+			<if test="null!=verificationStatus">
+				and t.verification_status = #{verificationStatus}
+			</if>		
+			<if test="null!=lastLoginTime">
+				and t.last_login_time = #{lastLoginTime}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=employeeKey and employeeKey!=''">
+				and t.employee_key = #{employeeKey}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MerchantEmployeesBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="MerchantEmployeesBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>		
+			<if test="null!=employeesType">
+				and t.employees_type = #{employeesType}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=password and password!=''">
+				and t.password = #{password}
+			</if>		
+			<if test="null!=verificationCode and verificationCode!=''">
+				and t.verification_code = #{verificationCode}
+			</if>		
+			<if test="null!=verificationTime">
+				and t.verification_time = #{verificationTime}
+			</if>		
+			<if test="null!=verificationStatus">
+				and t.verification_status = #{verificationStatus}
+			</if>		
+			<if test="null!=lastLoginTime">
+				and t.last_login_time = #{lastLoginTime}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=employeeKey and employeeKey!=''">
+				and t.employee_key = #{employeeKey}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MerchantEmployeesBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.MerchantEmployees" resultMap="MerchantEmployeesBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=phone and phone!=''">
+				and t.phone = #{phone}
+			</if>		
+			<if test="null!=employeesType">
+				and t.employees_type = #{employeesType}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=password and password!=''">
+				and t.password = #{password}
+			</if>		
+			<if test="null!=verificationCode and verificationCode!=''">
+				and t.verification_code = #{verificationCode}
+			</if>		
+			<if test="null!=verificationTime">
+				and t.verification_time = #{verificationTime}
+			</if>		
+			<if test="null!=verificationStatus">
+				and t.verification_status = #{verificationStatus}
+			</if>		
+			<if test="null!=lastLoginTime">
+				and t.last_login_time = #{lastLoginTime}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=employeeKey and employeeKey!=''">
+				and t.employee_key = #{employeeKey}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<update id="logicDelByMerchantId" >
+        update merchant_employees t set t.is_del = 1
+        where t.merchant_id = #{merchantId}
+    </update>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

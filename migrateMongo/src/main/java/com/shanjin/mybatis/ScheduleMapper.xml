@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IScheduleDao">
+
+	 <!-- 保存一条推送订单清理记录 -->
+	<insert id="insertScheduleRec" parameterType="java.util.Map">
+  		insert into scheduleRec(
+  			businessType,
+  			catalog,
+  			maxOrderId,
+  			lastBusinessDataTime,
+  			lastProcessTime
+  		) values(
+  			#{businessType},
+  			#{catalog},
+  			#{maxOrderId},
+  			#{businessDataTime},  		
+  	 		now()
+  		)
+	</insert>
+	
+	<!-- 查询某推送订单清理类型最后一次记录  -->
+	<select id="getLastScheduleRec" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+			 /** master **/
+     		select lastBusinessDataTime,maxOrderId from scheduleRec where businessType=#{businessType}
+     		<if test="catalog!=null and catalog!='' ">
+          		and catalog = #{catalog}
+          	</if>
+     		 order by lastBusinessDataTime desc limit 1 
+	</select>
+	
+	
+	<!-- 查询最近一次某类历史订单已成功迁移Mysql 但未清理的记录  -->
+	<select id="getLastMigrateMysqlRec" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		    /** master **/
+     		select id,catalog,lastBusinessDataTime,maxOrderId from scheduleRec where businessType=#{businessType}
+     		and maxOrderId!=-1 and migrateStatus=1  and purifyStatus=0
+     		order by lastBusinessDataTime,maxOrderId  limit 1 
+	</select>
+	
+	<update id="updateRecToPurity" parameterType="java.lang.Long">
+		update scheduleRec set purifyStatus=1,purifyTime=now() where id=#{id} 
+	</update>
+	
+</mapper>
+

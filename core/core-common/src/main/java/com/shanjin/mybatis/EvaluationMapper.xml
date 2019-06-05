@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IEvaluationDao">
+
+  <!-- 
+  	表     名：evaluation							评价
+  	表描述：
+  		id										主键
+  		user_id									用户id
+  		order_id								订单id
+  		merchant_id								商户id
+  		service_type							服务类型
+  		attitude_evaluation						态度评价
+  		quality_evaluation						质量评价
+  		speed_evaluation						速度评价
+  		text_evaluation							图片评价
+  		create_time								创建时间
+   -->
+
+  <!-- 查询某个用户的所有评价信息 -->
+  <select id="getUserEvaluations" resultType="java.util.HashMap">
+     SELECT
+		a.service_type,
+		a.text_evaluation,
+		a.attitude_evaluation,
+		a.quality_evaluation,
+		a.speed_evaluation
+	FROM
+		evaluation a
+	WHERE
+		a.user_id = #{userId}
+  </select>
+  
+  <!-- 查询某个商户的评价信息 -->
+  <select id="getMerchantEvaluations" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      SELECT
+			CONCAT('客户评价: ', CASE a.text_evaluation	WHEN NULL THEN '无'	WHEN '' THEN '无' ELSE a.text_evaluation END ) as textEvaluation,
+			a.attitude_evaluation as attitudeEvaluation,
+			a.quality_evaluation as qualityEvaluation,
+			a.speed_evaluation as speedEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as time,
+			b.phone as phone,
+			c.path as path,
+			(select GROUP_CONCAT(path) from evaluation_attachment  where evaluation_id=a.id and is_del = 0) as attachmentPaths
+		FROM
+			evaluation  a
+			left join user_info b on a.user_id = b.id and b.is_del=0
+			left join user_attachment c on a.user_id = c.user_id
+		where 
+			a.merchant_id = #{merchantId}
+			<if test="orderId != null">
+			and a.order_id = #{orderId}
+			</if>
+		ORDER BY a.join_time DESC
+		<if test="orderId == null">
+		LIMIT #{rows}, #{pageSize}
+		</if>
+  </select>
+
+  <!-- 查询某个商户的评价信息 -->
+  <select id="getMerchantEvaluationsForUser" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      SELECT
+			a.text_evaluation as textEvaluation,
+			a.attitude_evaluation as attitudeEvaluation,
+			a.quality_evaluation as qualityEvaluation,
+			a.speed_evaluation as speedEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as time,
+			b.name as userName,
+			b.phone,
+			c.path as path,
+			(select GROUP_CONCAT(path) from evaluation_attachment  where evaluation_id=a.id and is_del = 0) as attachmentPaths	
+		FROM
+			evaluation a
+			left join user_info b on a.user_id = b.id and b.is_del=0
+			left join user_attachment c on a.user_id = c.user_id
+		WHERE 
+			a.merchant_id = #{merchantId}
+		ORDER BY
+		    a.join_time DESC
+		LIMIT #{rows}, #{pageSize}
+  </select>
+
+  <!-- 获取店家的平均分 -->
+  <select id="getMerchantAverageScore" resultType="java.util.HashMap">
+      SELECT
+			AVG(a.attitude_evaluation) as attitudeAvg,
+			AVG(a.quality_evaluation) as qualityAvg,
+			AVG(a.speed_evaluation) as speedAvg
+		FROM
+			evaluation a
+		WHERE
+			a.merchant_id = #{merchantId}
+  </select>
+
+  <!-- 获取商户评论数量 -->
+  <select id="getMerchantEvaluationNum" resultType="Integer" parameterType="java.util.HashMap" >
+	 SELECT
+		count(1)
+	FROM
+		evaluation 
+	WHERE  merchant_id = #{merchantId}
+  </select>
+
+  <!-- 查询商户的最新两条文件评价 -->
+  <select id="getTextEvaluationTop2" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      select
+			a.text_evaluation as textEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as time,
+			b.phone as phone,
+			c.path as path
+	  from
+			evaluation a 
+			left join user_info b on a.user_id = b.id and b.is_del=0
+			left join user_attachment c on a.user_id = c.user_id
+	  where
+	  		a.merchant_id = #{merchantId}
+	  order by a.join_time desc
+      limit 0, 2
+  </select>
+  
+  <!-- 查询商户的最新两条文件评价 -->
+  <select id="getTextEvaluationTopN" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+      select
+			a.text_evaluation as textEvaluation,
+			date_format(a.join_time,'%Y-%m-%d %H:%i') as time,
+			b.phone as phone,
+			c.path as path
+	  from
+			evaluation a 
+			left join user_info b on a.user_id = b.id and b.is_del=0
+			left join user_attachment c on a.user_id = c.user_id
+	  where
+	  		a.merchant_id = #{merchantId}
+	  order by a.join_time desc
+      limit 0, ${num}
+  </select>
+  
+  <!-- 根据商户ID查询商户的所有统计信息 -->
+  <select id="selectStatisticsInfo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          grab_frequency as grabFrequency,
+          service_frequency as serviceFrequency,
+          total_income_price as totalIncomePrice,
+          total_withdraw_price as totalWithdrawPrice,
+          surplus_price as surplusPrice,
+          order_surplus_price as orderSurplusPrice,
+          total_attitude_evaluation as totalAttitudeEvaluation,
+          total_quality_evaluation as totalQualityEvaluation,
+          total_speed_evaluation as totalSpeedEvaluation,
+          total_count_evaluation as totalCountEvaluation
+      from
+          merchant_statistics
+      where
+          merchant_id = #{merchantId}
+  </select>
+</mapper>
+

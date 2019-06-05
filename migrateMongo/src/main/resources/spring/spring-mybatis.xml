@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:mvc="http://www.springframework.org/schema/mvc"
+xmlns:p="http://www.springframework.org/schema/p"
+xmlns:context="http://www.springframework.org/schema/context"
+xmlns:tx="http://www.springframework.org/schema/tx"
+xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.1.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
+ 
+  <!-- 自动扫描 -->
+  <context:component-scan base-package="com.shanjin" />
+  
+  <context:property-placeholder location="classpath:database.properties" ignore-unresolvable="true" />
+  <context:property-placeholder location="classpath:sms.properties" ignore-unresolvable="true" />
+
+  
+  <bean id="mysqlDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+    <!-- 数据库基本信息配置 -->
+    <property name="driverClassName" value="${mysql.driverClassName}" />
+    <property name="url" value="${mysql.url}" />
+    <property name="username" value="${mysql.username}" />
+    <property name="password" value="${mysql.password}" />
+    <!-- 初始化连接数量 -->
+    <property name="initialSize" value="${mysql.initialSize}" />
+    <!-- 最大并发连接数 -->
+    <property name="maxActive" value="${mysql.maxActive}" />
+    <!-- 最大空闲连接数 abounded
+    <property name="maxIdle" value="${mysql.maxIdle}" />   -->
+    <!-- 最小空闲连接数 -->
+    <property name="minIdle" value="${mysql.minIdle}" />
+    <!-- 配置获取连接等待超时的时间 -->
+    <property name="maxWait" value="${mysql.maxWait}" />
+    <!-- 超过时间限制是否回收 -->
+    <property name="removeAbandoned" value="${mysql.removeAbandoned}" />
+    <!-- 超过时间限制多长 -->
+    <property name="removeAbandonedTimeout" value="${mysql.removeAbandonedTimeout}" />
+    <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+    <property name="timeBetweenEvictionRunsMillis" value="${mysql.timeBetweenEvictionRunsMillis}" />
+    <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+    <property name="minEvictableIdleTimeMillis" value="${mysql.minEvictableIdleTimeMillis}" />
+    <!-- 用来检测连接是否有效的sql，要求是一个查询语句-->
+    <property name="validationQuery" value="${mysql.validationQuery}" />
+    <!-- 申请连接的时候检测 -->
+    <property name="testWhileIdle" value="${mysql.testWhileIdle}" />
+    <!-- 申请连接时执行validationQuery检测连接是否有效，配置为true会降低性能 -->
+    <property name="testOnBorrow" value="${mysql.testOnBorrow}" />
+    <!-- 归还连接时执行validationQuery检测连接是否有效，配置为true会降低性能  -->
+    <property name="testOnReturn" value="${mysql.testOnReturn}" />
+    <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+    <property name="poolPreparedStatements" value="${mysql.poolPreparedStatements}" />
+    <property name="maxPoolPreparedStatementPerConnectionSize" value="${mysql.maxPoolPreparedStatementPerConnectionSize}" />
+    <!--属性类型是字符串，通过别名的方式配置扩展插件，常用的插件有： 监控统计用的filter:stat 日志用的filter:log4j 防御SQL注入的filter:wall -->
+    <property name="filters" value="config" />
+    <property name="defaultAutoCommit" value="true" /> 
+    <property name="connectionProperties" value="config.decrypt=true" />
+   </bean>
+   
+    <bean id="logFilter" class="com.alibaba.druid.filter.logging.Slf4jLogFilter"> 
+  		<property name="statementExecutableSqlLogEnable" value="true" /> 
+ 	</bean>
+  
+  
+ 
+ 
+  <!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 -->
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="mysqlDataSource" />
+    <property name="configLocation" value="classpath:spring/configuration.xml" />
+    <!-- 自动扫描mapping.xml文件 -->
+    <property name="mapperLocations" value="classpath*:com/shanjin/mybatis/*.xml"></property>
+  </bean>
+  
+  <!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+  <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="com.shanjin.dao" />
+  </bean>
+  
+  <!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->
+  <bean id="mysqlTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="mysqlDataSource" />
+  </bean>
+
+  <!-- 短信工具类 -->
+  <bean id="SmsUtil" class="com.shanjin.common.util.SmsUtil">
+    <property name="smskey" value="${sms.key}" />
+    <property name="voicekey" value="${voice.key}" />
+  </bean>
+
+
+<!-- 使用annotation定义事务 -->
+    <tx:annotation-driven  transaction-manager="mysqlTransactionManager" proxy-target-class="true" />
+    
+    <bean id="purifyService"  class="com.shanjin.service.PurifyMigratedService" />
+    
+</beans>

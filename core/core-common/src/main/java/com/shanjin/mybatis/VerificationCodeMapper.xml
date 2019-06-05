@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IVerificationCodeDao">
+
+  <!-- 更新验证码,最后登陆时间 -->
+  <update id="updateVerificationInfo" parameterType="java.util.Map">
+      update
+          merchant_employees
+      set
+          verification_code = #{verificationCode},
+          verification_time = now(),
+          verification_status = 0,
+          last_login_time = now()
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+  </update>
+  
+  <insert id="saveSystemLog" parameterType="Map">
+  	insert into tempSystemLog
+  	(
+		ip,
+		requestMethod,
+		controllerPath,
+		paramNames,
+		methodDescription,
+		joinTime,
+		returnValue,
+		finishTime  		
+  	)values(
+		#{ip},
+		#{requestMethod},
+		#{controllerPath},
+		#{paramNames},
+		#{methodDescription},
+		#{joinTime},
+		#{returnValue},
+		#{finishTime}
+  	)
+   </insert>
+</mapper>
+

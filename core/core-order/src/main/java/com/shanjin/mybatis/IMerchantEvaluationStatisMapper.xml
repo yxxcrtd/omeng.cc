@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.IMerchantEvaluationStatisDao">
+	<!-- 根据订单获取，开通原子服务的商户列表 -->
+<!-- 	<select id="getMerchantByOrder" parameterType="java.util.Map" -->
+<!-- 		resultType="java.util.HashMap">	 -->
+<!-- 	  <![CDATA[  -->
+<!-- 	select oi.* from  -->
+<!-- 	( -->
+<!-- 	select  -->
+<!-- 	oi.merchant_id 	 -->
+<!-- 	,date_sub(date_sub(date_format(now(),'%Y-%m-%d 00:00:00'),interval -->
+<!-- 	extract(day from now())-1 day),interval 1 month) as startdate  -->
+<!-- 	,date_sub(date_sub(date_format(now(),'%Y-%m-%d 23:59:59'),interval -->
+<!-- 	extract(day from now()) day),interval 0 month) as enddate  -->
+<!-- 	,date_format(date_sub(now(),interval 1 month),'%Y%m') as statismonth  -->
+<!-- 	,now() as join_time  -->
+<!-- 	,now() as statis_time  -->
+<!-- 	from order_info oi left join merchant_auth ma on  -->
+<!-- 	ma.merchant_id=oi.merchant_id  -->
+<!-- 	where  -->
+<!-- 	oi.order_status in(#{orderstatus}) and ma.auth_status=1  -->
+<!-- 	group by oi.merchant_id  -->
+<!-- 	having count(oi.merchant_id)>0  -->
+<!-- 	) oi -->
+<!-- 	limit #{startli},#{pagesize} -->
+<!-- 	 ]]> -->
+<!-- 	</select> -->
+	<!-- 根据订单获取，开通原子服务的商户列表总数/* master */ -->
+<!-- 	<select id="getMerchantByOrderCount" parameterType="java.util.Map" -->
+<!-- 		resultType="int">	 -->
+		
+<!-- 	  <![CDATA[  -->
+<!-- 	select count(0) as totalcount -->
+<!--  from ( -->
+<!-- select  -->
+<!-- 	oi.merchant_id 	 -->
+<!-- 	from order_info oi left join merchant_auth ma on  -->
+<!-- 	ma.merchant_id=oi.merchant_id  -->
+<!-- 	where  -->
+<!-- 	oi.order_status in(#{orderstatus}) and ma.auth_status=1  -->
+<!-- 	group by oi.merchant_id  -->
+<!-- 	having count(oi.merchant_id)>0   -->
+<!-- 	) oi -->
+<!-- 	 ]]> -->
+<!-- 	</select> -->
+
+	<!-- 获取上月订单评价信息 -->
+<!-- 	<select id="getEvaluationByMonth" parameterType="java.util.Map" -->
+<!-- 		resultType="java.util.HashMap"> -->
+<!-- 		 <![CDATA[ -->
+<!-- 	select oi.* from  -->
+<!-- 	( -->
+<!-- 		select  -->
+<!-- 		e.merchant_id  -->
+<!-- 		,sum(IFNULL(e.attitude_evaluation,0))div sum(1) as -->
+<!-- 		total_attitude_evaluation  -->
+<!-- 		,sum(IFNULL(e.quality_evaluation,0))div -->
+<!-- 		sum(1) as total_quality_evaluation  -->
+<!-- 		,sum(IFNULL(e.speed_evaluation,0))div sum(1) as total_speed_evaluation  -->
+<!-- 		, -->
+<!-- 		( -->
+<!-- 		( -->
+<!-- 		sum(IFNULL(e.attitude_evaluation,0))+sum(IFNULL(e.quality_evaluation,0))+sum(IFNULL(e.speed_evaluation,0)) -->
+<!-- 		)/ 3 -->
+<!-- 		)div sum(1) as avg_evaluation  -->
+<!-- 		,date_sub(date_sub(date_format(now(),'%Y-%m-%d 00:00:00'),interval -->
+<!-- 		extract(day from now())-1 day),interval 1 month) as startdate  -->
+<!-- 		,date_sub(date_sub(date_format(now(),'%Y-%m-%d 23:59:59'),interval -->
+<!-- 		extract(day from now()) day),interval 0 month) as enddate  -->
+<!-- 		,date_format(date_sub(now(),interval 1 month),'%Y%m') as statismonth  -->
+<!-- 		,e.join_time  -->
+<!-- 		,now() as statis_time  -->
+<!-- 		from evaluation e  -->
+<!-- 		where date(e.join_time)  -->
+<!-- 		between date(date_sub(date_sub(date_format(now(),'%Y-%m-%d -->
+<!-- 		00:00:00'),interval -->
+<!-- 		extract(day from now())-1 day),interval 1 month)) -->
+<!-- 		and date(date_sub(date_sub(date_format(now(),'%Y-%m-%d 23:59:59'),interval -->
+<!-- 		extract(day from now()) day),interval 0 month))  -->
+<!-- 		group by e.merchant_id  -->
+<!-- 		order by e.join_time desc -->
+<!-- 		) oi -->
+<!-- 	limit #{startli},#{pagesize} -->
+<!-- 		 ]]> -->
+
+<!-- 	</select> -->
+
+	<!-- 根据订单获取，开通原子服务的商户列表总数/* master */ -->
+<!-- 	<select id="getEvaluationByMonthCount" parameterType="java.util.Map" -->
+<!-- 		resultType="int">	 -->
+		
+<!-- 	  <![CDATA[  -->
+<!-- select count(0) as totalcount -->
+<!--  from ( -->
+<!-- 		select  -->
+<!-- 		e.merchant_id 	 -->
+<!-- 		from evaluation e  -->
+<!-- 		where date(e.join_time)  -->
+<!-- 		between date(date_sub(date_sub(date_format(now(),'%Y-%m-%d -->
+<!-- 		00:00:00'),interval -->
+<!-- 		extract(day from now())-1 day),interval 1 month)) -->
+<!-- 		and date(date_sub(date_sub(date_format(now(),'%Y-%m-%d 23:59:59'),interval -->
+<!-- 		extract(day from now()) day),interval 0 month))  -->
+<!-- 		group by e.merchant_id  -->
+<!-- 	) oi -->
+<!-- 	 ]]> -->
+<!-- 	</select> -->
+
+
+	<!-- 批量将评价统计信息添加到数据库 -->
+<!-- 	<insert id="addMerchantEvaluationStatis" parameterType="java.util.Map" -->
+<!-- 		useGeneratedKeys="true" keyProperty="id"> -->
+<!-- 		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT -->
+<!-- 			LAST_INSERT_ID() as id; -->
+<!-- 		</selectKey> -->
+<!-- 		insert into merchant_evaluation_statis (merchant_id, -->
+<!-- 		total_attitude_evaluation, total_quality_evaluation, -->
+<!-- 		total_speed_evaluation, total_evaluation, join_time, statis_time, -->
+<!-- 		statismonth) values -->
+<!-- 		<foreach collection="list" item="item" index="index" -->
+<!-- 			separator=","> -->
+<!-- 			( #{item.merchant_id}, #{item.total_attitude_evaluation}, -->
+<!-- 			#{item.total_quality_evaluation}, -->
+<!-- 			#{item.total_speed_evaluation}, -->
+<!-- 			#{item.avg_evaluation}, -->
+<!-- 			#{item.join_time}, #{item.statis_time}, -->
+<!-- 			#{item.statismonth} -->
+<!-- 			) -->
+<!-- 		</foreach> -->
+<!-- 	</insert> -->
+
+	<!-- 单个将评价统计信息添加到数据库 -->
+<!-- 	<insert id="addMerchantEvaluationStatisOne" parameterType="java.util.Map" -->
+<!-- 		useGeneratedKeys="true" keyProperty="id"> -->
+<!-- 		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT -->
+<!-- 			LAST_INSERT_ID() as id; -->
+<!-- 		</selectKey> -->
+<!-- 		insert into merchant_evaluation_statis (merchant_id, -->
+<!-- 		total_attitude_evaluation, total_quality_evaluation, -->
+<!-- 		total_speed_evaluation, total_evaluation, join_time, statis_time, -->
+<!-- 		statismonth) values -->
+<!-- 		(#{merchant_id}, #{total_attitude_evaluation}, -->
+<!-- 		#{total_quality_evaluation}, -->
+<!-- 		#{total_speed_evaluation}, -->
+<!-- 		#{avg_evaluation}, -->
+<!-- 		#{join_time}, #{statis_time}, -->
+<!-- 		#{statismonth} -->
+<!-- 		) -->
+<!-- 	</insert> -->
+
+
+
+	<!-- 批量将评价统计信息添加到数据库 -->
+<!-- 	<update id="updateMerchantEvaluationStatis" parameterType="java.util.Map"> -->
+<!-- 		<foreach collection="list" item="item" index="index" open="" -->
+<!-- 			close="" separator=";"> -->
+<!-- 			update merchant_evaluation_statis -->
+<!-- 			<set> -->
+<!-- 				total_attitude_evaluation=#{item.total_attitude_evaluation} -->
+<!-- 				,total_quality_evaluation=#{item.total_quality_evaluation} -->
+<!-- 				,total_speed_evaluation=#{item.total_speed_evaluation} -->
+<!-- 				,total_evaluation=#{item.avg_evaluation} -->
+<!-- 				,statis_time=now() -->
+<!-- 			</set> -->
+<!-- 			where merchant_id = #{item.merchant_id} and statismonth -->
+<!-- 			=#{item.statismonth} -->
+<!-- 		</foreach> -->
+
+<!-- 	</update> -->
+
+
+	<!-- 单个将评价统计信息添加到数据库 -->
+<!-- 	<update id="updateMerchantEvaluationStatisOne" parameterType="java.util.Map"> -->
+<!-- 		update merchant_evaluation_statis -->
+<!-- 		set -->
+<!-- 		total_attitude_evaluation=#{total_attitude_evaluation} -->
+<!-- 		,total_quality_evaluation=#{total_quality_evaluation} -->
+<!-- 		,total_speed_evaluation=#{total_speed_evaluation} -->
+<!-- 		,total_evaluation=#{avg_evaluation} -->
+<!-- 		,statis_time=now() -->
+<!-- 		where merchant_id = #{merchant_id} and statismonth =#{statismonth} -->
+<!-- 	</update> -->
+
+
+
+
+	<!-- 获取上月的好评统计缓存-->
+<!-- 	<select id="getMerChantEvaluationStatis" parameterType="java.util.Map" -->
+<!-- 		resultType="java.util.HashMap">	 -->
+<!-- 	  <![CDATA[  -->
+<!-- 	select * -->
+<!--  from merchant_evaluation_statis where statismonth=#{statismonth}  -->
+<!--  limit #{startli},#{pagesize} -->
+<!-- 	 ]]> -->
+<!-- 	</select> -->
+	
+	<!-- 获取上月的好评统计缓存/* master */-->
+<!-- 	<select id="getMerChantEvaluationStatisCount" parameterType="java.util.Map" -->
+<!-- 		resultType="int">	 -->
+		
+<!-- 	  <![CDATA[  -->
+<!-- 	select count(*) -->
+<!--  from merchant_evaluation_statis where statismonth=#{statismonth}  -->
+<!-- 	 ]]> -->
+<!-- 	</select>	 -->
+	
+	
+		<!-- 获取上月的好评统计缓存-->
+	<select id="getdbDateTime" parameterType="java.util.Map"
+		resultType="string">		
+	  <![CDATA[ 
+	select date_format(date_sub(now(),interval #{mondiff} month),'%Y%m') as statismonth 
+	 ]]>
+	</select>	
+
+	<select id="selectdbDateTime" parameterType="java.util.Map"
+		resultType="string">		
+	  <![CDATA[ 
+	select 	date_format(date_sub(now(),interval #{adddays} day),'%Y-%m-%d %H:%i:%s') as dbdatatime
+	 ]]>
+	</select>	
+	
+<!-- 	select date_format(now(),'%Y-%m-%d %H:%i:%s') as dbdatatime  
+select 	date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d %H:%i:%s') as dbdatatime
+
+-->
+
+<!-- 按天统计前一天的数据写入按天统计表 -->
+	<insert id="addMerchantEvaluationStatisByDay" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>
+
+Insert into merchant_evaluation_statis_bydate
+(
+merchant_id 
+,total_attitude_evaluation 
+,total_quality_evaluation 
+,total_speed_evaluation 
+,avg_evaluation 
+,pjcount
+,evaluation_date 
+,statismonth
+,statis_time 
+)
+
+select 
+		e.merchant_id 
+		,sum(IFNULL(e.attitude_evaluation,0)) as
+		total_attitude_evaluation 
+		,sum(IFNULL(e.quality_evaluation,0)) as total_quality_evaluation 
+		,sum(IFNULL(e.speed_evaluation,0))  as total_speed_evaluation 
+		,		
+		(
+		sum(IFNULL(e.attitude_evaluation,0))+sum(IFNULL(e.quality_evaluation,0))+sum(IFNULL(e.speed_evaluation,0))
+		) as avg_evaluation 
+		,count(8) as pjcount
+		,date(e.join_time) as evaluation_date		
+		,date_format(date(e.join_time),'%Y%m') as statismonth 
+		,now() as statis_time
+		from evaluation e 
+		where date(e.join_time)=date(date_sub(curdate(),interval #{adddays} day))
+		group by e.merchant_id 
+		order by e.join_time desc
+		
+
+	</insert>
+	
+<!-- 	 /* master */ -->
+	<select id="addMerchantEvaluationStatisByDayListCount" parameterType="java.util.Map" resultType="int">	
+	<![CDATA[
+select count(oi.merchant_id) as totalcount
+from 
+(
+	select distinct e.merchant_id 	
+	from evaluation e 
+	where e.join_time>=date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 00:00:00') 
+	and  date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 23:59:59')>=e.join_time
+) oi
+left join 
+(
+select mb.merchant_id from  merchant_evaluation_statis_bydate mb where mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+) mbb 
+on mbb.merchant_id=oi.merchant_id
+where mbb.merchant_id is null
+	]]>
+	</select>
+	
+<!-- 按天统计前一天的数据写入按天统计表  批量导入 -->
+	<insert id="addMerchantEvaluationStatisByDayList" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>
+<![CDATA[
+Insert into merchant_evaluation_statis_bydate
+(
+merchant_id 
+,total_attitude_evaluation 
+,total_quality_evaluation 
+,total_speed_evaluation 
+,avg_evaluation 
+,pjcount
+,evaluation_date 
+,statismonth
+,statis_time 
+)
+select oi.* from 
+(
+select 
+		e.merchant_id 
+		,sum(IFNULL(e.attitude_evaluation,0)) as
+		total_attitude_evaluation 
+		,sum(IFNULL(e.quality_evaluation,0)) as total_quality_evaluation 
+		,sum(IFNULL(e.speed_evaluation,0))  as total_speed_evaluation 
+		,		
+		(
+		sum(IFNULL(e.attitude_evaluation,0))+sum(IFNULL(e.quality_evaluation,0))+sum(IFNULL(e.speed_evaluation,0))
+		) as avg_evaluation 
+		,count(e.merchant_id) as pjcount
+		,date(e.join_time) as evaluation_date		
+		,date_format(date(e.join_time),'%Y%m') as statismonth 
+		,now() as statis_time
+		from evaluation e 
+		where e.join_time>=date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 00:00:00') and  date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 23:59:59')>=e.join_time
+		group by e.merchant_id 
+) oi
+left join 
+(
+select mb.merchant_id from  merchant_evaluation_statis_bydate mb where mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+) mbb 
+on mbb.merchant_id=oi.merchant_id
+where mbb.merchant_id is null
+limit #{startli},#{pagesize}
+		
+]]>
+	</insert>	
+
+<!-- 按天统计的数据如果月统计没有，则写到月统计表merchant_evaluation_statis -->
+	<insert id="addMerchantsEvaluationStatisByDay" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>
+
+insert into merchant_evaluation_statis
+(
+merchant_id,
+total_attitude_evaluation
+,total_quality_evaluation
+,total_speed_evaluation
+,total_evaluation
+,join_time
+,statis_time
+,statismonth
+,pjcount
+)
+select
+mb.merchant_id 
+,mb.total_attitude_evaluation 
+,mb.total_quality_evaluation 
+,mb.total_speed_evaluation 
+,mb.avg_evaluation 
+,now() as join_time 
+,mb.evaluation_date as statis_time
+,mb.statismonth
+,mb.pjcount
+from merchant_evaluation_statis_bydate mb 
+left join 
+(
+select ms.merchant_id from merchant_evaluation_statis ms where ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+) mss
+on mss.merchant_id=mb.merchant_id
+where mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+and mb.merchant_id is null
+	
+
+	</insert>
+	
+<!-- 	/* master */ -->
+	<select id="addMerchantsEvaluationStatisByDayListCount" parameterType="java.util.Map" resultType="int">	
+
+select count(oi.merchant_id) as totalcount
+ from 
+(	
+select
+mb.merchant_id 
+from merchant_evaluation_statis_bydate mb 
+left join 
+(
+select ms.merchant_id from merchant_evaluation_statis ms where ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+) mss
+on mss.merchant_id=mb.merchant_id
+where mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+and mss.merchant_id is null
+) oi
+	
+	</select>
+	<!-- 按天统计的数据如果月统计没有，则批量写到月统计表merchant_evaluation_statis -->
+	<insert id="addMerchantsEvaluationStatisByDayList" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>
+
+insert into merchant_evaluation_statis
+(
+merchant_id,
+total_attitude_evaluation
+,total_quality_evaluation
+,total_speed_evaluation
+,total_evaluation
+,join_time
+,statis_time
+,statismonth
+,pjcount
+)
+select oi.* from 
+(
+select
+mb.merchant_id 
+,mb.total_attitude_evaluation 
+,mb.total_quality_evaluation 
+,mb.total_speed_evaluation 
+,mb.avg_evaluation 
+,now() as join_time 
+,date_sub(now(),interval #{adddays} day)  as statis_time
+,mb.statismonth
+,mb.pjcount
+from merchant_evaluation_statis_bydate mb
+left join 
+(
+select ms.merchant_id from merchant_evaluation_statis ms where ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+) mss
+on mss.merchant_id=mb.merchant_id
+where mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+and mss.merchant_id is null
+) oi
+limit #{startli},#{pagesize}
+
+	</insert>
+
+	
+
+
+	<!-- 根据订单获取当月没有评价商户总数 /* master */-->
+		<select id="selectMerchantByOrderNoStatisCount" parameterType="java.util.Map" resultType="int">	
+	  select 
+	count(1) as totalcount 	
+	from merchant_info mi 
+	where not exists (select 1 from evaluation  where  mi.id = merchant_id and join_time &gt; #{beginTime} and join_time &lt; #{endTime})
+	 and  mi.join_time &lt; #{endTime}
+	</select>
+<!-- 	mi.is_del=0 and<select id="selectMerchantByOrderNoStatisCount" parameterType="java.util.Map" resultType="int">	 -->
+	 
+<!-- select count(oii.merchant_id) as totalcount -->
+<!--  from  -->
+<!-- ( -->
+<!-- 	select  -->
+<!-- 	oi.merchant_id 	 -->
+<!-- 	from order_info oi -->
+<!-- 	left join merchant_auth ma on ma.merchant_id=oi.merchant_id 	 -->
+<!-- 	where  -->
+<!-- 	oi.order_status in(5)  -->
+<!--    and ma.auth_status=1  -->
+<!-- 	group by oi.merchant_id  -->
+<!-- 	having count(oi.merchant_id)>0  -->
+<!-- ) oii  -->
+<!-- left join merchant_evaluation_statis ms on ms.merchant_id=oii.merchant_id -->
+<!-- where ms.statismonth=#{monthValue}  -->
+<!-- and ms.merchant_id is null	 -->
+	
+<!-- 	</select> -->
+<!-- 根据订单获取当月没有评价商户列表，写入merchant_evaluation_statis -->
+	<insert id="selectIntoMerchantByOrderNoStatisList" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>	
+insert into merchant_evaluation_statis
+(
+merchant_id,
+total_attitude_evaluation
+,total_quality_evaluation
+,total_speed_evaluation
+,total_evaluation
+,join_time
+,statis_time
+,statismonth
+,pjcount
+,avg_evaluations
+)
+select oii.*
+,0 as total_attitude_evaluation
+,0 as total_quality_evaluation
+,0 as total_speed_evaluation
+,15 as total_evaluation
+,now() as join_time
+,now() as statis_time
+,#{monthValue} as statismonth
+,1 as pjcount
+,5 as avg_evaluations
+ from 
+(
+ select 
+	mi.id as merchant_id 	
+	from merchant_info mi 
+	where not exists (select 1 from evaluation  where  mi.id = merchant_id and join_time &gt; #{beginTime} and join_time &lt; #{endTime})
+	 and  mi.join_time &lt; #{endTime} 
+	 order by mi.id 
+) oii 
+ limit #{startli},#{pagesize}
+
+	
+	</insert>
+<!-- mi.is_del=0 and (date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m') -->
+	
+	
+	
+	<!-- 按天统计的数据，累计到月统计merchant_evaluation_statis 优化处理如下面-->
+	<update id="updateMerchantsEvaluationStatisByDay" parameterType="java.util.Map">
+	UPDATE merchant_evaluation_statis 
+	inner  JOIN merchant_evaluation_statis_bydate 
+	on merchant_evaluation_statis.merchant_id=merchant_evaluation_statis_bydate.merchant_id
+	set merchant_evaluation_statis.pjcount=(merchant_evaluation_statis.pjcount+ifnull(merchant_evaluation_statis_bydate.pjcount,0)) 
+	,merchant_evaluation_statis.total_attitude_evaluation=(merchant_evaluation_statis.total_attitude_evaluation+ifnull(merchant_evaluation_statis_bydate.total_attitude_evaluation,0)) 
+	,merchant_evaluation_statis.total_quality_evaluation=(merchant_evaluation_statis.total_quality_evaluation+ifnull(merchant_evaluation_statis_bydate.total_quality_evaluation,0)) 
+	,merchant_evaluation_statis.total_speed_evaluation=(merchant_evaluation_statis.total_speed_evaluation+ifnull(merchant_evaluation_statis_bydate.total_speed_evaluation,0)) 
+	,merchant_evaluation_statis.avg_evaluation=(merchant_evaluation_statis.avg_evaluation+ifnull(merchant_evaluation_statis_bydate.avg_evaluation,0)) 
+	where  merchant_evaluation_statis_bydate.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+	and merchant_evaluation_statis.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+	 and merchant_evaluation_statis_bydate.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+	</update>
+	
+	<!-- /* master */按天统计，统计当天数据，汇总表里有的商户信息，则更新汇总表里评价次数等信息  分页总数 
+	#and date_sub(now(),interval #{adddays} day)>ms.statis_time-->
+	<select id="selectMerchantsEvaluationStatisByDayListCount" parameterType="java.util.Map" resultType="int">	
+	<![CDATA[	
+	select count(ms.merchant_id) as totalcount	
+	from  merchant_evaluation_statis ms inner JOIN merchant_evaluation_statis_bydate mb 
+	on ms.merchant_id=mb.merchant_id
+	where  mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+	and ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+	and mb.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+	and mb.is_cumulative=0
+	and date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 00:00:00')>=ms.statis_time
+	and ms.total_attitude_evaluation!=0 and ms.total_quality_evaluation!=0 and ms.total_speed_evaluation!=0 
+	]]>	
+	</select>
+	
+	<!--   获取日评价统计表按商户汇总后的总记录数    Revoke Yu 9.13 -->
+	<select id="getTotalGroupCountFromDay" parameterType="java.util.Map" resultType="int">	
+	<![CDATA[	
+	select  count(distinct mb.merchant_id) as totalcount	
+    from  merchant_evaluation_statis_bydate mb 
+	where mb.statismonth = #{statsMonth} 
+	]]>	
+	</select>
+	
+	<insert id="addToMonthStaticByDayGroup" parameterType="java.util.Map">
+			insert into merchant_evaluation_statis
+			(
+				merchant_id,
+				total_attitude_evaluation
+				,total_quality_evaluation
+				,total_speed_evaluation
+				,total_evaluation
+				,join_time
+				,statis_time
+				,statismonth
+				,pjcount
+				,avg_evaluations
+			) select
+			mb.merchant_id,sum(total_attitude_evaluation) total_attitude_evaluation,
+			sum(total_quality_evaluation) total_quality_evaluation,
+			sum(total_speed_evaluation) total_speed_evaluation,
+			sum(total_attitude_evaluation+total_quality_evaluation+total_speed_evaluation) total_evaluation,
+			now(),now(),#{statsMonth},sum(pjcount),0
+			from  merchant_evaluation_statis_bydate mb
+			where mb.statismonth=#{statsMonth}
+			group by mb.merchant_id
+			limit #{startli},#{pagesize}
+	</insert>
+	
+	
+	
+	<!-- 按天统计，统计当天数据，汇总表里有的商户信息，则更新汇总表里评价次数等信息 -->
+	<select id="selectMerchantsEvaluationStatisByDayList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		<![CDATA[
+	 select ms.merchant_id
+	 ,(ms.pjcount+ifnull(mb.pjcount,0)) as pjcount
+	 ,(ms.total_attitude_evaluation+ifnull(mb.total_attitude_evaluation,0)) as total_attitude_evaluation
+	 ,(ms.total_quality_evaluation+ifnull(mb.total_quality_evaluation,0)) as total_quality_evaluation
+	 ,(ms.total_speed_evaluation+ifnull(mb.total_speed_evaluation,0)) as total_speed_evaluation
+	 ,(ms.total_evaluation+ifnull(mb.avg_evaluation,0)) as total_evaluation
+	 ,mb.evaluation_date
+	 ,mb.statismonth
+	  from  merchant_evaluation_statis ms inner JOIN merchant_evaluation_statis_bydate mb 
+	on ms.merchant_id=mb.merchant_id
+	where  mb.evaluation_date=date(date_sub(curdate(),interval #{adddays} day))
+	and ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m')
+	and mb.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m') 
+	and mb.is_cumulative=0
+	and date_format(date(date_sub(now(),interval #{adddays} day)),'%Y-%m-%d 00:00:00')>=ms.statis_time
+	and ms.total_attitude_evaluation!=0 and ms.total_quality_evaluation!=0 and ms.total_speed_evaluation!=0 
+	limit #{startli},#{pagesize}
+		]]>	
+	</select>
+
+	<!-- 按天统计，统计当天数据，汇总表里有的商户信息，则更新汇总表里评价次数等信息 分批更新 
+	#and date_sub(now(),interval #{adddays} day)>ms.statis_time-->
+	<update id="updateMerchantsEvaluationStatisByDayList" parameterType="java.util.Map">
+		<foreach collection="list" item="item" index="index" open=""
+			close="" separator=";">
+			update merchant_evaluation_statis
+			<set>
+				pjcount=#{item.pjcount}
+				,total_attitude_evaluation=#{item.total_attitude_evaluation}
+				,total_quality_evaluation=#{item.total_quality_evaluation}
+				,total_speed_evaluation=#{item.total_speed_evaluation}
+				,total_evaluation=#{item.total_evaluation}				
+			</set>
+			where merchant_id = #{item.merchant_id} and statismonth=#{item.statismonth}
+		</foreach>
+	</update>	
+<!-- 	是否累加 -->
+	<update id="updateMerchantsEvaluationStatisByDayListcumulative" parameterType="java.util.Map">
+		<foreach collection="list" item="item" index="index" open=""
+			close="" separator=";">
+			update merchant_evaluation_statis_bydate set is_cumulative=1			
+			where merchant_id = #{item.merchant_id} and evaluation_date=#{item.evaluation_date}
+		</foreach>
+	</update>
+	
+	<!-- 跑批任务出现错误时记录批次 -->
+	<insert id="addnewmerchant_evaluation_statis_errorlog" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>	
+			insert into merchant_evaluation_statis_errorlog
+			(keyid,keypagecount,join_time,statis_time)values
+			(#{keyid},#{keypagecount},now(),#{statis_time})
+	</insert>
+	
+	<!-- 获取跑批任务出现错误时记录批次-->
+	<select id="selectmerchant_evaluation_statis_errorlog" parameterType="java.util.Map"
+		resultType="java.util.HashMap">	
+	select * from merchant_evaluation_statis_errorlog where keyid=#{keyid} and date(statis_time)=#{statis_time} and is_del=0 order by id desc limit 1
+	</select>	
+	
+	<!-- 跑批任务出现错误时 删除  -->
+ 	<update id="deletemerchant_evaluation_statis_errorlog" parameterType="java.util.Map">
+		update merchant_evaluation_statis_errorlog set is_del=1 where  id=#{id}
+	</update>	   
+<!-- 商户评价平均值计算 /* master */-->
+	<select id="selectmsaveListcount" parameterType="java.util.Map" resultType="int">
+	<![CDATA[	
+		select count(ms.merchant_id)  as totalcount from merchant_evaluation_statis ms where ms.statismonth=#{monthValue} and ms.avg_evaluations=0	
+		and ms.total_attitude_evaluation!=0 and ms.total_quality_evaluation!=0 and ms.total_speed_evaluation!=0
+	]]>		
+	</select>  
+	
+	<!-- 商户评价平均值计算,分页获取 -->
+	<update id="updatemsaveList2" parameterType="java.util.Map">
+		<![CDATA[
+	update  merchant_evaluation_statis set avg_evaluations=truncate((total_evaluation / 3 / pjcount),1) where statismonth=#{monthValue} 
+	and avg_evaluations=0 and total_attitude_evaluation!=0 and total_quality_evaluation!=0 and total_speed_evaluation!=0
+	limit #{pagesize}
+		]]>	
+	</update>
+	<select id="selectmsaveList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		<![CDATA[
+  	select ms.merchant_id 
+ 	,truncate((ms.total_evaluation / 3 / ms.pjcount),1) as avg_evaluations1,ms.statismonth,ms.avg_evaluations 
+  	from merchant_evaluation_statis ms where ms.statismonth=#{monthValue} and ms.avg_evaluations=0  
+  	and ms.total_attitude_evaluation!=0 and ms.total_quality_evaluation!=0 and ms.total_speed_evaluation!=0 
+ 	limit #{startli},#{pagesize} -
+ 		]]>	 
+	</select>
+<!-- 商户评价平均值计算,计算-->
+	<update id="updatemsaveList" parameterType="java.util.Map">
+		<foreach collection="list" item="item" index="index" open=""
+			close="" separator=";">
+			update merchant_evaluation_statis set avg_evaluations=#{item.avg_evaluations1} 
+			where merchant_id = #{item.merchant_id} and statismonth=#{item.statismonth}
+		</foreach>
+	</update>		
+	
+	
+	<select id="selectnopjdatacount" parameterType="java.util.Map" resultType="int">
+	<![CDATA[	
+		select count(ms.merchant_id)  as totalcount from merchant_evaluation_statis ms 
+where ms.statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m') 
+and ms.total_attitude_evaluation=0 and ms.total_quality_evaluation=0 and ms.total_speed_evaluation=0 
+	]]>		
+	</select>  	
+	
+	<delete id="selectnopjdatadelete" parameterType="java.util.Map">
+		delete from merchant_evaluation_statis where statismonth=date_format(date(date_sub(curdate(),interval #{adddays} day)),'%Y%m') 
+	and total_attitude_evaluation=0 and total_quality_evaluation=0 and total_speed_evaluation=0
+	limit #{pagesize}
+	</delete>
+	
+<!-- 	delete from table where userId = 18 limit 9，100000 -->
+</mapper>

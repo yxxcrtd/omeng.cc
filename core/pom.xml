@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.shanjin.o2o</groupId>
+    <artifactId>omeng</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <groupId>com.shanjin.o2o.omeng</groupId>
+  <artifactId>core</artifactId>
+  <packaging>pom</packaging>
+  <name>core</name>
+  
+  <modules>
+  	<module>core-util</module>
+  	<module>core-common</module>
+  	<module>core-user</module>
+  	<module>core-merchant</module>
+  	<module>core-order</module>
+  	<module>core-pay</module>
+  	<module>core-cache</module>
+  	<module>core-client</module>
+    <module>ali-service</module>
+    <module>core-rongCloud</module>
+    <module>core-push</module>
+    <module>core-activity</module>
+	<module>token-api</module>
+	<module>core-cplan</module>
+    <module>core-incr</module>
+	  <module>core-king</module>
+  </modules>
+  
+  <build>
+  	<resources>
+  		<resource>
+  			<directory>src/main/java</directory>
+  			<includes>
+  				<include>**/*.xml</include>
+  				<include>**/*.properties</include>
+  			</includes>
+  		</resource>
+  		<resource>
+  			<directory>src/main/resources</directory>
+  			<includes>
+  				<include>**/*.xml</include>
+  				<include>**/*.properties</include>
+  			</includes>
+  		</resource>
+  	</resources>
+  </build>
+</project>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IManagerHotRecommendDao">
+
+	
+
+	<!-- 获取用户首页行业推荐列表 
+	<select id="getUserHomeCommend" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		select title,detail,app_type,service_type,pics_path,is_hot,color
+			from manager_hot_recommend where  overdue_time>sysdate() and type=1 and province=#{province} and city=#{city}
+ 			and is_del=0  limit 2
+	</select>  -->
+	
+	
+	
+	<!-- 获取用户首页行业推荐列表 -->
+	<select id="getUserHomeCommend" parameterType="java.util.Map" resultType="java.util.HashMap">
+	    select mhrd.title,mhrd.detail,mhrd.catalog_id catalogId,mhrd.pics_path,mhrd.is_hot,mhrd.color  from manager_hot_recommend_detail mhrd  
+		inner join manager_hot_recommend mhr on mhrd.rec_id = mhr.id where  overdue_time>sysdate() and mhrd.type=1 and mhr.status=1
+			<if test="province != null">
+				and province=#{province}
+			</if>
+			<if test="city != null">
+				 and city=#{city}
+			</if> 		
+ 			and is_del=0   order by mhrd.rank  limit 2
+	</select>  
+	
+	
+	<!-- 获取用户首页个人推荐列表 
+	<select id="getUserHomePersonCommend" parameterType="java.util.Map" resultType="java.util.HashMap">  
+		select title,detail,app_type,service_type,pics_path,is_hot,color
+			from manager_hot_recommend where  overdue_time>sysdate() and type=2 and province=#{province} and city=#{city}
+ 			and is_del=0  order by rank limit 4
+	</select>  -->
+	
+		<!-- 获取用户首页个人推荐列表 -->
+	<select id="getUserHomePersonCommend" parameterType="java.util.Map" resultType="java.util.HashMap">  
+	  select mhrd.title,mhrd.detail,mhrd.service_id serviceId,mhrd.pics_path,mhrd.is_hot,mhrd.color from manager_hot_recommend_detail mhrd  
+			inner join manager_hot_recommend mhr on mhrd.rec_id = mhr.id where  overdue_time>sysdate() and mhrd.type=2 and mhr.status=1
+			<if test="province != null">
+				and province=#{province}
+			</if>
+			<if test="city != null">
+				 and city=#{city}
+			</if> 		
+ 			and is_del=0  order by mhrd.rank limit 4
+	</select>  
+	
+	
+	<!-- 获取用户热门搜素 -->
+	<select id="getHotSearch"  resultType="java.util.HashMap">  
+		select   service_id as serviceId,service_name as serviceName 
+			from  search_statistic where is_fixed=1 order by rank
+	</select>  
+	
+	<!-- 获取所有服务项目 -->
+	<select id="getAllServiceInfo"  resultType="java.util.HashMap">  
+		select id,<!-- service_type_id, -->service_type_name, substring_index(app_type,'_',1) as app_type  from service_type
+		 where is_del=0 and parent_id is null order by app_type
+	</select> 
+	
+	<!-- 获取所有服务项目 -->
+	<select id="getAllHotIcons"  resultType="java.util.HashMap">  
+		select catalog_id,pics_path,size  from search_statistic_attachment
+		 where is_del=0 
+	</select> 
+	
+
+	<!-- 获取所有自定义服务项目   根据目录-服务配置表判断 -->
+	<select id="getCustomServices"  resultType="java.util.HashMap">  
+		select id serviceId,service_type_name serviceName from service_type st
+		where not exists (select 1 from catalog_service ct 
+ 		where st.id=ct.service_id) and is_del=0
+	</select> 
+		
+	
+	
+	<!-- 获取所有自定义服务项目中某几个服务-->
+	<select id="getCustomServicesByRange"  parameterType="java.util.Map"  resultType="java.util.HashMap">  
+		select id serviceId,service_type_name serviceName from service_type st
+		where not exists (select 1 from catalog_service ct 
+ 		where st.id=ct.service_id) and is_del=0  and  st.id in ( ${serviceIds} )
+	</select> 
+	
+	
+	
+	
+	
+	
+	<!-- 根据叶子级别的分类查询服务id及服务名称 -->
+	<select id="getServiceInfoByCatalogIds" parameterType="java.util.Map"  resultType="java.util.HashMap">  
+		select id as serviceId,service_type_name  serviceName from service_type st
+		where exists ( select 1 from  catalog_service cs where cs.catalog_id in 
+		(${catalogIds}) and st.id=cs.service_id  and  cs.status=1) and st.is_del=0
+	</select> 
+	
+	
+	<!-- 获取第三方应用 -->
+	<select id="getExternalInfos"  resultType="java.util.HashMap">
+		select name serviceName,link from third_app where status=0 and is_del=0
+		order by rank
+	</select>
+	
+	
+	<!-- 根据appType 获取 appInfo -->
+	<select id="getAppInfoByAppType" parameterType="java.util.Map"  resultType="java.util.HashMap">
+		select  distinct app_name as appName, app_type appType from service_type where app_type  in ( ${appTypes} )
+	</select>
+	
+	
+	
+	
+	
+	
+</mapper>
+

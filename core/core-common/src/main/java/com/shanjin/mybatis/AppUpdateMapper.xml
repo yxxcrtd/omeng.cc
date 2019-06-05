@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IAppUpdateDao">
+
+  <!-- 
+  	表     名：app_update						应用更新
+  	表描述：
+  		package_name						包名
+  		version								版本号
+  		file_path							下载路径
+  		detail								版本描述
+  		
+   -->
+
+  <!-- 验证APP是否有更新  -->
+  <select id="checkUpdate" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select package_name as packageName,version,file_path as filePath,detial from app_update where package_name=#{packageName} and version>#{version} limit 0,1
+  </select>
+  
+  <!-- 获得所有发布的客户端版本列表 -->
+    <select id="getPubClientVersionList" resultType="java.util.HashMap">  
+		SELECT au.id,au.package_name AS packageName,au.version,
+        au.app_type AS appType,au.detail,au.download_url AS downloadUrl,
+        au.package_type AS packageType,au.update_type AS updateType
+        FROM app_update au WHERE au.publish_status=1 AND au.is_del=0
+	</select>  
+</mapper>
+

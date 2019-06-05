@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantAuthDao">
+
+  <!-- 认证的信息查询 -->
+  <select id="selectMerchantAuth" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          auth_type as authType,
+          auth_status as authStatus,
+          path
+      from
+          merchant_auth
+      where
+          merchant_id = #{merchantId}
+      order by
+          join_time desc
+      limit
+          0, 1 
+       
+  </select>
+<select id="selectMerchantAuthList" parameterType="java.util.Map" resultType="java.util.HashMap">
+      <!-- SELECT * FROM ( 
+		SELECT
+				auth_type as authType,
+				auth_status as authStatus,
+				path,
+				remark
+		FROM
+				merchant_auth
+		WHERE
+				merchant_id =  #{merchantId}
+		ORDER BY
+				join_time DESC
+		)  a
+	GROUP BY authType -->
+	
+	(SELECT
+        auth_type as authType,
+        auth_status as authStatus,
+        path,
+        remark
+    FROM
+        merchant_auth
+    WHERE
+        merchant_id = #{merchantId}
+        and auth_type=1
+    ORDER BY
+        join_time DESC limit 1
+    )
+    union ( SELECT
+        auth_type as authType,
+        auth_status as authStatus,
+        path,
+        remark
+    FROM
+        merchant_auth
+    WHERE
+        merchant_id = #{merchantId}
+        and auth_type=2
+    ORDER BY
+        join_time DESC limit 1
+      )
+  </select>
+  
+  <!-- 申请认证的类型查询 -->
+  <select id="selectAuthType" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          auth_type as authType,
+          auth_status as authStatus,
+          path
+      from
+          merchant_auth
+      where
+          merchant_id = #{merchantId}
+      	  and auth_status=1
+      order by
+          join_time desc
+      limit 1
+  </select>
+  <update id="cancelAuth" parameterType="java.util.Map">
+  		UPDATE 
+  			merchant_auth 
+  		SET 
+  			auth_status=3 
+  		WHERE  
+  			merchant_id = #{merchantId}
+      	ORDER BY
+          join_time DESC
+      	LIMIT 1
+  </update>
+  <update id="cancelAuthUpdateMerchant" parameterType="java.util.Map">
+  		UPDATE 
+  			merchant_info 
+  		SET 
+  			auth_status=3 
+  		WHERE  
+  			id = #{merchantId}
+  </update>
+  <!-- 认证申请记录数查询 -->
+  <select id="selectAuthCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_auth
+      where
+          merchant_id = #{merchantId}
+          and auth_type=#{authType}
+          and (auth_status = 1 or auth_status = 2 )
+  </select>
+  <select id="selectPendingAuthCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_auth
+      where
+          merchant_id = #{merchantId}
+          and  auth_status = 2 
+  </select>
+
+  <!-- 商户认证信息的保存 -->
+  <insert id="insertMerchantAuth" parameterType="java.util.Map">
+      insert into merchant_auth
+           (
+               merchant_id,
+               auth_type,
+               auth_status,
+               path,
+               join_time
+           )
+      values
+           (
+               #{merchantId},
+               #{authType},
+               #{authStatus},
+               #{path},
+               now()
+           )
+  </insert>
+  
+  <update id="updateMerchantAuth" parameterType="java.util.Map">
+  		UPDATE 
+  			merchant_info 
+  		SET 
+  			auth_status=#{authStatus},
+  			auth_type=#{authType}
+  		WHERE  
+  			id = #{merchantId}
+      	
+  </update>
+</mapper>
+

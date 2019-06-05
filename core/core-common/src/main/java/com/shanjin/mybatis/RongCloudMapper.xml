@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IRongCloudDao">
+  
+    <!-- 获取用户端融云token -->
+	<select id="getRongCloudUserToken" resultType="Map" parameterType="java.util.Map">
+       SELECT t.user_id AS uid,t.token
+       FROM user_rong_cloud_token t
+       WHERE t.user_id=#{uid} 
+       AND t.client_id=#{clientId} 
+	</select>  
+	
+	<!-- 获取商户端融云token -->
+	<select id="getRongCloudMerchantToken" resultType="Map" parameterType="java.util.Map">
+       SELECT t.merchant_id AS uid,t.token
+       FROM merchant_rong_cloud_token t
+       WHERE t.merchant_id=#{uid}
+       AND t.client_id=#{clientId} 
+	</select>  
+	
+	<!-- 保存用户端融云token -->
+    <insert id="saveRongCloudUserToken" parameterType="java.util.Map" >
+       INSERT INTO user_rong_cloud_token
+           (
+           user_id
+           ,token
+           ,client_id
+           )
+       VALUES
+           (#{uid},
+            #{token},
+            #{clientId}
+           )
+    </insert>
+    
+    <!-- 保存商户端融云token -->
+    <insert id="saveRongCloudMerchantToken" parameterType="java.util.Map" >
+       INSERT INTO merchant_rong_cloud_token
+           (
+           merchant_id
+           ,token
+           ,client_id
+           )
+       VALUES
+           (#{uid},
+            #{token},
+            #{clientId}
+           )
+    </insert>
+    
+    <!-- 删除用户端融云token -->
+	<delete id="delRongCloudUserToken" parameterType="java.util.Map">
+	    DELETE FROM user_rong_cloud_token WHERE user_id=#{uid} AND client_id=#{clientId} 
+	</delete>
+	
+	<!-- 删除商户端融云token -->
+	<delete id="delRongCloudMerchantToken" parameterType="java.util.Map">
+	    DELETE FROM merchant_rong_cloud_token WHERE merchant_id=#{uid} AND client_id=#{clientId} 
+	</delete>
+</mapper>
+

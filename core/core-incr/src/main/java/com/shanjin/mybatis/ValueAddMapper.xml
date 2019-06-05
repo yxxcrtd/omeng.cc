@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IValueAddedDao">
+  <!-- 根据服务大类ID获取包列表 -->
+	<select id="getPackageListByServiceId" resultType="java.util.HashMap">  
+        SELECT t.id AS pkgId,t.`name`,t.charge FROM
+	    inc_pkg t
+        WHERE
+	    t.is_del = 0
+        AND t.`status` = 1
+        AND t.service_id = #{serviceId}
+        ORDER BY charge
+	</select>  
+	
+	<!-- 根据服务大类ID和商户ID查询服务包详细信息 -->
+	<select id="getPackageDetail" resultType="java.util.HashMap">  
+	    <choose> 
+	    <!-- 查询员工数 -->
+        <when test="serviceKey == 'emloyee_num'"> 
+           SELECT (t.max_employee_num-(select count(1) from merchant_employees me where me.employees_type>1 and me.is_del=0 and me.merchant_id=t.id)) AS num,'' AS stime,'' AS etime,'' AS `name`,0 AS charge,'' AS paName,'' AS paPhone,
+                  (select inc.id from inc_pkg inc where inc.is_del=0 and inc.status=1 and inc.service_id=(select ins.id from inc_service ins where ins.service_key='emloyee_num') limit 1) as pkgId
+            FROM merchant_info t WHERE t.id=#{merchantId}
+        </when> 
+        <!-- 订单推送 -->
+        <when test="serviceKey == 'order_push'">
+           SELECT t.order_surplus_price AS num,'' AS stime,'' AS etime,'' AS `name`,0 AS charge,'' AS paName,'' AS paPhone,
+                      (select inc.id from inc_pkg inc where inc.is_del=0 and inc.status=1 and inc.service_id=(select ins.id from inc_service ins where ins.service_key='order_push') limit 1) as pkgId
+            FROM merchant_statistics t WHERE t.merchant_id=#{merchantId}
+         </when> 
+        
+        <otherwise> 
+        SELECT o.pkg_id AS pkgId,DATE_FORMAT(o.effictive_time,'%Y.%m.%d') AS stime,DATE_FORMAT(o.lose_effictive_time,'%Y.%m.%d') AS etime,
+        p.`name`,FLOOR(charge) AS charge,0 AS num,'' AS paName,'' AS paPhone 
+        FROM inc_pkg_order o
+        LEFT JOIN inc_pkg p ON o.pkg_id=p.id
+        WHERE o.is_del=0 AND o.`status`=1 
+        AND now() &gt; o.effictive_time
+	   <choose>
+        <when test="lose_effictive_time == null||lose_effictive_time == ''"></when>
+        <otherwise> AND now() &lt; o.lose_effictive_time</otherwise>
+       </choose>
+        AND o.merchant_id=#{merchantId} AND p.service_id=#{serviceId} limit 1
+        </otherwise> 
+        </choose> 
+	</select>
+
+	<!-- 查询诚信服务商是否是第一个购买 -->
+	<select id="getMerchantBuyDetail" resultType="int"
+		parameterType="java.util.Map">
+		select count(1) from (
+		SELECT
+		  *
+		FROM
+		(
+		SELECT
+		pkg_id,
+		user_id,
+		merchant_id,
+		effictive_time,
+		lose_effictive_time
+		FROM
+		inc_pkg_order
+		WHERE
+		pkg_id IN (
+		SELECT
+		id
+		FROM
+		inc_pkg
+		WHERE
+		id IN (
+		SELECT
+		pkg_id
+		FROM
+		inc_rs_pkg_item
+		WHERE
+		item_id IN (
+		SELECT
+		item_id
+		FROM
+		inc_rs_item_rule
+		WHERE
+		rule_id IN (
+		SELECT
+		id
+		FROM
+		inc_rule
+		WHERE
+		rule_code IN (
+		'praise_award',
+		'contract_activity_privilege'
+		)
+		)
+		)
+		)
+		)
+		AND STATUS = 1
+		AND user_id IS NOT NULL
+		ORDER BY
+		effictive_time ASC
+		) AS a
+		GROUP BY
+		a.user_id
+		having a.merchant_id=#{merchantId}
+		) b
+	</select>
+  
+    <!-- 根据服务大类ID 获取 服务Key -->
+	<select id="getServiceKeyById" resultType="String">  
+        SELECT t.service_key FROM inc_service t WHERE t.is_del=0 AND t.id=#{serviceId}
+	</select>  
+	
+   <!-- 获得增值服务列表 -->
+	<select id="getValueAddServiceList" resultType="java.util.HashMap">  
+		select ise.id,ise.name,ise.service_key from inc_service ise
+	</select>  
+	
+	<!-- 获得服务商购买的服务列表 -->
+	<select id="getMerchantServiceList" resultType="java.util.HashMap" parameterType="java.util.Map">
+	SELECT ip.service_id
+	FROM
+	inc_pkg ip
+	WHERE
+	ip.id IN (SELECT ipo.pkg_id FROM inc_pkg_order ipo
+	WHERE ipo.merchant_id = #{merchantId}
+	AND ipo. STATUS = 1
+	AND now() &gt; ipo.effictive_time
+	<choose>
+        <when test="lose_effictive_time == null||lose_effictive_time == ''"></when>
+        <otherwise> and now() &lt;  ipo.lose_effictive_time</otherwise>
+    </choose>
+	)
+	</select> 
+	
+	<!-- 获得服务商信息 -->
+	<select id="getMerchantInfo" resultType="Map" parameterType="java.util.Map">
+	SELECT (mi.max_employee_num-(select count(1) from merchant_employees me where me.employees_type>1 and me.is_del=0 and me.merchant_id=mi.id)) as max_employee_num,
+	(select ms.order_surplus_price from merchant_statistics ms where mi.id=ms.merchant_id) as order_surplus_price,
+	(select inc.id from inc_pkg inc where inc.is_del=0 and inc.status=1 and inc.service_id=(select ins.id from inc_service ins where ins.service_key='order_push') limit 1) as orderPushId,
+	(select inc.id from inc_pkg inc where inc.is_del=0 and inc.status=1 and inc.service_id=(select ins.id from inc_service ins where ins.service_key='emloyee_num') limit 1) as emloyeeNumId
+	from merchant_info mi
+	where mi.id = #{merchantId} limit 1 
+	</select>  
+	
+	<!-- 获得服务商基本信息 -->
+	<select id="getMerchantDetail" resultType="Map" parameterType="java.util.Map">
+	SELECT mi.name,mi.app_type as appType,(select me.phone from merchant_employees me where me.merchant_id=mi.id and me.employees_type=1 and me.is_del=0 limit 1) as phone,
+	(select name from catalog where alias=mi.app_type and level=0 limit 1) as appName
+	from merchant_info mi
+	where mi.id = #{merchantId} limit 1 
+	</select>  
+</mapper>

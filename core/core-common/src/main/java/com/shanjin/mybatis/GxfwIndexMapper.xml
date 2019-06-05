@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IGxfwIndexDao">
+  <!-- 获得所有的服务标签  -->
+  <select id="getAllMerchantTags" resultType="java.util.HashMap">
+	SELECT
+	    mst.id as id,
+		mst.tag as tag,
+		mst.merchant_id AS merchantId,
+		mst.price as price
+	FROM
+		merchant_service_tag mst,
+		merchant_info mi
+	WHERE
+		mst.merchant_id = mi.id
+	AND mst.is_del = 0
+	AND mst.is_audit = 1
+	AND mi.is_del = 0
+	ORDER BY
+		mst.price DESC
+  </select>
+  
+  <!-- 获取订单的关键词  -->
+  <select id="getOrderTitle" resultType="String" >
+    SELECT
+		title
+	FROM
+		gxfw_order_info
+	WHERE
+		order_id = #{orderId}
+  </select>
+  
+  <!-- 查询推荐的的服务标签 -->
+  <select id="selectRecommendServiceTag" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          tag
+      from
+          service_tag
+      where
+          is_recommend = 1
+          and is_del = 0
+      order by
+          join_time asc 
+      limit 0,40
+  </select>
+  
+  <!-- 根据ID获得服务标签  -->
+  <select id="getAllMerchantTagsById" resultType="java.util.HashMap">
+	SELECT
+	    mst.id as id,
+		mst.name as tag,
+		mst.merchant_id AS merchantId,
+		mst.price as price
+	FROM
+		service_type_apply mst,
+		merchant_info mi
+	WHERE
+		mst.merchant_id = mi.id
+	AND mst.is_del = 0
+	AND mst.is_audit = 1
+	AND mi.is_del = 0
+	AND mst.id = #{id}
+	ORDER BY
+		mst.price DESC
+  </select>
+  
+</mapper>
+

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IBlackListDao">
+  <!-- 验证手机号是否为黑名单  -->
+  <select id="checkBlackList" parameterType="java.util.Map" resultType="int">
+  	<![CDATA[
+	    select 
+	      count(1)
+	    from 
+	      black_list
+	    where 
+	      phone = #{phone} 
+	    and
+	      (app_type = #{appType} or app_type is null) 
+	    and
+	      (start_date is null or now()>start_date)
+	    and
+	      (end_date is null or now()<end_date)
+    ]]> 
+  </select>
+
+    <select id="findAllBlackList" resultType="java.util.LinkedHashMap">
+        SELECT user_id FROM black_user
+    </select>
+
+</mapper>
+

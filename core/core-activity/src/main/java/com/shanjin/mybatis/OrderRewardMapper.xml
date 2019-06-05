@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IOrderRewardDao">
+
+	
+<!-- 获取商铺基本信息 -->
+	<select id="getMerchantBaseInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT m.id AS merchantId,m.`name`,mt.path AS icon,m.province,m.city
+		FROM merchant_info m
+		LEFT JOIN merchant_attachment mt ON
+		m.id=mt.merchant_id AND
+		mt.attachment_type=1
+		AND mt.attachment_use=11
+		WHERE m.id=#{merchantId}
+	</select>
+
+	<!-- 获取商铺奖励信息-->
+	<select id="getOrderReward" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT IFNULL(sum(ad.amount),0) as money,count(1) as orderCount from activity_order_reward_detail ad
+		WHERE ad.merchant_id=#{merchantId} and ad.activity_id=#{activityId} 
+	</select>
+	
+	<!-- 获取商铺奖励订单总数-->
+	<select id="getOrderRewardListCount" parameterType="java.util.Map"
+		resultType="long">
+		SELECT count(1) as orderCount from activity_order_reward_detail ad
+		WHERE ad.merchant_id=#{merchantId}
+	</select>
+	
+	
+	<!-- 获取商铺订单奖励列表信息-->
+	<select id="getOrderRewardList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT ad.amount,ad.pay_time,ad.pay_price,
+		(select service_type_name from service_type where id=ad.service_id) as service_name,
+		(select phone from user_info where id=ad.user_id) as phone,
+		(select mt.path from user_attachment mt where ad.user_id=mt.user_id AND mt.attachment_type=1 AND mt.attachment_use=11 limit 1) as icon 
+		 from activity_order_reward_detail ad
+		WHERE ad.merchant_id=#{merchantId} and ad.activity_id=#{activityId} 
+		order by ad.pay_time desc
+		limit #{pageIndex},#{pageSize}
+	</select>
+	
+	<!-- 获取开放城市直辖市-->
+	<select id="getOpenCityCountbyProvince" parameterType="java.util.Map"
+		resultType="long">
+		SELECT count(1) as orderCount from activity_order_reward_city ao 
+		INNER JOIN activity_info ai on ao.activity_id=ai.id and ai.is_pub=1 
+		WHERE ao.province=#{province} and ai.id=#{activityId}  
+	</select>
+	
+	<!-- 获取开放城市普通省市 -->
+	<select id="getOpenCityCountbyCity" parameterType="java.util.Map"
+		resultType="long">
+		SELECT count(1) as orderCount from activity_order_reward_city ao
+		INNER JOIN activity_info ai on ao.activity_id=ai.id and ai.is_pub=1 
+		WHERE ao.province=#{province} and ao.city=#{city} and ai.id=#{activityId}  
+	</select>
+	
+	<!-- 获取用户补贴剩余奖励个数 -->
+	<select id="getSurplusUserReward" parameterType="java.util.Map"
+		resultType="long">
+		SELECT count(1) from activity_user_order_reward ao 
+		WHERE ao.activity_id=#{activityId}
+	</select>
+	
+	<!-- 获取商户补贴剩余奖励个数 -->
+	<select id="getSurplusMerchantReward" parameterType="java.util.Map"
+		resultType="long">
+		SELECT count(1) from activity_order_reward_detail ao 
+		WHERE ao.activity_id=#{activityId}
+	</select>
+	
+	<!-- 获取活动截止时间 -->
+	<select id="getRewardActivityInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT stime,etime from activity_info ai 
+		WHERE ai.is_pub=1 and ai.id=#{activityId}
+	</select>
+</mapper>
+

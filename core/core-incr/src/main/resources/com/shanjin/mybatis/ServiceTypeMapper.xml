@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.ServiceTypeMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.ServiceType" id="ServiceTypeBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="serviceTypeId" column="service_type_id"/>
+		<result property="serviceTypeName" column="service_type_name"/>
+		<result property="appName" column="app_name"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="isLeaves" column="is_leaves"/>
+		<result property="serviceNick" column="service_nick"/>
+		<result property="isPub" column="is_pub"/>
+		<result property="version" column="version"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.ServiceType" id="ServiceTypeBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="serviceTypeId" column="service_type_id"/>
+		<result property="serviceTypeName" column="service_type_name"/>
+		<result property="appName" column="app_name"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="parentId" column="parent_id"/>
+		<result property="isLeaves" column="is_leaves"/>
+		<result property="serviceNick" column="service_nick"/>
+		<result property="isPub" column="is_pub"/>
+		<result property="version" column="version"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.service_type_id as serviceTypeId, 
+			t.service_type_name as serviceTypeName, 
+			t.app_name as appName, 
+			t.app_type as appType, 
+			t.is_del as isDel, 
+			t.parent_id as parentId, 
+			t.is_leaves as isLeaves, 
+			t.service_nick as serviceNick, 
+			t.is_pub as isPub, 
+			t.version as version
+		FROM service_type AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM service_type AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO service_type (
+				
+				service_type_id, 
+				service_type_name, 
+				app_name, 
+				app_type, 
+				is_del, 
+				parent_id, 
+				is_leaves, 
+				service_nick, 
+				is_pub, 
+				version
+			) VALUES (
+				
+				#{serviceTypeId}, 
+				#{serviceTypeName}, 
+				#{appName}, 
+				#{appType}, 
+				#{isDel}, 
+				#{parentId}, 
+				#{isLeaves}, 
+				#{serviceNick}, 
+				#{isPub}, 
+				#{version}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE service_type AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM service_type AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.ServiceType" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.ServiceType">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=serviceTypeId">
+				t.service_type_id = #{serviceTypeId},
+			</if>		
+			<if test="null!=serviceTypeName and serviceTypeName!=''">
+				t.service_type_name = #{serviceTypeName},
+			</if>		
+			<if test="null!=appName and appName!=''">
+				t.app_name = #{appName},
+			</if>		
+			<if test="null!=appType and appType!=''">
+				t.app_type = #{appType},
+			</if>		
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>		
+			<if test="null!=parentId">
+				t.parent_id = #{parentId},
+			</if>		
+			<if test="null!=isLeaves">
+				t.is_leaves = #{isLeaves},
+			</if>		
+			<if test="null!=serviceNick and serviceNick!=''">
+				t.service_nick = #{serviceNick},
+			</if>		
+			<if test="null!=isPub">
+				t.is_pub = #{isPub},
+			</if>		
+			<if test="null!=version and version!=''">
+				t.version = #{version},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=serviceTypeId">
+				and t.service_type_id = #{serviceTypeId}
+			</if>		
+			<if test="null!=serviceTypeName and serviceTypeName!=''">
+				and t.service_type_name = #{serviceTypeName}
+			</if>		
+			<if test="null!=appName and appName!=''">
+				and t.app_name = #{appName}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=parentId">
+				and t.parent_id = #{parentId}
+			</if>		
+			<if test="null!=isLeaves">
+				and t.is_leaves = #{isLeaves}
+			</if>		
+			<if test="null!=serviceNick and serviceNick!=''">
+				and t.service_nick = #{serviceNick}
+			</if>		
+			<if test="null!=isPub">
+				and t.is_pub = #{isPub}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="ServiceTypeBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="ServiceTypeBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=serviceTypeId">
+				and t.service_type_id = #{serviceTypeId}
+			</if>		
+			<if test="null!=serviceTypeName and serviceTypeName!=''">
+				and t.service_type_name = #{serviceTypeName}
+			</if>		
+			<if test="null!=appName and appName!=''">
+				and t.app_name = #{appName}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=parentId">
+				and t.parent_id = #{parentId}
+			</if>		
+			<if test="null!=isLeaves">
+				and t.is_leaves = #{isLeaves}
+			</if>		
+			<if test="null!=serviceNick and serviceNick!=''">
+				and t.service_nick = #{serviceNick}
+			</if>		
+			<if test="null!=isPub">
+				and t.is_pub = #{isPub}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="ServiceTypeBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.ServiceType" resultMap="ServiceTypeBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=serviceTypeId">
+				and t.service_type_id = #{serviceTypeId}
+			</if>		
+			<if test="null!=serviceTypeName and serviceTypeName!=''">
+				and t.service_type_name = #{serviceTypeName}
+			</if>		
+			<if test="null!=appName and appName!=''">
+				and t.app_name = #{appName}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=parentId">
+				and t.parent_id = #{parentId}
+			</if>		
+			<if test="null!=isLeaves">
+				and t.is_leaves = #{isLeaves}
+			</if>		
+			<if test="null!=serviceNick and serviceNick!=''">
+				and t.service_nick = #{serviceNick}
+			</if>		
+			<if test="null!=isPub">
+				and t.is_pub = #{isPub}
+			</if>		
+			<if test="null!=version and version!=''">
+				and t.version = #{version}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

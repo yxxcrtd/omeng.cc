@@ -1,0 +1,97 @@
+#! /bin/bash
+usage(){
+
+   echo "----------USAGE:--------------------" 
+   echo "provider  start"
+   echo "provider  stop"
+   echo "provider  start  xx"
+   echo "provider  stop   xx"
+   echo "-------------------------------------"
+}
+
+stopAll(){
+
+    procids=`ps -fe|grep jar |grep -v grep |grep -v tomcat| awk '{print $2}'`
+    if [ -z "$procids" ]; then
+    	echo  tip:  no process  found
+    else
+    	for procid in $procids
+    	  do
+               kill -9  $procid
+          done
+    fi
+}
+
+startAll(){
+    echo '....'
+    jars=`ls *.jar`
+    if [ -z "$jars" ]; then
+    	echo top:  no jar found,please check if you are in correct directory...
+    else
+	for jarName in $jars
+        do
+            #logName=`echo ${jarName/jar/log}`
+	    logName='all.log'
+            nohup java $JAVA_OPTS -jar $jarName >>$logName 2>1 &
+        done
+    fi;
+}
+
+cmd=$1
+module=$2
+
+JAVA_OPTS="-server -Xms512m  -Xmx512m -XX:PermSize=128M -XX:MaxPermSize=256m"
+
+
+if [ $# -gt 2 ] || [ $# -lt 1 ];  then
+   usage;
+elif [ $cmd != 'start' ] &&  [ $cmd != 'stop' ]; then 
+   usage;
+else
+   case $cmd  in
+          'start')
+                                if [ $#  -eq 1 ] ; then
+                                       echo start all provider ............
+                                       procids=`ps -fe|grep jar |grep -v grep |grep -v tomcat| awk '{print $2}'`
+                                       if [ -z "$procids" ]; then
+				             echo '' 	
+				       else
+					      stopAll 
+                                       fi;
+				       startAll
+				else
+				       echo start $module  ........
+				       echo
+                                       if [ -n $module".jar" ];  then
+                                                procid=`ps -fe|grep $module".jar" |grep -v grep | awk '{print $2}'`
+						echo $procid
+                                                if [ -z "$procid" ]; then
+						    #nohup java -jar $module".jar" >$module".log" & 
+						    nohup java $JAVA_OPTS -jar $module".jar" >>all.log 2>1 & 
+						else
+						    echo  tip:     $module".jar"  has started already.  don not  start again!
+						fi
+				       else
+						echo $module".jar not exists"
+				       fi
+				       echo
+				fi
+                                ;;
+           'stop')
+                                if [ $#  -eq 1 ] ; then
+                                       echo stop all provider ............
+				       stopAll
+				else
+				       echo stop  $module  ........
+				       echo 
+                                       procid=`ps -fe|grep $module".jar" |grep -v grep | awk '{print $2}'`
+                                       if [ -z "$procid" ]; then
+				       		echo   tip:   java $module".jar"  process not exists;
+                                       else
+					        kill -9 $procid
+				       fi
+				       echo
+				fi
+				;;
+   esac
+fi

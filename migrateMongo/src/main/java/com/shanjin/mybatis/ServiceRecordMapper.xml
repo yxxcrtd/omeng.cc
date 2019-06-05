@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IServiceRecordDao">
+	<!-- 获取订单对应的服务记录-->
+  	<select id="getServiceRecordsByIds" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">
+     		SELECT id,price,order_id,remark,pay_type,join_time
+     		FROM  merchant_service_record 
+     		WHERE order_id in ( ${orderId} ) and  is_del=0
+  	</select>   	
+  	
+  	
+  	<!-- 获取订单对应的服务记录附件-->
+  	<select id="getServiceRecordsAttaByIds" parameterType="java.lang.String" resultType="java.util.LinkedHashMap">
+     		SELECT id,merchant_service_record_id,attachment_type,path
+     		FROM  merchant_service_record_attachment 
+     		WHERE merchant_service_record_id in ( ${serviceRecordId} ) 
+  	</select>   
+  	
+  	<!-- 查询订单号对应的服务记录ids -->  	
+  	<select id="getServiceRecordByOrderIds" parameterType="java.util.Map" resultType="java.lang.String">
+  			select  group_concat(id)  from  merchant_service_record where order_id in ( ${ids} )
+  	</select>
+  	
+  	<!-- 删除订单商户服务附件记录 -->
+  	<delete id="delServiceRecordAttByIds" parameterType="java.util.Map">
+  			delete from merchant_service_record_attachment where merchant_service_record_id in (${ids})
+  	</delete>
+  	
+  	
+  	<!-- 删除订单商户服务记录 -->
+  	<delete id="delServiceRecordByIds" parameterType="java.util.Map">
+  			delete from merchant_service_record where id in ( ${ids} )
+  	</delete>
+  	
+</mapper>
+

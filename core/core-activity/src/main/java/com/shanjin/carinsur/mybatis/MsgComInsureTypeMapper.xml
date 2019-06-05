@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.MsgComInsureTypeMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgComInsureType" id="MsgComInsureTypeBsRstMap">
+		<id property="code" column="code"/>
+		
+		<result property="name" column="name"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.MsgComInsureType" id="MsgComInsureTypeBsParaMap">
+		<id property="code" column="code"/>
+		
+		<result property="name" column="name"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.code as code, 
+			t.name as name
+		FROM msg_com_insure_type AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM msg_com_insure_type AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO msg_com_insure_type (
+				code,
+				name
+			) VALUES (
+				#{code},
+				#{name}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE msg_com_insure_type AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM msg_com_insure_type AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY code DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.MsgComInsureType">
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.MsgComInsureType">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>		
+		</trim>
+		where t.code = #{code}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> where code = #{code}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.String">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.code in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MsgComInsureTypeBsRstMap" parameterType="java.lang.String">
+		<include refid="commSelTpl"/> where t.code = #{code} 
+	</select>
+	
+	<select id="getAll" resultMap="MsgComInsureTypeBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MsgComInsureTypeBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.code in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.MsgComInsureType" resultMap="MsgComInsureTypeBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantServiceTypeDao">
+
+  <!-- 查询商户服务项目名 -->
+  <select id="selectMerchantServiceTypeName" parameterType="java.util.Map" resultType="java.lang.String">
+      select
+          st.service_type_name as serviceTypeName
+      from
+          merchant_service_type mst
+          inner join service_type st on mst.service_type_id = st.id<!-- st.service_type_id -->
+      where
+          mst.merchant_id = #{merchantId}
+          and st.is_del = 0
+      order by
+          mst.service_type_id asc
+  </select>
+
+  <select id="getMerchantServiceTypeNames" parameterType="java.util.Map" resultType="String">
+      select
+          GROUP_CONCAT(st.service_type_name) as serviceTypeNames
+      from
+          merchant_service_type mst
+          inner join service_type st on mst.service_type_id = st.id<!-- st.service_type_id -->
+      where
+          mst.merchant_id = #{merchantId}
+          and st.is_del = 0
+      order by
+          mst.service_type_id asc
+  </select>
+  <!-- 查询商户在当前应用程序中所能提供的服务项目 -->
+  <select id="selectMerchantService" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          mst.service_type_id as id,
+          st.service_type_name as serviceTypeName
+      from
+          merchant_service_type mst
+          inner join service_type st on mst.service_type_id =st.id <!-- st.service_type_id -->
+      where
+          mst.merchant_id = #{merchantId}
+          <!-- and mst.app_type = #{appType}
+          and st.app_type = #{appType}    -->       
+          and st.is_del = 0
+      order by
+          mst.service_type_id asc
+  </select>
+
+  <!-- 查询编辑商户已提供和未提供的服务项目 -->
+  <select id="selectMerchantServiceForChoose" parameterType="java.util.Map" resultType="java.util.HashMap">
+          
+      	select
+				<!-- st.service_type_id as id, -->
+				st.id as id,
+				st.service_type_name as serviceTypeName,
+				(case when mst.service_type_id  is null then 0 else 1 end) as chose
+		from
+				service_type st
+				left join merchant_service_type mst on mst.service_type_id=st.id<!-- st.service_type_id  -->
+				and mst.merchant_id =#{merchantId}
+		where
+				st.is_del = 0
+				and st.app_type=#{appType}
+          
+  </select>
+
+  <!-- 查询编辑商户已提供和未提供的服务项目 -->
+  <select id="selectCategoryMerchantService" parameterType="java.util.Map" resultType="java.util.HashMap">
+      	select
+			st.id as serviceTypeId,
+			st.service_type_name as serviceTypeName,
+			(case when mst.service_type_id is null then 0 else 1 end) as chose
+		from
+	       catalog c
+	       inner join catalog_service cs on c.id = cs.catalog_id
+	       inner join service_type st on cs.service_id = st.id
+           left join merchant_service_type mst on st.id = mst.service_type_id and mst.merchant_id = #{merchantId}
+		where
+			c.id = #{catalogId}
+			and c.status = 1
+			and cs.status = 1
+			and st.is_del = 0
+		<!-- 另一种查询方式
+      	select
+			st.id as servicTypeId,
+			st.service_type_name as serviceTypeName,
+			(case when
+				(select service_type_id from merchant_service_type where service_type_id = st.id and merchant_id = #{merchantId}) is null
+			 	then 0 else 1 end) as chose
+		from 
+			service_type st
+			inner join (select distinct service_id from catalog_service where catalog_id in 
+							(select distinct catalog_id from catalog_service where service_id in 
+								(select service_type_id from merchant_service_type where merchant_id = #{merchantId}))) tmp
+			on st.id = tmp.service_id
+		where
+			st.is_del = 0
+		 -->
+  </select>
+
+  <!-- 查询编辑商户已提供和未提供的服务项目 
+  <select id="selectPersonalMerchantService" parameterType="java.util.Map" resultType="java.util.HashMap">
+      	select
+			st.id as serviceTypeId,
+			st.service_type_name as serviceTypeName,
+			(case when mst.service_type_id is null then 0 else 1 end) as chose
+		from
+	       catalog c
+	       inner join catalog_service cs on c.id = cs.catalog_id
+	       inner join service_type st on cs.service_id = st.id
+           left join merchant_service_type mst on st.id = mst.service_type_id and mst.merchant_id = #{merchantId}
+		where
+			c.id = #{catalogId}
+			and st.is_del = 0
+  </select>-->
+
+  <!-- 查询编辑商户已提供和未提供的服务项目-多级服务项目一切性查询 -->
+  <select id="selectMerchantServiceForChooseMultilevel" parameterType="java.util.Map" resultType="java.util.HashMap">
+          
+       	select
+				st.parent_id as parentId, 
+				<!-- st.service_type_id as id, -->
+				st.id as id,
+				st.service_type_name as serviceTypeName,
+				(case when mst.service_type_id  is null then 0 else 1 end) as chose
+		from
+				service_type st
+				left join merchant_service_type mst on mst.service_type_id=st.id<!-- st.service_type_id  -->
+				and mst.merchant_id =#{merchantId}
+		where
+				st.is_del = 0
+				and st.app_type=#{appType}
+  </select>
+	
+  <!-- 商户服务项目的保存 -->
+  <insert id="insertMerchantServiceType" parameterType="java.util.List">
+      insert into
+           merchant_service_type(merchant_id, service_type_id, app_type)
+      values
+           <foreach collection="list" item="item" index="index" separator=",">
+               (#{item.merchantId}, #{item.serviceTypeId}, #{item.appType})
+           </foreach>
+  </insert>
+
+  <!-- 查询单个商户服务数量 -->
+  <select id="selectMerchantServiceNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_service_type mst
+      where
+          mst.merchant_id = #{merchantId}
+  </select>
+
+  <delete id="deleteMerchantServiceType" parameterType="java.util.Map">
+      delete from
+          merchant_service_type
+      where
+          merchant_id = #{merchantId}
+  </delete>
+
+  <delete id="deleteByServiceTypeId" parameterType="java.util.Map">
+      delete from
+          merchant_service_type
+      where
+          merchant_id = #{merchantId}
+          and service_type_id = #{id}
+  </delete>
+
+  <select id="serviceTypeConvertToId" parameterType="java.util.Map" resultType="java.lang.String">
+  	select 
+  		GROUP_CONCAT(id) as serviceIds 
+  	from
+  		service_type st
+  	where
+  		st.service_type_id in (#{serviceTypes}) 
+  		and st.app_type=#{appType}
+  </select>
+
+  <select id="selectServiceTypeId" parameterType="java.util.List" resultType="java.lang.String">
+  	select 
+  		service_type_id
+  	from
+  		merchant_service_type
+  	where
+		merchant_id = #{merchantId}
+  </select>
+
+  <!-- 商户添加的服务个数 -->
+  <select id="personApplyServiceNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          service_type_apply 
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+          and is_audit = 0
+  </select>
+
+  <!-- 验证商户添加的服务是否已经在service_type表里存在 -->
+  <select id="checkApplyServiceInServiceType" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          service_type
+      where
+          service_type_name = #{serviceName}
+          and is_del = 0
+  </select>
+
+  <!-- 查询商户申请的服务的信息 -->
+  <select id="selectApplyServiceInfo" parameterType="java.util.Map" resultType="java.util.Map">
+      select
+          is_del as isDel,
+          is_audit as isAudit
+      from
+          service_type_apply
+      where
+          name = #{serviceName}
+          and merchant_id = #{merchantId}
+  </select>
+
+  <!-- 个人申请的服务的保存 -->
+  <insert id="personApplyServiceSave" parameterType="java.util.Map">
+  <!-- insert into service_type_apply
+      (
+          merchant_id,
+          name,
+          join_time
+      )
+      values
+          <foreach collection="serviceNameArray" index="index" item="item" separator=","> 
+             (#{merchantId}, #{item}, now())
+          </foreach> -->
+      insert into
+      	  service_type_apply
+      (
+          merchant_id,
+          name,
+          join_time
+      )
+      values
+      (
+      	  #{merchantId},
+      	  #{serviceName},
+      	  now()
+      )
+  </insert>
+
+  <!-- 个人申请的服务的查询 -->
+  <select id="personApplyServiceQuery" parameterType="java.util.Map" resultType="java.util.Map">
+  	select 
+  		id,
+  		name,
+  		is_audit as isAudit
+  	from
+  		service_type_apply
+  	where
+		merchant_id = #{merchantId}
+		and is_del = 0
+  </select>
+
+  <!-- 个人申请的服务的删除 -->
+  <update id="personApplyServiceDelete" parameterType="java.util.Map">
+      update
+          service_type_apply
+      set
+      	  is_del = 1
+      where
+          id = #{id}
+  </update>
+  
+  <select id="getServiceTypeNamesByServiceTypeIds" parameterType="java.util.Map" resultType="String">
+  	select
+  		GROUP_CONCAT(service_type_name) as serviceTypeNames
+  	from
+  		service_type
+  	where 
+  		is_del=0
+  		and id in (${serviceTypes})
+  </select>
+</mapper>
+

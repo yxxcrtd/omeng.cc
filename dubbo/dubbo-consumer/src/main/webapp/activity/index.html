@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>邀请好友来剪彩</title>
+		<script src="scripts/emRemLayer.js"></script>
+		<link rel="stylesheet" type="text/css" href="styles/main.css">
+		<meta name="viewport" id="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+		<meta name="apple-touch-fullscreen" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes"> 
+		<meta name="format-detection" content="telephone=no, email=no"> 
+		<script src="scripts/jquery-1.8.3.min.js" ></script>
+		<script src="scripts/fastclick.min.js" ></script>
+		<script>
+		    window.addEventListener( "load", function() { FastClick.attach( document.body ); }, false );
+		    window.onload=function(){document.getElementById('loading').style.display="none";}
+		    function indexD(){
+			 $.ajax({
+				 type : "get",
+				 async:false,
+				  url : "/activity/getCuttingInfoForHtml",
+				  data: {'merchantId':'144602070215941839'},
+			      dataType : "json",
+				  //jsonp: "callbackparam",//服务端用于接收callback调用的function名的参数
+		          //jsonpCallback:"showDetail",//callback的function名称
+			  success : function(data){
+			  	alert(0)
+						},
+				error:function(){
+						alert('服务忙，稍后获取咨询');
+						}
+				});
+		    };
+		    function showDetail(data) {
+		    	alert(0)
+		    };
+		    indexD();
+		</script>
+	</head>
+	<body>
+		<div id="loading"><span><img src="images/loading.gif" class="img"></span></div>
+		<!--第1屏-->
+		<section class="page_1 plrtb">
+			<div class="Field_1">
+				<div class="pic"><img src="images/pic.jpg" class="img"></div>
+				<div class="cont">
+					<div class="title"><span class="name">汽车之家</span><span class="city">合肥</span></div>
+					<div class="item">服务项目：汽车美容 汽车维修 汽车维修</div>
+					<div class="desc">已有 <span class="num">1234</span> 个好友帮忙剪彩</div>
+				</div>
+			</div>
+			<div class="Field_2">
+				<audio src="scripts/baozhu.mp3" id="myVoice0" loop="loop"></audio>
+				<audio src="scripts/XIQIN.mp3" id="myVoice1" loop="loop"></audio>
+				<div class="title"><span>选择标签送贺词</span></div>
+				<div class="cont">
+					<label><input type="checkbox" class="inputC">赚钱多多</label>
+					<label><input type="checkbox" class="inputC">门庭若市</label>
+					<label><input type="checkbox" class="inputC">生意兴隆</label>
+					<label><input type="checkbox" class="inputC">财源广进</label>
+					<label><input type="checkbox" class="inputC">钱途无量</label>
+					<label><input type="checkbox" class="inputC">开张大吉</label>
+					<label><input type="checkbox" class="inputC">少嘚瑟 </label>
+					<label><input type="checkbox" class="inputC">老板最美</label>
+					<label><input type="checkbox" class="inputC">抱大腿</label>
+					<label><input type="checkbox" class="inputC">吊炸天</label>
+					<label><input type="checkbox" class="inputC">土豪请客 </label>
+					<label><input type="checkbox" class="inputC">关门大吉</label>
+					<label><input type="checkbox" class="inputC">猴赛雷</label>
+					<label><input type="checkbox" class="inputC">红红火火</label>
+				</div>
+				<div class="btn"><input type="button" class="inputB inputC_1" value="帮TA剪彩"></div>
+			</div>
+		</section>
+	    <!--成功剪裁-->
+		<div class="layerPannel" style="visibility: hidden;">
+			<div class="box_1 plrtb" style="display: none;">
+				<div class="bjField plrtb"><img src="images/lbj_1.png" class="img"></div>
+				<div class="imgField"><img src="images/lImg_1.png" class="img"></div>
+				<div class="gifField_1"><img src="images/fireworks.gif" class="img"></div>
+				<div class="gifField_2"><img src="images/ren.gif" class="img"></div>
+				<div class="botField"><img src="images/lbj_2.jpg" class="img"></div>
+			</div>
+			<div class="box_2" style="display: none;">
+				<div class="title">
+					已为<span class="tt">丽华美容</span>成功剪彩<br>多谢捧场！
+				</div>
+				<div class="btn_1">
+					<a href="down.html" class="inputB">我也要开店</a>
+				</div>
+			</div>
+		</div>
+		<!--没选中标签提示框-->
+		<div class="tishiPannel" style="display: none;">
+			<div class="box">
+				<p style="margin-top:1rem;">请选择标签送贺词~</p>
+				<a class="close">关闭</a>
+			</div>
+		</div>
+
+		<script>
+			/*选项是否选中*/
+			$('.Field_2 label input').click(function(){
+				if($(this).parent('label').hasClass('cur')){
+					$(this).parent('label').find('input:checkbox').parent('label').removeClass('cur');
+				}
+				else{
+					$(this).parents('.cont').find('input:radio').parent('label').removeClass('cur');
+					$(this).parent('label').addClass('cur');}
+				if($('.Field_2').find('.cur').length>0){
+					$('.Field_2 .btn .inputB').removeClass('inputC_1');
+				}
+				else{
+					$('.Field_2 .btn .inputB').addClass('inputC_1');
+				}
+			});
+
+			/*动画弹框*/
+			var audio0 = document.getElementById('myVoice0');
+			var audio1 = document.getElementById('myVoice1');
+			$('.btn .inputB').click(function(){
+				if($('.page_1 .Field_2').find('.cur').length>0){
+					audio0.play();
+					audio1.play();
+			    	$('.layerPannel').css({'visibility':'visible'});
+			    	$('.layerPannel .box_1').show();
+					var dhtime=setTimeout(function(){
+						audio0.pause();
+						audio1.pause();
+						$('.layerPannel .box_1').fadeOut();
+						$('.layerPannel .box_2').fadeIn();
+					},4200);
+				}
+				else{
+					$('.tishiPannel').show();
+				}
+		    });
+		    /*关闭提示*/
+		    $('.tishiPannel .close').click(function(){
+		    	$('.tishiPannel').hide();
+		    });
+		    
+		</script>
+	</body>
+</html>

@@ -1,0 +1,79 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+xmlns:p="http://www.springframework.org/schema/p"
+xmlns:aop="http://www.springframework.org/schema/aop"
+xmlns:context="http://www.springframework.org/schema/context"
+xmlns:mvc="http://www.springframework.org/schema/mvc"
+xmlns:util="http://www.springframework.org/schema/util" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.1.xsd
+    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+    http://www.springframework.org/schema/util 
+    http://www.springframework.org/schema/util/spring-util.xsd
+    http://code.alibabatech.com/schema/dubbo
+    http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+    "
+    >
+    
+    <!--   
+    <context:component-scan base-package="com.shanjin" />       
+     -->
+    
+    <dubbo:application name="push_consumer" />
+ 	 
+  
+  <!-- 使用zookeeper注册中心暴露服务地址            测试版本与 发布版本    -->     
+  <dubbo:registry address="zookeeper://zkmaster:2181?backup=zkslave1:2181,zkslave2:2181" />  
+	
+	<!--     开发者本地zookeeper    
+	<dubbo:registry address="zookeeper://localhost:2181" />    -->          
+
+					
+<!-- 	<dubbo:reference id="pushService" interface="com.shanjin.service.IPushService" /> -->
+	
+	
+    <!--   end  of   订阅 通用服务 -->
+    
+     <!-- 消息队列配置    2016.7.6
+    <bean id="connectionFactory"    class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+    		<property name="addresses" value="10.25.54.143,10.47.93.17,10.25.0.88" />
+    		<property name="username" value="mq730"/>
+    		<property name="password" value="omengadmin"/>
+    		<property name="channelCacheSize" value="50"/>
+	</bean>-->
+
+    <!-- 测试环境 -->
+    <bean id="connectionFactory" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+        <property name="addresses" value="mqMaster,mqSlave1,mqSlave2" />
+        <property name="username" value="mq"/>
+        <property name="password" value="mq"/>
+        <property name="channelCacheSize" value="50"/>
+    </bean>
+	
+	
+	<bean  id="orderMsgDelegate" class="com.shanjin.MqMsg" />
+	
+	<bean id="MqConfirmCallback"  class="com.shanjin.other.MqConfirmCallback" />
+	
+	<bean  id="messageListenerAdapter" class="org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter">
+			<property name="delegate" ref="orderMsgDelegate"  />
+			<property name="defaultListenerMethod" value="getMQMsg"  />
+	</bean>  
+    
+    <bean class="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer">
+    		<constructor-arg ref="connectionFactory"/>
+    		<property name="concurrentConsumers" value="20" />
+    		<property name="queueNames" value="pushNewOrderQueue" /><!-- 读  -->
+    		<property name="messageListener" ref="messageListenerAdapter" />
+    		<property name="channelTransacted" value="true" />
+    		<!-- <property name="confirmCallback"  ref="MqConfirmCallback" /> -->
+	</bean>
+    
+    
+  
+</beans>

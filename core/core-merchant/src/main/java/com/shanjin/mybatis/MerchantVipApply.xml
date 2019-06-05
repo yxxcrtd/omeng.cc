@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantVipApplyDao">
+
+  <!-- 保存商户会员申请 -->
+  <insert id="insertMerchantVipApply" parameterType="java.util.Map">
+       insert into 
+          merchant_vip_apply
+          (
+              merchant_id,
+              apply_vip_level,
+              apply_time,
+              apply_status,
+              app_type,
+              money,
+              pay_no,
+              pay_type,
+              trade_no,
+              client_type,
+              open_time
+          )
+          values
+          (
+              #{merchantId},
+              #{applyVipLevel},
+              now(),
+              #{applyStatus},
+              #{appType},
+              #{money},
+              #{payNo},
+              #{payType},
+              #{tradeNo},
+              #{clientType},
+              #{openTime}
+          )
+  </insert>
+
+  <!-- 查询商户会员申请状态 -->
+  <select id="selectMerchantVipApplyStatus" parameterType="java.util.Map" resultType="java.lang.Integer">
+     select count(1) from  inc_pkg_order  where     merchant_id = #{merchantId} and is_del=0 and status=1 and
+     				pkg_id = (select id from inc_pkg where is_default=1)     
+  </select>
+  
+   <!-- 根据支付号查询商户会员申请状态 -->
+  <select id="checkMerchantVipApplyByPayNo" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_vip_apply
+      where
+         pay_no = #{payNo}
+  </select>
+  
+  <!-- 通过商户会员申请 -->
+  <update id="updateMerchantVipApply" parameterType="java.util.Map">
+      update
+          merchant_info
+      set
+          vip_level = 1 
+      where
+          id = #{merchantId}
+      and vip_level = 0
+  </update>
+  
+  
+</mapper>
+

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IUserMerchantDao">
+ 	<!-- 收藏店铺 -->
+	<insert id="collectionMerchant" parameterType="java.util.Map" >
+	    insert user_merchant_collection(
+	    	user_id,
+	    	merchant_id,
+	    	join_time,
+	    	receive_employees_id
+	    )values(
+	    	#{userId},
+	    	#{merchantId},
+	    	now(),
+	    	#{receiveEmployeesId}
+	    )
+	</insert>
+	
+	<!-- 删除收藏店铺 -->
+	<delete id="delCollectionMerchant" parameterType="java.util.Map">
+	    delete from user_merchant_collection where user_id=#{userId} and merchant_id in 
+	    <foreach item="item" index="index" collection="merchantIds" open="(" separator="," close=")">  
+		  #{item}  
+		</foreach>
+	</delete>
+	
+	<!-- 验证是否收藏店铺 -->
+	<select id="checkCollectionMerchant" parameterType="java.util.Map" resultType="int">
+	   select count(1) from  user_merchant_collection where user_id=#{userId} and merchant_id=#{merchantId} 
+	</select>
+	
+	<!-- 获取收藏店铺信息 -->
+	<select id="getCollectionMerchant" parameterType="java.util.Map" resultType="java.util.HashMap">
+	    SELECT
+	    	mi.id,			
+			mi.name,
+			ms.total_count_evaluation as orderNum,
+			ms.total_attitude_evaluation AS totalAttitudeEvaluation,
+			ms.total_quality_evaluation AS totalQualityEvaluation,
+			ms.total_speed_evaluation AS totalSpeedEvaluation,	
+			ma.path AS path,
+			umc.receive_employees_id as receiveEmployeesId
+		FROM
+			user_merchant_collection umc 
+			LEFT JOIN 	merchant_info mi ON umc.merchant_id=mi.id 
+			LEFT JOIN merchant_statistics ms ON ms.merchant_id=mi.id
+			LEFT JOIN merchant_attachment ma ON ma.merchant_id=mi.id
+		WHERE
+			umc.user_id = #{userId}	
+			AND mi.is_del=0
+			AND ma.attachment_type = 1
+			AND ma.attachment_use = 11
+			AND ma.is_del = 0
+		order by umc.join_time desc 
+      limit #{startNum}, #{pageSize} 
+	</select>
+	
+	<!-- 获取收藏店铺信息 -->
+	<select id="getCollectionMerchantTotalPage" parameterType="java.util.Map" resultType="int">
+	   SELECT
+			count(1)
+		FROM
+			user_merchant_collection umc
+		WHERE
+			umc.user_id = #{userId}	
+	</select>
+	
+	
+	
+     <!-- 查询商户被多少用户收藏 -->
+	<select id="selectTotalFans" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			user_merchant_collection
+		where
+			merchant_id = #{merchantId}
+	</select>
+	
+</mapper>

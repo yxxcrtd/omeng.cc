@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.1.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+    http://code.alibabatech.com/schema/dubbo
+    http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+    http://www.springframework.org/schema/task
+    http://www.springframework.org/schema/task/spring-task-4.1.xsd">
+
+	<bean id="checkFailureMQ" class="com.shanjin.common.quartz.CheckFailureMQ" />
+	<task:scheduled-tasks>
+		<task:scheduled ref="checkFailureMQ" method="reWrite"
+			cron="0 0/30 * * * ?" />
+	</task:scheduled-tasks>
+
+	<!-- 自动扫描该包，使SpringMVC认为包下用了@controller注解的类是控制器 -->
+	<context:component-scan base-package="com.shanjin.controller" />
+	<context:component-scan base-package="com.shanjin.common.interceptor" />
+
+	<dubbo:annotation package="com.shanjin.controller" />
+
+	<aop:aspectj-autoproxy />
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+	<!--避免IE执行AJAX时，返回JSON出现下载文件 <bean id="mappingJacksonHttpMessageConverter" 
+		class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"> 
+		<property name="supportedMediaTypes"> <list> <value>text/html;charset=UTF-8</value> 
+		</list> </property> </bean> -->
+
+	<!-- 直接读取静态资源 -->
+	<mvc:default-servlet-handler />
+
+
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="true">
+			<!-- 解决JSON 返回中文乱码 -->
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<constructor-arg value="UTF-8" />
+			</bean>
+			<bean
+				class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+				<property name="objectMapper">
+					<bean
+						class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean">
+						<property name="failOnEmptyBeans" value="false" />
+						<property name="serializationInclusion" value="NON_NULL"/>
+					</bean>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+
+	<!-- REST中根据URL后缀自动判定Content-Type及相应的View <bean id="contentNegotiationManager" 
+		class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean"> 
+		<property name="mediaTypes"> <value> json=application/json xml=application/xml 
+		</value> </property> <property name="ignoreAcceptHeader" value="true"/> <property 
+		name="favorPathExtension" value="true"/> </bean> -->
+
+	<!-- 启动SpringMVC的注解功能，完成请求和注解POJO的映射 -->
+	<bean
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<!--<property name="messageConverters"> <list> <ref bean="mappingJacksonHttpMessageConverter" 
+			/> JSON转换器 </list> </property> -->
+	</bean>
+
+	<!-- 定义跳转的文件的前后缀 ，视图模式配置 -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<!-- 这里的配置我的理解是自动给后面action的方法return的字符串加上前缀和后缀，变成一个 可用的url地址 -->
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<!-- 配置文件上传，如果没有使用文件上传可以不用配置，当然如果不配，那么配置文件中也不必引入上传组件包 -->
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- 默认编码 -->
+		<property name="defaultEncoding" value="utf-8" />
+		<!-- 文件大小最大值 10MB -->
+		<property name="maxUploadSize" value="104857600" />
+		<!-- 内存中的最大值 -->
+		<property name="maxInMemorySize" value="104857600" />
+	</bean>
+
+	<bean id="exceptionResolver"
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<!-- 遇到MaxUploadSizeExceededException异常时，自动跳转到/WEB-INF/jsp/error_fileupload.jsp页面 -->
+				<prop
+					key="org.springframework.web.multipart.MaxUploadSizeExceededException">redirect:/error/outOfFileSize</prop>
+				<prop key="java.lang.Exception">redirect:/error/error</prop>
+				<prop key="java.lang.Throwable">redirect:/error/error</prop>
+			</props>
+		</property>
+	</bean>
+
+
+
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<mvc:exclude-mapping path="/error/**" />
+			<mvc:exclude-mapping path="/search/**" />
+			<mvc:exclude-mapping path="/alipay/*.jsp" />
+			<mvc:exclude-mapping path="/wechat/*.jsp" />
+			<mvc:exclude-mapping path="/cplan/user/register" />
+			<mvc:exclude-mapping path="/backRcvResponse" />
+			<mvc:exclude-mapping path="/wechat/**"/>
+			<mvc:exclude-mapping path="/MP_verify_YTvQbenJV21iGtsa.txt"/>
+			<mvc:exclude-mapping path="/customOrder/getOrderDetailForReceiverV730" />
+			<bean class="com.shanjin.common.interceptor.ValidateRequestInterceptor" />
+		</mvc:interceptor>
+
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.shanjin.common.interceptor.BusinessInterceptor" />
+		</mvc:interceptor>
+
+		<mvc:interceptor>
+			<mvc:mapping path="/myMerchant/validateVerificationCode" />
+			<bean class="com.shanjin.common.interceptor.VerificationCodeInterceptor" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/common/feedback" />
+			<bean class="com.shanjin.common.interceptor.commonValidateTokenInterceptor" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/userOrder/**" />
+			<mvc:mapping path="/userMerchant/**" />
+			<mvc:mapping path="/userInfo/**" />
+			<mvc:mapping path="/customOrder/**" />
+			<mvc:mapping path="/king/**" />
+			<mvc:exclude-mapping path="/king/getActShare"/>
+			<mvc:exclude-mapping path="/userMerchant/getCollectionMerchant" />
+			<mvc:exclude-mapping path="/userMerchant/getMerchantGoodsClassificationInfo" />
+			<mvc:exclude-mapping path="/userMerchant/getMerchantGoodsInfo" />
+			<mvc:exclude-mapping path="/userInfo/getVerificationCode" />
+			<mvc:exclude-mapping path="/userInfo/getVoiceVerificationCode" />
+			<mvc:exclude-mapping path="/userInfo/validateVerificationCode" />
+			<mvc:exclude-mapping path="/userInfo/getUserAvailableVouchersInfo" />
+			<mvc:exclude-mapping path="/userInfo/getUserHistoryVouchersInfo" />
+			<mvc:exclude-mapping path="/userOrder/getMerchantInfoV24" />
+			<mvc:exclude-mapping path="/userOrder/getMerchantInfoV24_2" />
+			<mvc:exclude-mapping path="/userOrder/getMerchantBasicInfo" />
+			<mvc:exclude-mapping path="/userOrder/userEvaluation" />
+			<mvc:exclude-mapping path="/userOrder/selectMerchantAlbum" />
+			<mvc:exclude-mapping path="/userOrder/selectMerchantPhoto" />
+			<mvc:exclude-mapping path="/customOrder/getRecommedServiceList" />
+			<mvc:exclude-mapping path="/customOrder/orderCatalogList" />
+			<mvc:exclude-mapping path="/customOrder/thirdServiceList" />
+			<mvc:exclude-mapping path="/customOrder/catalogListTest" />
+			<mvc:exclude-mapping path="/customOrder/getOrderCatalogList" />
+			<mvc:exclude-mapping path="/customOrder/getOrderCatalogAndServiceList" />
+			<mvc:exclude-mapping path="/customOrder/getOrderForm" />
+			<mvc:exclude-mapping path="/customOrder/getOrderFormByOrderId" />
+			<mvc:exclude-mapping path="/customOrder/getPricePlanForm" />
+            <mvc:exclude-mapping path="/customOrder/tobeConfirmed" />
+            <mvc:exclude-mapping path="/customOrder/findPaymentByOrderId" />
+            <mvc:exclude-mapping path="/customOrder/updatePaymentStatus" />
+            <mvc:exclude-mapping path="/customOrder/getOrderDetailForReceiverV730" />
+			<bean class="com.shanjin.common.interceptor.ValidateTokenInterceptor" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/myIncome/**" />
+			<mvc:mapping path="/myMerchant/**" />
+			<mvc:mapping path="/merchantOrderManage/**" />
+			<mvc:exclude-mapping path="/myMerchant/getVerificationCode" />
+			<mvc:exclude-mapping path="/myMerchant/getVoiceVerificationCode" />
+			<mvc:exclude-mapping path="/myMerchant/validateVerificationCode" />
+			<mvc:exclude-mapping path="/myMerchant/myMerchantShow" />
+			<mvc:exclude-mapping path="/myMerchant/myMerchantV23" />
+			<mvc:exclude-mapping path="/myMerchant/myMerchantV24" />
+			<mvc:exclude-mapping path="/myMerchant/selectVipBackgroundUrlList" />
+			<mvc:exclude-mapping path="/myMerchant/merchantDetailInfo" />
+			<mvc:exclude-mapping path="/myMerchant/merchantDetailInfo_2" />
+			<mvc:exclude-mapping path="/myMerchant/charmValueInfo" />
+			<mvc:exclude-mapping path="/myMerchant/serviceItem" />
+			<mvc:exclude-mapping path="/myMerchant/serviceQuery" />
+			<mvc:exclude-mapping path="/myMerchant/personApplyServiceQuery" />
+			<mvc:exclude-mapping path="/myMerchant/personServiceSearch" />
+			<mvc:exclude-mapping path="/myMerchant/currentVouchersInfo" />
+			<mvc:exclude-mapping path="/myMerchant/historyVouchersInfo" />
+			<mvc:exclude-mapping path="/myMerchant/vouchersTypeShow" />
+			<mvc:exclude-mapping path="/myMerchant/surplusVouchersNumber" />
+			<mvc:exclude-mapping path="/myMerchant/userEvaluation" />
+			<mvc:exclude-mapping path="/myMerchant/applyAuth" />
+			<mvc:exclude-mapping path="/myMerchant/selectAlbum" />
+			<mvc:exclude-mapping path="/myMerchant/selectPhoto" />
+			<mvc:exclude-mapping path="/myMerchant/employeesInfo" />
+			<mvc:exclude-mapping path="/myMerchant/getVerificationCodeForAddEmployee" />
+			<mvc:exclude-mapping path="/myMerchant/getVoiceVerificationCodeForAddEmployee" />
+			<mvc:exclude-mapping path="/myMerchant/merchantServiceItemName" />
+			<mvc:exclude-mapping path="/myMerchant/surplusEmployeesNum" />
+			<mvc:exclude-mapping path="/myMerchant/addedServices" />
+			<mvc:exclude-mapping path="/myMerchant/vipApplyStatus" />
+			<mvc:exclude-mapping path="/myMerchant/selectGoodsClassificationInfo" />
+			<mvc:exclude-mapping path="/myMerchant/selectGoodsInfo" />
+			<mvc:exclude-mapping path="/myMerchant/myMerchantList" />
+			<mvc:exclude-mapping path="/myMerchant/orderPlan" />
+			<mvc:exclude-mapping path="/myMerchant/merchantEditPageInfo" />
+			<mvc:exclude-mapping path="/myMerchant/getCollections" />
+            <mvc:exclude-mapping path="/myMerchant/openIncreaseService" />
+            <mvc:exclude-mapping path="/myMerchant/getPkgInfoById" />
+			<bean class="com.shanjin.common.interceptor.MerchantValidateTokenInterceptor" />
+		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.shanjin.common.interceptor.ClientLogInterceptor" />
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+
+	<!-- 定时任务 -->
+	<bean id="evaluationOrderJob" class="com.shanjin.common.quartz.EvaluationOrder">
+		<property name="startday">
+		<!--指定具体日期对上月数据，进行汇总汇和5分好评奖励，暂定月初1号整理上月数据 -->
+			<value>1</value>
+		</property>
+		<property name="addday">
+		<!--统计距当前日期提前几天的数据 -->
+			<value>1</value>
+		</property>
+	</bean>
+	<bean id="evaluationOrderDitail"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- 指定任务类 -->
+		<property name="targetObject">
+			<ref bean="evaluationOrderJob" />
+		</property>
+		<!-- 指定任务方法 -->
+		<property name="targetMethod">
+			<value>getMerchantByOrder</value>
+		</property>
+	</bean>
+	<!-- 调度方法 -->
+	<bean id="evaluationOrderTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="evaluationOrderDitail" />
+<!-- 		<property name="cronExpression" value="0 0/1 * * * ?" />  -->
+		<!-- 每天零晨10分执行 -->
+<!-- 		cron的格式是：秒 分钟 小时 天 月 星期 （年） -->
+		<property name="cronExpression" value="0 10 0 * * ?"/>
+	</bean>
+
+	<!-- <bean id="evaluationOrderDitail" -->
+	<!-- class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean"> -->
+	<!-- <property name="targetObject" ref="checkOrder" /> -->
+	<!-- <property name="targetMethod" value="checkNoChoosedOrder" /> -->
+	<!-- <property name="concurrent" value="false" /> -->
+	<!-- </bean> -->
+
+
+	<bean id="checkOrder" class="com.shanjin.common.quartz.checkOrder" />
+	<bean id="noChoosedOrderCheck"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="checkOrder" />
+		<property name="targetMethod" value="checkNoChoosedOrder" />
+		<property name="concurrent" value="false" />
+	</bean>
+
+
+	<bean id="noBidOrderCheck"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="checkOrder" />
+		<property name="targetMethod" value="checkNoBidOrder" />
+		<property name="concurrent" value="false" />
+	</bean>
+
+
+	<bean id="noPlanChoosedTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="noChoosedOrderCheck" />
+		<property name="cronExpression" value="0 0/10 1 * * ?" />  <!-- 每天1点执行 0 0 1 * * ? -->
+	</bean>
+
+
+
+	<bean id="noBidTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="noBidOrderCheck" />
+		<property name="cronExpression" value="0 0/10 1 * * ?" />    <!-- 每天1点执行 0 0 1 * * ? -->
+	</bean>
+
+
+	<bean id="userCacheJobDetail"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="checkOrder" />
+		<property name="targetMethod" value="cleanUserCache" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="userCacheTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="userCacheJobDetail" />
+		<property name="cronExpression" value="0 0/5 * * * ?" /> <!-- 每五分钟执行一次 -->
+	</bean>
+
+	<bean id="checkIpToCity" class="com.shanjin.common.quartz.CheckIP" />
+	<bean id="checkIpDetail"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="checkIpToCity" />
+		<property name="targetMethod" value="cleanIpCachec" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="ipCleantrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="checkIpDetail" />
+		<property name="cronExpression" value="0 0/10 * * * ?" />  <!-- 每十分钟执行一次 -->
+	</bean>
+
+
+	<bean id="returnBidFee" class="com.shanjin.common.quartz.ReturnBidFee" />
+	<bean id="checkReturnBidFee"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="returnBidFee" />
+		<property name="targetMethod" value="returnFee" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="returnBidFeeTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="checkReturnBidFee" />
+		<property name="cronExpression" value="0 0/10 2 * * ?" />  <!-- 每天两点执行一次 -->
+	</bean>
+
+
+
+	<bean id="purifyPushOrder" class="com.shanjin.common.quartz.PurifyPushOrder" />
+	<bean id="checkPushPurify"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="purifyPushOrder" />
+		<property name="targetMethod" value="purify" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="pushPurifytrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="checkPushPurify" />
+		<property name="cronExpression" value="0 0/10 3 * * ?" />  <!-- 每天三点执行一次 -->
+	</bean>
+
+ 	<!-- 30分钟无抢单，则推送私人助理 -->
+  	<bean id="pushToPrivateAssistant" class="com.shanjin.common.quartz.PushToPrivateAssistant"/>
+  	<bean id="checkPushToPrivateAssistant" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">   
+        <property name="targetObject" ref="pushToPrivateAssistant"/>  
+        <property name="targetMethod" value="push"/>  
+        <property name="concurrent" value="false"/>
+  	</bean>  
+   	<bean id="pushToPrivateAssistanttrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+       <property name="jobDetail" ref="checkPushToPrivateAssistant"/>  
+       <property name="cronExpression" value="0 0/5 * * * ?"/>  <!-- 每5分钟执行一次  -->  
+  	</bean>
+  
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="noPlanChoosedTrigger" />
+				<ref bean="noBidTrigger" />
+				<ref bean="userCacheTrigger" />
+				<ref bean="ipCleantrigger" />
+				<ref bean="pushPurifytrigger" />
+				<ref bean="returnBidFeeTrigger" />
+				<!-- 好评奖励统计 -->
+				<ref bean="evaluationOrderTrigger" />
+				
+              <ref bean="pushToPrivateAssistanttrigger"/> <!-- 30分钟无抢单，则推送私人助理 -->
+
+			</list>
+		</property>
+		<property name="autoStartup" value="true" />
+	</bean>
+
+
+
+</beans>

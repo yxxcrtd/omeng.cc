@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>    
+        <!-- 要调用的工作类 -->
+        <bean id="quartzJob" class="com.shanjin.manager.job.BusinessJob"></bean>
+        <bean id="searchJob" class="com.shanjin.manager.job.SearchStatisticJob"></bean>
+        <bean id="fensiRewardJob" class="com.shanjin.manager.job.FensiRewardJob"></bean>
+        <bean id="merchantOrderJob" class="com.shanjin.manager.job.MerchantOrderJob"></bean>
+        <bean id="merchantInfoJob" class="com.shanjin.manager.job.MerchantInfoJob"></bean>
+        
+        
+        <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="jobtask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="quartzJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+        <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="searchtask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="searchJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+        <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="fensiRewardtask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="fensiRewardJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+        <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="merchantOrdertask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="merchantOrderJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+         <!-- 定义调用对象和调用对象的方法 -->
+        <bean id="merchantInfotask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+            <!-- 调用的类 -->
+            <property name="targetObject">
+                <ref bean="merchantInfoJob"/>
+            </property>
+            <!-- 调用类中的方法 -->
+            <property name="targetMethod">
+                <value>work</value>
+            </property>
+        </bean>
+        
+        <!-- 定义触发时间 -->
+        <bean id="doTime" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="jobtask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                 <value>0 55 3 * * ? *</value>
+            </property>
+        </bean>
+        
+        <!-- 定义触发时间 -->
+        <bean id="doSearchTime" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="searchtask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                <value>0 0/30 * * * ?</value>
+            </property>
+        </bean>
+        
+        <!-- 定义触发时间 -->
+        <bean id="doFensiRewardTime" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="fensiRewardtask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                <value>0 28 11 * * ? *</value>
+            </property>
+        </bean>
+        
+         <!-- 定义触发时间 -->
+        <bean id="doMerchantOrderTime" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="merchantOrdertask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                <value>0 10 3 * * ? *</value>
+            </property>
+        </bean>
+        
+        <!-- 定义触发时间 -->
+        <bean id="doMerchantInfo" class="org.springframework.scheduling.quartz.CronTriggerBean">
+            <property name="jobDetail">
+                <ref bean="merchantInfotask"/>
+            </property>
+            <!-- cron表达式 -->
+            <property name="cronExpression">
+                <value>0 20 2 1 * ?</value>
+            </property>
+        </bean>
+        
+        <!-- 总管理类 如果将lazy-init='false'那么容器启动就会执行调度程序  -->
+        <bean id="startQuertz" lazy-init="false" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+            <property name="triggers">
+                <list>
+                    <ref bean="doTime"/>
+                    <ref bean="doSearchTime"/> 
+                    <ref bean="doMerchantOrderTime"/>
+                    <ref bean="doMerchantInfo"/>
+                </list>
+            </property>
+        </bean>
+    
+</beans>

@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantVouchersPermissionsDao">
+
+  <!-- 查询当前还未被领取的代金券记录数 -->
+  <select id="selectCurrentVouchersInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          (select
+              vi.service_type_id as couponsType
+          from
+              merchant_vouchers_permissions mvp
+              inner join vouchers_info vi on mvp.vouchers_id = vi.id
+          where
+              mvp.merchant_id = #{merchantId}
+              and mvp.cutoff_time > #{cutoffTime}
+              and mvp.is_del = 0
+             <!--  and vi.app_type = #{appType} -->
+             <!--  and vi.service_type_id in (${catalogIds}) -->
+              and vi.cutoff_time > #{cutoffTime}
+              and vi.is_del = 0
+          ) tmp0
+          inner join merchant_service_type mst on tmp0.couponsType = mst.service_type_id
+      where
+          <!-- mst.app_type=#{appType}
+		  and --> mst.merchant_id = #{merchantId}
+  </select>
+
+  <!-- 查询当前还未被领取的代金券信息 -->
+  <select id="selectCurrentVouchersInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          tmp0.couponsType as couponsType,
+          st.service_type_name as serviceTypeName,
+          tmp0.icon_path as couponsTypePicPath,
+          tmp0.price as price,
+          date_format(tmp0.joinTime, '%Y-%m-%d') as joinTime,
+          date_format(tmp0.cutoffTime, '%Y-%m-%d') as cutoffTime,
+          tmp0.totalCount as totalCount,
+          tmp0.userCount as userCount
+      from
+          (select
+              vi.id as id,
+              vi.service_type_id as couponsType,
+              vi.price as price,
+			  vi.icon_path as icon_path,
+              mvp.join_time as joinTime,
+              mvp.cutoff_time as cutoffTime,
+              mvp.count as totalCount,
+              mvp.user_count as userCount
+          from
+              merchant_vouchers_permissions mvp
+              inner join vouchers_info vi on mvp.vouchers_id = vi.id
+          where
+              mvp.merchant_id = #{merchantId}
+              and mvp.cutoff_time > #{cutoffTime}
+              and mvp.is_del = 0
+              <!-- and vi.app_type = #{appType} -->
+              <!-- and vi.service_type_id in (${catalogIds}) -->
+              and vi.cutoff_time > #{cutoffTime}
+              and vi.is_del = 0
+          ) tmp0
+          INNER JOIN merchant_service_type mst ON tmp0.couponsType = mst.service_type_id
+		  INNER JOIN service_type st ON <!-- st.service_type_id -->st.id = mst.service_type_id
+      where
+      		<!-- mst.app_type= #{appType}
+		  	and --> mst.merchant_id =#{merchantId}
+			<!-- and st.app_type= #{appType} -->
+			and st.is_del = 0
+      order by
+            cutoffTime
+      limit #{rows}, #{pageSize}
+  </select>
+
+  <!-- 查询过期的或者已被使用的代金券记录数 -->
+  <select id="selectHistoryVouchersInfoCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          (select
+              vi.service_type_id as couponsType,
+              vi.price as price,
+              mvp.id as id,
+              mvp.cutoff_time as cutoffTime,
+              0 as userId,
+              '' as phone
+          from
+              merchant_vouchers_permissions mvp
+              inner join vouchers_info vi on mvp.vouchers_id = vi.id
+          where
+              mvp.merchant_id = #{merchantId}
+              and mvp.cutoff_time &lt; #{cutoffTime}
+              and mvp.is_del = 0
+              <!-- and vi.app_type = #{appType} -->
+             <!--  and vi.service_type_id in (${catalogIds}) -->
+              and vi.is_del = 0
+          union all
+          select
+              vi.service_type_id as couponsType,
+              vi.price as price,
+              uvi.id as id,
+              vi.cutoff_time as cutoffTime,
+              uvi.user_id as userId,
+              (select phone from user_info where id = userId and is_del = 0) as phone
+          from
+              user_vouchers_info uvi
+              inner join order_info oi on uvi.vouchers_id = oi.vouchers_id
+              inner join vouchers_info vi on uvi.vouchers_id = vi.id
+          where
+              oi.merchant_id = #{merchantId}
+              <!-- and oi.app_type = #{appType} -->
+              and uvi.is_use = 1
+              and uvi.is_del_merchant = 0
+              <!-- and vi.app_type = #{appType} -->
+              <!-- and vi.service_type_id in (${catalogIds}) -->
+              and vi.is_del = 0
+          ) tmp0
+          inner join merchant_service_type mst on tmp0.couponsType = mst.service_type_id
+      where
+         <!--  mst.app_type=#{appType}
+		  and --> mst.merchant_id = #{merchantId}
+  </select>
+
+  <!-- 查询过期的或者已被使用的代金券信息 -->
+  <select id="selectHistoryVouchersInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          tmp0.couponsType as couponsType,
+          st.service_type_name as serviceTypeName,
+          tmp0.price as price,
+          tmp0.id as id,
+          date_format(tmp0.cutoffTime, '%Y-%m-%d') as cutoffTime,
+          tmp0.phone as userPhone
+      from
+          (select
+              vi.service_type_id as couponsType,
+              vi.price as price,
+              mvp.id as id,
+              mvp.cutoff_time as cutoffTime,
+              0 as userId,
+              '' as phone
+          from
+              merchant_vouchers_permissions mvp
+              inner join vouchers_info vi on mvp.vouchers_id = vi.id
+          where
+              mvp.merchant_id = #{merchantId}
+              and mvp.cutoff_time &lt; #{cutoffTime}
+              and mvp.is_del = 0
+              and vi.app_type = #{appType}
+              and vi.is_del = 0
+          union all
+          select
+              vi.service_type_id as couponsType,
+              vi.price as price,
+              uvi.id as id,
+              vi.cutoff_time as cutoffTime,
+              uvi.user_id as userId,
+              (select phone from user_info where id = userId and is_del = 0) as phone
+          from
+              user_vouchers_info uvi
+              inner join order_info oi on uvi.vouchers_id = oi.vouchers_id
+              inner join vouchers_info vi on uvi.vouchers_id = vi.id
+          where
+              oi.merchant_id = #{merchantId}
+              <!-- and oi.app_type = #{appType} -->
+              and uvi.is_use = 1
+              and uvi.is_del_merchant = 0
+              and vi.app_type = #{appType}
+              and vi.is_del = 0
+          ) tmp0
+          INNER JOIN merchant_service_type mst ON tmp0.couponsType = mst.service_type_id
+		  INNER JOIN service_type st ON <!-- st.service_type_id -->st.id = mst.service_type_id
+      where
+      		<!-- mst.app_type= #{appType} 
+		  	and--> mst.merchant_id =#{merchantId}
+			<!-- and st.app_type= #{appType} -->
+      order by
+          cutoffTime desc
+      limit #{rows}, #{pageSize}
+  </select>
+
+  <!-- 删除过期代金券信息,将商户代金券权限表的is_del设置成1 -->
+  <update id="deletePastVouchers" parameterType="java.util.Map">
+      update
+          merchant_vouchers_permissions
+      set
+          is_del = 1
+      where
+          id = #{id}
+  </update>
+
+  <!-- 删除已使用代金券信息,将用户关联代金券表的is_del_merchant设置成1 -->
+  <update id="deleteUsedVouchers" parameterType="java.util.Map">
+      update
+          user_vouchers_info
+      set
+          is_del_merchant = 1
+      where
+          id = #{id}
+  </update>
+
+  <!-- 查询当前还未被领取的代金券数量 
+  <select id="selectSurplusVouchersNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          sum(count) as totalCount
+      from
+          merchant_vouchers_permissions
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+      union all
+      select
+          count(1) as totalCount
+      from
+          user_vouchers_info
+      where
+          vouchers_id in
+              (select
+                  vouchers_id
+              from
+                  merchant_vouchers_permissions
+              where
+                  merchant_id = #{merchantId}
+                  and is_del = 0)
+  </select>-->
+
+  <!-- 查询当前还未被领取的代金券数量 -->
+  <select id="selectSurplusVouchersNum" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+      select
+          sum(count) as totalCount,
+          sum(user_count) as userCount
+      from
+          merchant_vouchers_permissions
+      where
+          merchant_id = #{merchantId}
+          and is_del = 0
+  </select>
+
+  <!-- 添加代金券 -->
+  <insert id="insertMerchantVouchersPermissions" parameterType="java.util.Map">
+      insert into
+          merchant_vouchers_permissions
+          (
+               merchant_id,
+               vouchers_id,
+               cutoff_time,
+               join_time,
+               count
+          )
+      values
+          (
+               #{merchantId},
+               #{vouchersId},
+               #{cutoffTime},
+               now(),
+               #{count}
+          )
+  </insert>
+
+  <!-- 添加代金券（多条） -->
+  <insert id="insertMerchantVouchersPermissionsBatch" parameterType="java.util.Map">
+      insert into
+          merchant_vouchers_permissions
+          (
+               merchant_id,
+               vouchers_id,
+               cutoff_time,
+               join_time,
+               count
+          )
+      values
+          <foreach collection="list" item="item" index="index" separator=",">
+          (
+              #{item.merchantId},
+              #{item.vouchersId},
+              #{item.cutoffTime},
+              now(),
+              #{item.count}
+          )
+          </foreach>
+  </insert>
+</mapper>
+

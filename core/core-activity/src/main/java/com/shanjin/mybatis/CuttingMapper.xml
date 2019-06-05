@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.ICuttingDao">
+
+	<!-- 获取商铺基本信息 -->
+	<select id="getMerchantInfo" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT m.id AS merchantId,m.`name`,m.location_address AS
+		address,mt.path AS icon,m.city,
+		(select group_CONCAT(mst.service_type_id) from
+		merchant_service_type mst
+		where mst.merchant_id=m.id) AS serviceIds,
+		<if test="flag == 2">
+			0 AS totalNum,
+		</if>
+		<if test="flag == 1">
+			(SELECT ac.cutting_num AS cuttingNum FROM activity_cutting  ac  WHERE
+			ac.merchant_id=m.id) AS
+			totalNum,
+		</if>
+		<if test="flag == 2">
+			0 AS priceTotal
+		</if>
+		<if test="flag == 1">
+			(SELECT ac.priceTotal AS priceTotal FROM activity_cutting  ac  WHERE
+			ac.merchant_id=m.id) AS
+			priceTotal
+		</if>
+		FROM merchant_info m
+		LEFT JOIN merchant_attachment mt ON
+		m.id=mt.merchant_id AND
+		mt.attachment_type=1
+		AND mt.attachment_use=11
+		WHERE m.id=#{merchantId}
+	</select>
+
+	<!-- 获取商户剪彩数 -->
+	<select id="getMerchantCuttingNum" parameterType="java.util.Map"
+		resultType="int">
+		SELECT t.cutting_num AS cuttingNum FROM activity_cutting t 
+        WHERE t.merchant_id=#{merchantId} 
+	</select>
+
+	<!-- 获取剪彩活动标签列表 -->
+	<select id="getLabelList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	  SELECT t.label_name AS label,t.label_desc AS labelDesc 
+	  FROM activity_cutting_label t
+	</select>
+
+	<!-- 获取剪彩活动统计 -->
+	<select id="getLabelCount" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+        SELECT t.* FROM activity_cutting t  WHERE t.merchant_id=#{merchantId}
+	</select>
+	
+	<!-- 获取开店店铺数 -->
+	<select id="getMerchantCount" resultType="int">
+        SELECT COUNT(1) FROM merchant_info t 
+	</select>
+	
+	<!-- 校验商户是否有剪彩记录 -->
+	<select id="checkMerchantCutting" parameterType="java.util.Map"
+		resultType="int">
+       	SELECT COUNT(1) FROM activity_cutting t WHERE t.merchant_id=#{merchantId}
+	</select>
+	
+	<!-- 校验商户是否有剪彩记录 -->
+	<select id="checkCuttingInfobyTranId" parameterType="java.util.Map"
+		resultType="int">
+     /*master*/ SELECT COUNT(1) FROM activity_cutting_detail t WHERE t.transaction_id=#{transaction_id}
+	</select>
+	
+	<!-- 插入剪彩信息  -->
+	<insert id="insertCuttingInfo" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into activity_cutting(
+  			create_time,
+  			merchant_id
+  		) values(
+  	 		now(),
+  	 		#{merchantId}
+  		)
+	</insert>
+
+  
+	<!-- 更新剪彩信息（标签信息） -->
+	<update  id="updateCuttingInfo" parameterType="java.util.Map">
+       UPDATE activity_cutting SET
+       <if test="label == 'label1'">
+       label1=label1+1,
+       </if>
+       <if test="label == 'label2'">
+       label2=label2+1,
+       </if>
+       <if test="label == 'label3'">
+       label3=label3+1,
+       </if>
+       <if test="label == 'label4'">
+       label4=label4+1,
+       </if>
+       <if test="label == 'label5'">
+       label5=label5+1,
+       </if>
+       <if test="label == 'label6'">
+       label6=label6+1,
+       </if>
+       cutting_num=cutting_num+1
+       WHERE id=#{cuttingId}
+	</update >
+	
+	<!-- 更新剪彩信息（标签信息） -->
+	<update  id="updateCuttingInfoCash" parameterType="java.util.Map">
+       UPDATE activity_cutting SET
+       priceTotal=priceTotal+#{total_fee},
+       cutting_num=cutting_num+1
+       WHERE id=#{cuttingId}
+	</update >
+<!-- 插入剪彩信息(标签)  -->
+	<insert id="insertCuttingInfoLabel" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into activity_cutting_detail(
+  			merchant_id,
+  			poritl,
+  			name,
+  			join_time,
+  			label_key,
+  			label,
+  			type,
+  			openId,
+  			demand
+  		) values(
+  		   #{merchantId},
+  		   #{headimgurl},
+  		   #{nickname},
+  	 		now(),
+  	 		#{label},
+  	 		#{labelName},
+  	 		1,
+  	 		#{openId},
+  	 		#{demand}
+  		)
+	</insert>
+	
+	<!-- 插入剪彩信息(红包) -->
+	<insert id="insertCuttingInfoCash" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into activity_cutting_detail(
+  			merchant_id,
+  			poritl,
+  			name,
+  			join_time,
+  			price,
+  			label_key,
+  			label,
+  			type,
+  			out_trade_no,
+  			transaction_id,
+  			openId,
+  			demand
+  		 ) values(
+  		   #{merchantId},
+  		   #{headimgurl},
+  		   #{nickname},
+  	 	   #{payTime},
+  	 		#{total_fee},
+  	 	    #{label},
+  	 		#{labelName},
+  	 		2,
+  	 		#{out_trade_no},
+  	 		#{transaction_id},
+  	 		#{openId},
+  	 		#{demand}
+  		)
+	</insert>
+	
+	<!-- 更新商户统计表信息（红包信息） -->
+	<update  id="updateMerchantStatics" parameterType="java.util.Map">
+       UPDATE merchant_statistics SET
+       surplus_price=surplus_price+#{total_fee},
+       total_income_price=total_income_price+#{total_fee}
+       WHERE merchant_id=#{merchantId}
+	</update >
+	
+	<!-- 插入商户收支明细信息(红包) -->
+	<insert id="insertMerchantPayMentDetail" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into merchant_payment_details(
+  			merchant_id,
+  			payment_type,
+  			business_id,
+  			payment_price,
+  			app_type,
+  			payment_time
+  		 ) values(
+  		   #{merchantId},
+  		    2,
+  		    #{id},
+  		    #{total_fee},
+  		    (select app_type from merchant_info where id= #{merchantId}),
+  	 		now()
+  		)
+	</insert>
+<!--获取剪彩评价详情 -->
+ <select id="getCuttingDetail" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	select ac.poritl, ac.name,ac.join_time,ac.label_key,ac.label,ac.type,ac.price,ac.demand
+	from
+	activity_cutting_detail ac
+	where
+	ac.merchant_id=#{merchantId}
+	ORDER BY ac.join_time DESC
+	limit #{pageNo},#{pageSize}
+	</select>
+	
+	<!--获取所有的服务类型 -->
+  <select id="getAllServiceList" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	select id as serviceTypeId,service_type_name as serviceTypeName
+	from
+	service_type s
+	where
+	 s.is_del=0
+	</select>
+	
+	<!--获取要推送的服务商 -->
+   <select id="getPushMerchant" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	SELECT up.user_id AS userId,up.client_id AS clientId,up.client_type AS clientType,me.merchant_id,
+	up.push_id AS pushId FROM merchant_employees me INNER JOIN user_push up ON me.user_id=up.user_id
+	WHERE me.employees_type=1 and me.merchant_id=#{merchantId}
+	</select>
+	
+	<!--获取要推送的服务商的app类型 -->
+   <select id="getAppType" parameterType="java.util.HashMap"
+		resultType="java.lang.String">
+	SELECT m.app_type
+	FROM merchant_info m
+	WHERE m.id=#{merchantId}
+	</select>
+	
+	<!-- 获取商铺基本信息 -->
+	<select id="getMerchantInfoForAdver" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT m.id AS merchantId,m.`name`,m.location_address AS
+		address,mt.path AS icon,m.city,m.join_time,m.app_type,
+		(select group_CONCAT(mst.service_type_id) from
+		merchant_service_type mst
+		where mst.merchant_id=m.id) AS serviceIds,
+		(select ca.name from catalog ca where ca.id=m.catalog_id) as cataName
+		FROM merchant_info m
+		LEFT JOIN merchant_attachment mt ON
+		m.id=mt.merchant_id AND
+		mt.attachment_type=1
+		AND mt.attachment_use=11
+		WHERE m.id=#{merchantId}
+	</select>
+	
+	<!-- 查询地推人员总数 -->
+  <select id="getRankingMerchant" parameterType="java.util.Map" resultType="java.lang.Integer">
+     select count(1) from merchant_info where join_time&lt;#{join_time}
+  </select>
+	
+	<!-- 查询平台开放城市 -->
+  <select id="getCityCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+   select count(1) from activity_open_city 
+  </select>
+	
+<!-- 查询平台商铺总粉丝数-->
+  <select id="getFansCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+    select count(1) as total from user_merchant_collection 
+    <if test="flag == 'true'">
+        where join_time&lt; #{time}
+   </if>
+  </select>
+  
+  <!-- 查询个人商铺粉丝数-->
+  <select id="getPerFansCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select count(1) as total from user_merchant_collection where merchant_id=#{merchantId} 
+    <if test="flag == 'true'">
+       AND join_time&lt; #{time}
+   </if>
+  </select>
+  
+   <!-- 查询个人商铺城市排名-->
+  <select id="getperRanking" parameterType="java.util.Map" resultType="java.lang.Integer">
+     SELECT count(1)
+     FROM
+	  (
+		SELECT
+		count(1) AS total
+		FROM
+			user_merchant_collection uc
+		JOIN merchant_info mi ON uc.merchant_id = mi.id
+        where mi.city = (select m.city from merchant_info m where m.id=#{merchantId})
+        <if test="flag == 'true'">
+        AND uc.join_time&lt; #{time}
+        </if>
+		GROUP BY
+		mi.id
+	) sa
+    WHERE
+	sa.total &gt;= #{perfansCount}
+  </select>
+  
+   <!-- 获取活动截止时间 -->
+	<select id="getEndTime" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	  SELECT t.end_time FROM activity_fansi t
+	</select>
+	
+	<!-- 获取城市排名 -->
+	<select id="getCityRanking" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	 SELECT *
+     FROM
+	  (
+		SELECT
+		mi.id,mi.name,mi.join_time,
+		(SELECT ma.path FROM merchant_attachment ma WHERE
+		ma.merchant_id=mi.id AND ma.attachment_type = 1
+		and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+		count(1) AS total
+		FROM
+			user_merchant_collection uc
+		JOIN merchant_info mi ON uc.merchant_id = mi.id
+        where mi.city = (select m.city from merchant_info m where m.id=#{merchantId}) 
+        <if test="flag == 'true'">
+        AND uc.join_time&lt; #{time}
+        </if>
+		GROUP BY
+		mi.id
+	) sa
+    order by
+	sa.total
+	desc,sa.join_time ASC
+	limit #{pageNo},#{pageSize}
+	</select>
+	
+	<!-- 获取全国排名 -->
+	<select id="getCountyRanking" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	 SELECT *
+     FROM
+	  (
+		SELECT
+		mi.id,mi.name,
+		(SELECT ma.path FROM merchant_attachment ma WHERE
+		ma.merchant_id=mi.id AND ma.attachment_type = 1
+		and ma.attachment_use = 11 and ma.is_del = 0) AS iconUrl,
+		count(1) AS total
+		FROM
+			user_merchant_collection uc
+		JOIN merchant_info mi ON uc.merchant_id = mi.id
+		 <if test="flag == 'true'">
+         where uc.join_time&lt; #{time}
+         </if>
+		GROUP BY
+		mi.id
+	) sa
+    order by
+	sa.total desc
+	limit 0,3
+	</select>
+	
+   <!-- 查询个人商铺所在城市-->
+  <select id="getCityByMerchantId" parameterType="java.util.Map" resultType="java.lang.String">
+      select city from merchant_info where id=#{merchantId} 
+  </select>
+  
+  <!-- 获取全国开放城市-->
+	<select id="getOpenCity" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	 select city from activity_open_city 
+	</select>
+	
+	  <!-- 查询城市有粉丝商户个数-->
+  <select id="getFansAllCountByCity" parameterType="java.util.Map" resultType="java.lang.Integer">
+	SELECT
+	count(DISTINCT mi.id) AS total
+	FROM
+	user_merchant_collection uc
+	JOIN merchant_info mi ON uc.merchant_id = mi.id
+	WHERE
+	mi.city = (SELECT m.city FROM merchant_info m WHERE m.id = #{merchantId} 
+	  <if test="flag == 'true'">
+       AND uc.join_time&lt; #{time}
+   </if>
+	)
+  
+  </select>
+  
+  <!--1000万粉丝活动截止 -->
+	<insert id="insertFansiEndTime" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into activity_fansi(
+  			end_time
+  		 ) values(
+  		   #{time}
+  		)
+	</insert>
+	
+<!-- 查询该微信用户是否关注此服务商-->
+  <select id="checkFocusMerbyOpenId" parameterType="java.util.Map" resultType="java.lang.Integer">
+	/*master*/ select count(1) from user_merchant_collection where merchant_id=#{merchantId} and
+	user_id=(select user_id from wechat_user where openid=#{openId}) 
+  </select>
+  
+  <!--获取商户的所在省市 -->
+ <select id="getProAndCity" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+	select mi.province,mi.city
+	from
+	merchant_info mi
+	where
+	mi.id=#{merchantId}
+	</select>
+<!-- 获取商铺基本信息 -->
+	<select id="getMerchantBasic" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT me.user_id,me.phone,(select mi.name from merchant_info mi where mi.id=me.merchant_id) as name
+		  from merchant_employees me where me.employees_type=1 and me.merchant_id=#{merchantId} limit 1
+	</select>	
+	
+	
+	 <!--插入mq失败消息 -->
+	<insert id="insertMqFailure" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="id">
+  		insert into activity_fansi(
+  			business_id,
+  			queueName,
+  			msg,
+  			type,
+  			status,
+  			join_time
+  		 ) values(
+  		   #{business_id},
+  		   #{queueName},
+  		   #{msg},
+  		   4,
+  		   0,
+  		   now()
+  		)
+	</insert>
+	
+	<!-- 获取活动分享详情 -->
+	<select id="getActivityShare" parameterType="java.util.Map"
+		resultType="java.util.HashMap">
+		SELECT ai.shareTitle,ai.shareImage,ai.shareLink,ai.shareDesc 
+		  from activity_info ai where ai.id=#{activityId} limit 1
+	</select>	
+	
+	<!-- 查询该服务商对应的剪彩id-->
+  <select id="getCuttingIdByMer" parameterType="java.util.Map" resultType="java.lang.Long">
+	 select id from activity_cutting where merchant_id=#{merchantId} limit 1
+  </select>
+	
+</mapper>
+

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>omeng</artifactId>
+        <groupId>com.shanjin.o2o</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.shanjin.o2o.omeng</groupId>
+    <artifactId>management</artifactId>
+    <packaging>pom</packaging>
+    <name>management</name>
+
+    <modules>
+        <module>bank-server</module>
+        <module>financial</module>
+        <module>log-analysis</module>
+        <module>operating</module>
+        <module>manager</module>
+        <module>sso-admin</module>
+        <module>sso-bean</module>
+    </modules>
+
+</project>

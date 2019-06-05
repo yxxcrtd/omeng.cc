@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.MerchantInfoMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantInfo" id="MerchantInfoBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="detail" column="detail"/>
+		<result property="shortName" column="short_name"/>
+		<result property="address" column="address"/>
+		<result property="province" column="province"/>
+		<result property="city" column="city"/>
+		<result property="locationAddress" column="location_address"/>
+		<result property="detailAddress" column="detail_address"/>
+		<result property="longitude" column="longitude"/>
+		<result property="latitude" column="latitude"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="moneyPassword" column="money_password"/>
+		<result property="moneyRealName" column="money_real_name"/>
+		<result property="moneyIdNo" column="money_id_no"/>
+		<result property="ip" column="ip"/>
+		<result property="microWebsiteUrl" column="micro_website_url"/>
+		<result property="maxEmployeeNum" column="max_employee_num"/>
+		<result property="vipLevel" column="vip_level"/>
+		<result property="orderPrice" column="order_price"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="invitationCode" column="invitation_code"/>
+		<result property="maxMsgId" column="max_msg_id"/>
+		<result property="catalogId" column="catalog_id"/>
+		<result property="authType" column="auth_type"/>
+		<result property="authStatus" column="auth_status"/>
+		<result property="flag" column="flag"/>
+		<result property="lastActiveTime" column="last_active_time"/>
+		<result property="mapType" column="map_type"/>
+		<result property="isPrivateAssistant" column="is_private_assistant"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantInfo" id="MerchantInfoBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="name" column="name"/>
+		<result property="detail" column="detail"/>
+		<result property="shortName" column="short_name"/>
+		<result property="address" column="address"/>
+		<result property="province" column="province"/>
+		<result property="city" column="city"/>
+		<result property="locationAddress" column="location_address"/>
+		<result property="detailAddress" column="detail_address"/>
+		<result property="longitude" column="longitude"/>
+		<result property="latitude" column="latitude"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="moneyPassword" column="money_password"/>
+		<result property="moneyRealName" column="money_real_name"/>
+		<result property="moneyIdNo" column="money_id_no"/>
+		<result property="ip" column="ip"/>
+		<result property="microWebsiteUrl" column="micro_website_url"/>
+		<result property="maxEmployeeNum" column="max_employee_num"/>
+		<result property="vipLevel" column="vip_level"/>
+		<result property="orderPrice" column="order_price"/>
+		<result property="appType" column="app_type"/>
+		<result property="isDel" column="is_del"/>
+		<result property="invitationCode" column="invitation_code"/>
+		<result property="maxMsgId" column="max_msg_id"/>
+		<result property="catalogId" column="catalog_id"/>
+		<result property="authType" column="auth_type"/>
+		<result property="authStatus" column="auth_status"/>
+		<result property="flag" column="flag"/>
+		<result property="lastActiveTime" column="last_active_time"/>
+		<result property="mapType" column="map_type"/>
+		<result property="isPrivateAssistant" column="is_private_assistant"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.name as name, 
+			t.detail as detail, 
+			t.short_name as shortName, 
+			t.address as address, 
+			t.province as province, 
+			t.city as city, 
+			t.location_address as locationAddress, 
+			t.detail_address as detailAddress, 
+			t.longitude as longitude, 
+			t.latitude as latitude, 
+			t.join_time as joinTime, 
+			t.money_password as moneyPassword, 
+			t.money_real_name as moneyRealName, 
+			t.money_id_no as moneyIdNo, 
+			t.ip as ip, 
+			t.micro_website_url as microWebsiteUrl, 
+			t.max_employee_num as maxEmployeeNum, 
+			t.vip_level as vipLevel, 
+			t.order_price as orderPrice, 
+			t.app_type as appType, 
+			t.is_del as isDel, 
+			t.invitation_code as invitationCode, 
+			t.max_msg_id as maxMsgId, 
+			t.catalog_id as catalogId, 
+			t.auth_type as authType, 
+			t.auth_status as authStatus, 
+			t.flag as flag, 
+			t.last_active_time as lastActiveTime, 
+			t.map_type as mapType, 
+			t.is_private_assistant as isPrivateAssistant
+		FROM merchant_info AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM merchant_info AS t
+	</sql>
+
+	<!--商户表Id非自增 save 操作 特殊处理-->
+	<sql id="commInsTpl">
+		INSERT INTO merchant_info (
+				id,
+				name, 
+				detail, 
+				short_name, 
+				address, 
+				province, 
+				city, 
+				location_address, 
+				detail_address, 
+				longitude, 
+				latitude, 
+				join_time, 
+				money_password, 
+				money_real_name, 
+				money_id_no, 
+				ip, 
+				micro_website_url, 
+				max_employee_num, 
+				vip_level, 
+				order_price, 
+				app_type, 
+				is_del, 
+				invitation_code, 
+				max_msg_id, 
+				catalog_id, 
+				auth_type, 
+				auth_status, 
+				flag, 
+				last_active_time, 
+				map_type, 
+				is_private_assistant
+			) VALUES (
+				#{id},
+				#{name}, 
+				#{detail}, 
+				#{shortName}, 
+				#{address}, 
+				#{province}, 
+				#{city}, 
+				#{locationAddress}, 
+				#{detailAddress}, 
+				#{longitude}, 
+				#{latitude}, 
+				#{joinTime}, 
+				#{moneyPassword}, 
+				#{moneyRealName}, 
+				#{moneyIdNo}, 
+				#{ip}, 
+				#{microWebsiteUrl}, 
+				#{maxEmployeeNum}, 
+				#{vipLevel}, 
+				#{orderPrice}, 
+				#{appType}, 
+				#{isDel}, 
+				#{invitationCode}, 
+				#{maxMsgId}, 
+				#{catalogId}, 
+				#{authType}, 
+				#{authStatus}, 
+				#{flag}, 
+				#{lastActiveTime}, 
+				#{mapType}, 
+				#{isPrivateAssistant}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE merchant_info AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM merchant_info AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.MerchantInfo">
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.MerchantInfo">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>		
+			<if test="null!=detail and detail!=''">
+				t.detail = #{detail},
+			</if>		
+			<if test="null!=shortName and shortName!=''">
+				t.short_name = #{shortName},
+			</if>		
+			<if test="null!=address and address!=''">
+				t.address = #{address},
+			</if>		
+			<if test="null!=province and province!=''">
+				t.province = #{province},
+			</if>		
+			<if test="null!=city and city!=''">
+				t.city = #{city},
+			</if>		
+			<if test="null!=locationAddress and locationAddress!=''">
+				t.location_address = #{locationAddress},
+			</if>		
+			<if test="null!=detailAddress and detailAddress!=''">
+				t.detail_address = #{detailAddress},
+			</if>		
+			<if test="null!=longitude">
+				t.longitude = #{longitude},
+			</if>		
+			<if test="null!=latitude">
+				t.latitude = #{latitude},
+			</if>		
+			<if test="null!=joinTime">
+				t.join_time = #{joinTime},
+			</if>		
+			<if test="null!=moneyPassword and moneyPassword!=''">
+				t.money_password = #{moneyPassword},
+			</if>		
+			<if test="null!=moneyRealName and moneyRealName!=''">
+				t.money_real_name = #{moneyRealName},
+			</if>		
+			<if test="null!=moneyIdNo and moneyIdNo!=''">
+				t.money_id_no = #{moneyIdNo},
+			</if>		
+			<if test="null!=ip and ip!=''">
+				t.ip = #{ip},
+			</if>		
+			<if test="null!=microWebsiteUrl and microWebsiteUrl!=''">
+				t.micro_website_url = #{microWebsiteUrl},
+			</if>		
+			<if test="null!=maxEmployeeNum">
+				t.max_employee_num = #{maxEmployeeNum},
+			</if>		
+			<if test="null!=vipLevel">
+				t.vip_level = #{vipLevel},
+			</if>		
+			<if test="null!=orderPrice">
+				t.order_price = #{orderPrice},
+			</if>		
+			<if test="null!=appType and appType!=''">
+				t.app_type = #{appType},
+			</if>		
+			<if test="null!=isDel">
+				t.is_del = #{isDel},
+			</if>		
+			<if test="null!=invitationCode and invitationCode!=''">
+				t.invitation_code = #{invitationCode},
+			</if>		
+			<if test="null!=maxMsgId">
+				t.max_msg_id = #{maxMsgId},
+			</if>		
+			<if test="null!=catalogId">
+				t.catalog_id = #{catalogId},
+			</if>		
+			<if test="null!=authType">
+				t.auth_type = #{authType},
+			</if>		
+			<if test="null!=authStatus">
+				t.auth_status = #{authStatus},
+			</if>		
+			<if test="null!=flag">
+				t.flag = #{flag},
+			</if>		
+			<if test="null!=lastActiveTime">
+				t.last_active_time = #{lastActiveTime},
+			</if>		
+			<if test="null!=mapType">
+				t.map_type = #{mapType},
+			</if>		
+			<if test="null!=isPrivateAssistant">
+				t.is_private_assistant = #{isPrivateAssistant},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=detail and detail!=''">
+				and t.detail = #{detail}
+			</if>		
+			<if test="null!=shortName and shortName!=''">
+				and t.short_name = #{shortName}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=province and province!=''">
+				and t.province = #{province}
+			</if>		
+			<if test="null!=city and city!=''">
+				and t.city = #{city}
+			</if>		
+			<if test="null!=locationAddress and locationAddress!=''">
+				and t.location_address = #{locationAddress}
+			</if>		
+			<if test="null!=detailAddress and detailAddress!=''">
+				and t.detail_address = #{detailAddress}
+			</if>		
+			<if test="null!=longitude">
+				and t.longitude = #{longitude}
+			</if>		
+			<if test="null!=latitude">
+				and t.latitude = #{latitude}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=moneyPassword and moneyPassword!=''">
+				and t.money_password = #{moneyPassword}
+			</if>		
+			<if test="null!=moneyRealName and moneyRealName!=''">
+				and t.money_real_name = #{moneyRealName}
+			</if>		
+			<if test="null!=moneyIdNo and moneyIdNo!=''">
+				and t.money_id_no = #{moneyIdNo}
+			</if>		
+			<if test="null!=ip and ip!=''">
+				and t.ip = #{ip}
+			</if>		
+			<if test="null!=microWebsiteUrl and microWebsiteUrl!=''">
+				and t.micro_website_url = #{microWebsiteUrl}
+			</if>		
+			<if test="null!=maxEmployeeNum">
+				and t.max_employee_num = #{maxEmployeeNum}
+			</if>		
+			<if test="null!=vipLevel">
+				and t.vip_level = #{vipLevel}
+			</if>		
+			<if test="null!=orderPrice">
+				and t.order_price = #{orderPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=invitationCode and invitationCode!=''">
+				and t.invitation_code = #{invitationCode}
+			</if>		
+			<if test="null!=maxMsgId">
+				and t.max_msg_id = #{maxMsgId}
+			</if>		
+			<if test="null!=catalogId">
+				and t.catalog_id = #{catalogId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=flag">
+				and t.flag = #{flag}
+			</if>		
+			<if test="null!=lastActiveTime">
+				and t.last_active_time = #{lastActiveTime}
+			</if>		
+			<if test="null!=mapType">
+				and t.map_type = #{mapType}
+			</if>		
+			<if test="null!=isPrivateAssistant">
+				and t.is_private_assistant = #{isPrivateAssistant}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MerchantInfoBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="MerchantInfoBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=detail and detail!=''">
+				and t.detail = #{detail}
+			</if>		
+			<if test="null!=shortName and shortName!=''">
+				and t.short_name = #{shortName}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=province and province!=''">
+				and t.province = #{province}
+			</if>		
+			<if test="null!=city and city!=''">
+				and t.city = #{city}
+			</if>		
+			<if test="null!=locationAddress and locationAddress!=''">
+				and t.location_address = #{locationAddress}
+			</if>		
+			<if test="null!=detailAddress and detailAddress!=''">
+				and t.detail_address = #{detailAddress}
+			</if>		
+			<if test="null!=longitude">
+				and t.longitude = #{longitude}
+			</if>		
+			<if test="null!=latitude">
+				and t.latitude = #{latitude}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=moneyPassword and moneyPassword!=''">
+				and t.money_password = #{moneyPassword}
+			</if>		
+			<if test="null!=moneyRealName and moneyRealName!=''">
+				and t.money_real_name = #{moneyRealName}
+			</if>		
+			<if test="null!=moneyIdNo and moneyIdNo!=''">
+				and t.money_id_no = #{moneyIdNo}
+			</if>		
+			<if test="null!=ip and ip!=''">
+				and t.ip = #{ip}
+			</if>		
+			<if test="null!=microWebsiteUrl and microWebsiteUrl!=''">
+				and t.micro_website_url = #{microWebsiteUrl}
+			</if>		
+			<if test="null!=maxEmployeeNum">
+				and t.max_employee_num = #{maxEmployeeNum}
+			</if>		
+			<if test="null!=vipLevel">
+				and t.vip_level = #{vipLevel}
+			</if>		
+			<if test="null!=orderPrice">
+				and t.order_price = #{orderPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=invitationCode and invitationCode!=''">
+				and t.invitation_code = #{invitationCode}
+			</if>		
+			<if test="null!=maxMsgId">
+				and t.max_msg_id = #{maxMsgId}
+			</if>		
+			<if test="null!=catalogId">
+				and t.catalog_id = #{catalogId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=flag">
+				and t.flag = #{flag}
+			</if>		
+			<if test="null!=lastActiveTime">
+				and t.last_active_time = #{lastActiveTime}
+			</if>		
+			<if test="null!=mapType">
+				and t.map_type = #{mapType}
+			</if>		
+			<if test="null!=isPrivateAssistant">
+				and t.is_private_assistant = #{isPrivateAssistant}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MerchantInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.MerchantInfo" resultMap="MerchantInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>		
+			<if test="null!=detail and detail!=''">
+				and t.detail = #{detail}
+			</if>		
+			<if test="null!=shortName and shortName!=''">
+				and t.short_name = #{shortName}
+			</if>		
+			<if test="null!=address and address!=''">
+				and t.address = #{address}
+			</if>		
+			<if test="null!=province and province!=''">
+				and t.province = #{province}
+			</if>		
+			<if test="null!=city and city!=''">
+				and t.city = #{city}
+			</if>		
+			<if test="null!=locationAddress and locationAddress!=''">
+				and t.location_address = #{locationAddress}
+			</if>		
+			<if test="null!=detailAddress and detailAddress!=''">
+				and t.detail_address = #{detailAddress}
+			</if>		
+			<if test="null!=longitude">
+				and t.longitude = #{longitude}
+			</if>		
+			<if test="null!=latitude">
+				and t.latitude = #{latitude}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=moneyPassword and moneyPassword!=''">
+				and t.money_password = #{moneyPassword}
+			</if>		
+			<if test="null!=moneyRealName and moneyRealName!=''">
+				and t.money_real_name = #{moneyRealName}
+			</if>		
+			<if test="null!=moneyIdNo and moneyIdNo!=''">
+				and t.money_id_no = #{moneyIdNo}
+			</if>		
+			<if test="null!=ip and ip!=''">
+				and t.ip = #{ip}
+			</if>		
+			<if test="null!=microWebsiteUrl and microWebsiteUrl!=''">
+				and t.micro_website_url = #{microWebsiteUrl}
+			</if>		
+			<if test="null!=maxEmployeeNum">
+				and t.max_employee_num = #{maxEmployeeNum}
+			</if>		
+			<if test="null!=vipLevel">
+				and t.vip_level = #{vipLevel}
+			</if>		
+			<if test="null!=orderPrice">
+				and t.order_price = #{orderPrice}
+			</if>		
+			<if test="null!=appType and appType!=''">
+				and t.app_type = #{appType}
+			</if>		
+			<if test="null!=isDel">
+				and t.is_del = #{isDel}
+			</if>		
+			<if test="null!=invitationCode and invitationCode!=''">
+				and t.invitation_code = #{invitationCode}
+			</if>		
+			<if test="null!=maxMsgId">
+				and t.max_msg_id = #{maxMsgId}
+			</if>		
+			<if test="null!=catalogId">
+				and t.catalog_id = #{catalogId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=flag">
+				and t.flag = #{flag}
+			</if>		
+			<if test="null!=lastActiveTime">
+				and t.last_active_time = #{lastActiveTime}
+			</if>		
+			<if test="null!=mapType">
+				and t.map_type = #{mapType}
+			</if>		
+			<if test="null!=isPrivateAssistant">
+				and t.is_private_assistant = #{isPrivateAssistant}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<select id="findPersAssistantByPhone" resultMap="MerchantInfoBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.is_del = 0
+		and t.is_private_assistant =1
+		and t.id in (
+			select merchant_id from merchant_employees me
+			where me.phone = #{phone}
+				and me.employees_type=1
+				and me.is_del = 0
+		)
+	</select>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

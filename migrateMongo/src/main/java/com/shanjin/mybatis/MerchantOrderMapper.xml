@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantOrderDao">
+
+    <select id="getMerchantOrderInfo" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+         SELECT
+            oi.id AS orderId,
+            oi.order_status AS userOrderStatus,
+            oi.user_id AS userId,
+            oi.service_type_id AS serviceTypeId,
+            (SELECT service_type_name FROM service_type WHERE id = oi.service_type_id) AS serviceTypeName,
+            (SELECT phone FROM user_info WHERE id = oi.user_id AND is_del = 0) AS userPhone,
+            (SELECT path FROM user_attachment WHERE user_id = oi.user_id AND attachment_type = 1 AND attachment_use = 11 AND is_del = 0) AS userPortraitUrl,
+            (SELECT count(1) FROM merchant_plan mp WHERE mp.order_id = oi.id ) AS planCount,
+			(SELECT if(count(1)>0,1,0) FROM evaluation WHERE order_id = oi.id) AS evaluate,
+            oi.service_time  AS serviceTime,
+            oi.order_price AS orderPrice,
+            merchant_actual_price AS merchantActualPrice,
+            order_actual_price AS orderActualPrice,
+            oi.price_unit AS priceUnit,
+            oi.order_pay_type AS orderPayType,
+			oi.deal_time,
+            oi.longitude,
+            oi.latitude,
+            oi.address,
+            oi.is_immediate isImmediate,
+            order_pay_type AS orderPayType,
+            pmo.merchant_id merchantId,
+            pmo.order_status orderStatus,
+			mp.id  merchantPlanId,
+			mp.is_offer isOffer
+		FROM order_info oi
+		INNER JOIN push_merchant_order pmo on oi.id=pmo.order_id
+		INNER JOIN merchant_info mi on pmo.merchant_id=mi.id
+		INNER JOIN merchant_plan  mp on mi.id=mp.merchant_id and pmo.order_id=mp.order_id
+        WHERE oi.id in (${ids})
+    </select>
+
+	 <select id="getMerchantsForSpeicalOrder"  parameterType="java.util.Map" resultType="java.util.HashMap">
+  	 			select merchant_id   from  push_merchant_order where order_id= #{orderId}
+  	 </select>
+</mapper>

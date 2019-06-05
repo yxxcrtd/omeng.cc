@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IReplicationDao">
+    
+    <!-- 插入订单的附件信息  -->
+	<insert id="addReplicateSql" parameterType="java.util.Map" >
+  		insert into 
+  		    replicate_trace(addTime, tableName,content) 
+  			values(now(),#{tableName},#{content})
+	</insert>
+</mapper>
+

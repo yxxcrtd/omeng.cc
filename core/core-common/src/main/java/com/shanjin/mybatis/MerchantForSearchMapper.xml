@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantForSearchDao">
+
+ 
+  <!-- 获取有效的商户数量 -->
+  <select id="getTotalMerchant"   resultType="java.lang.Integer">
+	  	SELECT count(1)  FROM	merchant_info mi 
+	  	WHERE  mi.is_del=0 and mi.name is not null  and mi.name!=""
+  </select>
+  
+  <!-- 获取1页商户数据-->
+  <select id="getMerchantInPage" parameterType="java.util.Map" resultType="java.util.HashMap">
+  		SELECT
+			mi.id,
+			mi. NAME,
+			mi.longitude,
+			mi.latitude
+		FROM
+			merchant_info mi
+		WHERE
+			mi.is_del = 0
+		AND mi. NAME IS NOT NULL
+		AND mi. NAME != ""
+		ORDER BY
+			mi.id
+		LIMIT #{rows}, #{pageSize}
+  </select>
+  
+  <!-- 获取商户对应的服务-->
+  <select id="getMerchantServiceTypeIds" parameterType="java.lang.String" resultType="java.lang.String">
+  		select GROUP_CONCAT(service_type_id) as serviceTypeIds  from  merchant_service_type where merchant_id = #{merchant_id}
+  </select>
+  
+  
+  <!-- 获取指定ID对应的商户数据-->
+  <select id="getMerchantOutLineById" parameterType="java.util.Map" resultType="java.util.HashMap">
+  		SELECT	mi.id,  mi.name,	mi.longitude,mi.latitude 	FROM	merchant_info mi
+    	WHERE  mi.id=#{id}  and mi.is_del=0 and mi.name is not null  and mi.name!=""
+  </select>
+   
+  <!-- 获取商户ID,用户ID 对应Map -->
+  <!-- 根据经纬度获取所有商户的 -->
+  <select id="getUserIdsByMerchantIds" parameterType="java.lang.String"
+		resultType="java.util.HashMap">
+
+		SELECT
+			DISTINCT
+			me.user_id as userId,
+			mi.id as merchantId,
+			me.phone
+		FROM
+			merchant_info mi
+			LEFT JOIN merchant_employees me ON me.merchant_id=mi.id AND me.is_del = 0
+		WHERE
+			mi.id in ( ${_parameter} )
+			and mi.is_del=0 
+			and me.user_id is not null 
+			and mi.business_type=1
+	</select>
+	
+	<select id ="getMerchantQualityByCity" parameterType="Map"
+		resultType="Integer">
+		 select count(1) from merchant_info where province=#{province}  and city=#{city} and is_del=0
+	</select>
+</mapper>
+

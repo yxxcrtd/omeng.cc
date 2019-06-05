@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.ActivityRelateMapper">
+	
+	<select id="getActivityInfo" parameterType="string" resultType="java.util.Map">
+		select
+			is_pub as isPub,
+			etime as etime
+			FROM activity_info
+			where detail_table = #{detailTable}
+	</select>
+	
+	<select id="getAllPkgList" resultType="java.util.Map">
+		select
+			t.id as pkgId,
+			t.pkg_type as pkgType,
+			t.price as price,
+			t.pkg_limit as pkgLimit,
+			t.rank as rank,
+			g.consumeGold_type as consumeGoldType,
+			g.consumeGold_code as consumeGoldCode,
+			g.consumeGold_value as consumeGoldValue,
+			g.consumeGold_limit as consumeGoldLimit,
+			g.status as status
+		  from consume_pkg t LEFT join consume_gold g on t.consumeGold_id = g.id
+		  where g.status = 1 order by rank asc
+	</select>
+
+
+	<select id="getPkgDetail" parameterType="java.lang.Long" resultType="java.util.Map">
+		select
+		t.id as pkgId,
+		t.pkg_type as pkgType,
+		t.price as price,
+		t.pkg_limit as pkgLimit,
+		t.rank as rank,
+		g.consumeGold_type as consumeGoldType,
+		g.consumeGold_code as consumeGoldCode,
+		g.consumeGold_value as consumeGoldValue,
+		g.consumeGold_limit as consumeGoldLimit,
+		g.status as status
+		from consume_pkg t LEFT join consume_gold g on t.consumeGold_id = g.id
+		where g.status = 1 and t.id=#{pkgId} order by rank asc
+	</select>
+
+	<select id="getActivityShare" parameterType="java.lang.Long"
+			resultType="java.util.HashMap">
+		SELECT ai.shareTitle,ai.shareImage,ai.shareLink,ai.shareDesc
+		from activity_info ai where ai.id=#{actId} limit 1
+	</select>
+</mapper>

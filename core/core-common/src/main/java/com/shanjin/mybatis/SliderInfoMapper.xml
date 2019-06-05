@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.ISliderInfoDao">
+  
+   <!-- 
+		表     名：manager_slider_info						轮播图片
+		表描述：
+			id											主键
+			name										名称
+			slider_type									轮播图类型
+			join_time									开始时间
+			overdue_time								结束时间
+			slider_status								轮播图状态。1、启用；0、禁用
+			pics_path									图片地址
+			link_url									跳转地址
+			app_type									行业类型
+			sort										排序字段
+			is_del										是否删除
+    -->
+  
+   <!-- 获取轮播图  -->
+    <select id="getSliderPics" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select a.name as name, a.join_time as joinTime, a.link_url as linkUrl, a.pics_path as path from manager_slider_info a 
+			where a.app_type=#{appType} and a.slider_status = 1 and a.overdue_time>= NOW()
+			ORDER BY a.sort
+    </select> 
+</mapper>
+

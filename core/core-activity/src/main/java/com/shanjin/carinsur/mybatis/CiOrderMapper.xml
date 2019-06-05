@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.carinsur.dao.CiOrderMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.CiOrder" id="CiOrderBsRstMap">
+		<id property="id" column="id"/>
+
+		<result property="orderNo" column="order_no"/>
+		<result property="name" column="name"/>
+		<result property="status" column="status"/>
+		<result property="userId" column="user_id"/>
+		<result property="bizNo" column="biz_no"/>
+		<result property="bizType" column="biz_type"/>
+		<result property="bizResult" column="biz_result"/>
+		<result property="bizDesc" column="biz_desc"/>
+		<result property="createTime" column="create_time"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifier" column="modifier"/>
+		<result property="amount" column="amount"/>
+	</resultMap>
+
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.carinsur.model.CiOrder" id="CiOrderBsParaMap">
+		<id property="id" column="id"/>
+
+		<result property="orderNo" column="order_no"/>
+		<result property="name" column="name"/>
+		<result property="status" column="status"/>
+		<result property="userId" column="user_id"/>
+		<result property="bizNo" column="biz_no"/>
+		<result property="bizType" column="biz_type"/>
+		<result property="bizResult" column="biz_result"/>
+		<result property="bizDesc" column="biz_desc"/>
+		<result property="createTime" column="create_time"/>
+		<result property="modifyTime" column="modify_time"/>
+		<result property="modifier" column="modifier"/>
+		<result property="amount" column="amount"/>
+	</resultMap>
+
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT
+		t.id as id,
+		t.order_no as orderNo,
+		t.name as name,
+		t.status as status,
+		t.user_id as userId,
+		t.biz_no as bizNo,
+		t.biz_type as bizType,
+		t.biz_result as bizResult,
+		t.biz_desc as bizDesc,
+		t.create_time as createTime,
+		t.modify_time as modifyTime,
+		t.modifier as modifier,
+		t.amount as amount
+		FROM ci_order AS t
+	</sql>
+
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM ci_order AS t
+	</sql>
+
+	<sql id="commInsTpl">
+		INSERT INTO ci_order (
+
+		order_no,
+		name,
+		status,
+		user_id,
+		biz_no,
+		biz_type,
+		biz_result,
+		biz_desc,
+		create_time,
+		modify_time,
+		modifier,
+		amount
+		) VALUES (
+
+		#{orderNo},
+		#{name},
+		#{status},
+		#{userId},
+		#{bizNo},
+		#{bizType},
+		#{bizResult},
+		#{bizDesc},
+		#{createTime},
+		#{modifyTime},
+		#{modifier},
+		#{amount}
+		)
+	</sql>
+
+	<sql id="commUpdTpl">
+		UPDATE ci_order AS t
+	</sql>
+
+	<sql id="commDelTpl">
+		DELETE t FROM ci_order AS t
+	</sql>
+
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+
+
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.carinsur.model.CiOrder" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+
+	<update id="updateEntity" parameterType="com.shanjin.carinsur.model.CiOrder">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=orderNo and orderNo!=''">
+				t.order_no = #{orderNo},
+			</if>
+			<if test="null!=name and name!=''">
+				t.name = #{name},
+			</if>
+			<if test="null!=status">
+				t.status = #{status},
+			</if>
+			<if test="null!=userId">
+				t.user_id = #{userId},
+			</if>
+			<if test="null!=bizNo and bizNo!=''">
+				t.biz_no = #{bizNo},
+			</if>
+			<if test="null!=bizType and bizType!=''">
+				t.biz_type = #{bizType},
+			</if>
+			<if test="null!=bizResult and bizResult!=''">
+				t.biz_result = #{bizResult},
+			</if>
+			<if test="null!=bizDesc and bizDesc!=''">
+				t.biz_desc = #{bizDesc},
+			</if>
+			<if test="null!=createTime">
+				t.create_time = #{createTime},
+			</if>
+			<if test="null!=modifyTime">
+				t.modify_time = #{modifyTime},
+			</if>
+			<if test="null!=modifier and modifier!=''">
+				t.modifier = #{modifier},
+			</if>
+			<if test="null!=amount">
+				t.amount = #{amount},
+			</if>
+		</trim>
+		where t.id = #{id}
+	</update>
+
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=bizNo and bizNo!=''">
+				and t.biz_no = #{bizNo}
+			</if>
+			<if test="null!=bizType and bizType!=''">
+				and t.biz_type = #{bizType}
+			</if>
+			<if test="null!=bizResult and bizResult!=''">
+				and t.biz_result = #{bizResult}
+			</if>
+			<if test="null!=bizDesc and bizDesc!=''">
+				and t.biz_desc = #{bizDesc}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>
+			<if test="null!=modifier and modifier!=''">
+				and t.modifier = #{modifier}
+			</if>
+			<if test="null!=amount">
+				and t.amount = #{amount}
+			</if>
+		</trim>
+	</delete>
+
+
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/>
+		where t.id in
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+	</delete>
+
+	<select id="getEntityByKey" resultMap="CiOrderBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id}
+	</select>
+
+	<select id="getAll" resultMap="CiOrderBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=bizNo and bizNo!=''">
+				and t.biz_no = #{bizNo}
+			</if>
+			<if test="null!=bizType and bizType!=''">
+				and t.biz_type = #{bizType}
+			</if>
+			<if test="null!=bizResult and bizResult!=''">
+				and t.biz_result = #{bizResult}
+			</if>
+			<if test="null!=bizDesc and bizDesc!=''">
+				and t.biz_desc = #{bizDesc}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>
+			<if test="null!=modifier and modifier!=''">
+				and t.modifier = #{modifier}
+			</if>
+			<if test="null!=amount">
+				and t.amount = #{amount}
+			</if>
+		</trim>
+	</select>
+
+
+	<select id="findInByKeyIds" parameterType="list" resultMap="CiOrderBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+
+	<select id="findByParamObj" parameterType="com.shanjin.carinsur.model.CiOrder" resultMap="CiOrderBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=orderNo and orderNo!=''">
+				and t.order_no = #{orderNo}
+			</if>
+			<if test="null!=name and name!=''">
+				and t.name = #{name}
+			</if>
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>
+			<if test="null!=bizNo and bizNo!=''">
+				and t.biz_no = #{bizNo}
+			</if>
+			<if test="null!=bizType and bizType!=''">
+				and t.biz_type = #{bizType}
+			</if>
+			<if test="null!=bizResult and bizResult!=''">
+				and t.biz_result = #{bizResult}
+			</if>
+			<if test="null!=bizDesc and bizDesc!=''">
+				and t.biz_desc = #{bizDesc}
+			</if>
+			<if test="null!=createTime">
+				and t.create_time = #{createTime}
+			</if>
+			<if test="null!=modifyTime">
+				and t.modify_time = #{modifyTime}
+			</if>
+			<if test="null!=modifier and modifier!=''">
+				and t.modifier = #{modifier}
+			</if>
+			<if test="null!=amount">
+				and t.amount = #{amount}
+			</if>
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<select id="getCiOrderByOrderNo" resultType="com.shanjin.carinsur.model.CiOrder">
+		<include refid="commSelTpl"/>
+		where t.order_no = #{orderNo}
+	</select>
+
+	<select id="getOrderByBiz" parameterType="com.shanjin.carinsur.model.CiOrder" resultMap="CiOrderBsRstMap">
+		<include refid="commSelTpl"/>
+		WHERE
+			t.biz_no = #{bizNo}
+		AND t.biz_type = #{bizType}
+		AND t.status=#{status}
+		And t.user_id=#{userId}
+		AND t.biz_result IN
+		<foreach collection="bizResultList" item="result" open="(" separator="," close=")">
+			#{result}
+		</foreach>
+	</select>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

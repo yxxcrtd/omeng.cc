@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>下载O盟 让技能变现</title>
+		<script src="scripts/emRemLayer.js"></script>
+		<link rel="stylesheet" type="text/css" href="styles/main.css">
+		<meta name="viewport" id="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+		<meta name="apple-touch-fullscreen" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes"> 
+		<meta name="format-detection" content="telephone=no, email=no"> 
+		<script src="scripts/jquery-1.8.3.min.js" ></script>
+		<script src="scripts/fastclick.min.js" ></script>
+		<script>
+			function iosAn(){
+				var ua = navigator.userAgent.toLowerCase();  
+			    if(ua.match(/MicroMessenger/i)=="micromessenger") {  
+			        //return true;
+			        $('.downPannel').show();
+			    } else {  
+			       // return false;
+			       $('.downPannel').hide();
+			       if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+				   //alert(navigator.userAgent);  
+					window.location.href ="#1";
+					}
+				   else if (/(Android)/i.test(navigator.userAgent)) {
+					//alert(navigator.userAgent); 
+					window.location.href ="#0";
+					}
+				//else{alert(0)}
+			      
+			    }  
+
+		    };
+		    window.addEventListener( "load", function() { FastClick.attach( document.body ); }, false );
+		    window.onload=function(){
+		    	document.getElementById('loading').style.display="none";
+				$('.page_2 .yField').addClass('dh_1');
+				$('.page_2 .text_1').addClass('dh_2');
+				$('.page_2 .btn_2').addClass('dh_3');
+		    }
+		</script>
+	</head>
+	<body>
+		<div id="loading"><span><img src="images/loading.gif" class="img"></span></div>
+		<section class="page_2 plrtb">
+			<div class="yField"><img src="images/yueliang.png" class="img"></div>
+			<div class="text_1">
+				<div class="TT_1"><img src="images/text_1.png" class="img"></div>
+				<div class="TT_2">据统计每10人中就有8人拥有3项以上技能<br>而每个人至少有2项技能被浪费</div>
+			</div>
+			<div class="btn_2"><input type="button" class="inputB_1" value="下载O盟 让技能变现" onclick="iosAn()"></div>
+		</section>
+		<!--下载提示框-->
+		<div class="downPannel" style="display: none;"><img src="images/tishiImg.png" class="img"></div>
+		<script>
+			/**/
+			$('.downPannel').click(function(){
+				$(this).hide();
+			});
+		</script>
+	</body>
+</html>

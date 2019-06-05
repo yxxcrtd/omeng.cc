@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IOrderObjectDao">
+
+  <select id="getServiceParas" parameterType="java.util.Map" resultType="java.util.HashMap">
+	  	SELECT
+	  		id,
+			col_name AS colName,
+			col_desc AS colDesc,
+			control_type AS controlType,
+			control_type_desc AS controlTypeDesc,
+			col_len AS colLen,
+			default_value AS defaultValue,
+			hint_value AS hintValue,
+			show_type AS showType,
+			show_type_desc AS showTypeDesc,
+			col_items AS colItems,
+			min_val AS minVal,
+			max_val AS maxVal,
+			parent_id AS parentId,
+			is_hide AS isHide,
+			icon,
+			rank
+		FROM
+			order_object_model
+		WHERE
+			object_id = (
+				SELECT
+					object_id
+				FROM
+					order_object_table
+				WHERE
+					app_type = #{appType}
+				AND service_type_id = #{serviceType}
+				AND is_del = 0
+			)
+		AND is_last_form=0
+		ORDER BY
+			rank
+  </select>
+  
+  <select id="getServiceSubParas" parameterType="Long" resultType="java.util.HashMap">
+	  	SELECT
+	  		id,
+			col_name AS colName,
+			col_desc AS colDesc,
+			control_type AS controlType,
+			control_type_desc AS controlTypeDesc,
+			col_len AS colLen,
+			default_value AS defaultValue,
+			hint_value AS hintValue,
+			show_type AS showType,
+			show_type_desc AS showTypeDesc,
+			col_items AS colItems,
+			min_val AS minVal,
+			max_val AS maxVal,
+			parent_id AS parentId,
+			is_hide AS isHide,
+			icon,
+			rank
+		FROM
+			order_object_model
+		WHERE
+			parent_id = #{parentId}
+		AND is_last_form=0
+		ORDER BY
+			rank
+  </select>
+  
+  <select id="getServiceCascadeParas" parameterType="Long" resultType="java.util.HashMap">
+	  	SELECT
+	  	    DISTINCT
+	  		cascade_id AS cascadeId,
+	  		item_name AS itemName,
+	  		cascade_col AS cascadeCol
+		FROM
+			order_object_model_item
+		WHERE
+			model_id = #{modelId}
+  </select>
+  
+  <select id="getServiceCascadeItems" parameterType="Long" resultType="java.util.HashMap">
+	  	SELECT
+			val AS status,
+			type
+		FROM
+			order_object_model_item
+		WHERE
+			cascade_id = #{cascadeId}
+  </select>
+  
+</mapper>
+

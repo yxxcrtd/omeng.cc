@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IAppKeyWordDao">
+  <!-- 查询应用的关键词  -->
+  <select id="getAllAppKeyWord" resultType="java.util.HashMap">
+    select id,keyword,service_type_name as serviceTypeName,service_type as serviceType,app_type as appType from app_key_words where is_del=0
+  </select>
+  
+  <!-- 根据关键词搜索APP-->
+  <select id="serachAppType" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select app_name as appName,app_type as appType from app_name_key_words where keyword=#{keyword} and is_del=0
+  </select>
+  
+ 
+  <select id="getAllAppKeyWordById" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select id,keyword,service_type_name as serviceTypeName,service_type as serviceType,app_type as appType from app_key_words where is_del=0 and id=#{id}
+  </select>
+  
+  
+  <!-- 检查用户搜索的关键词是否被记录过  -->
+  <select id="checkUserAppKeyWord" parameterType="String" resultType="Integer">
+      SELECT
+			count(1)
+		FROM
+			user_supply_app_key_word
+		WHERE
+			is_del = 0
+		AND app_key_word = #{queryString} and keywordtype=1
+  </select>
+  
+  <!-- 搜索没结果的时候，记录用户搜索的关键词  -->
+  <insert id="insertUserAppKeyWord" parameterType="String" >
+      insert into user_supply_app_key_word
+           (
+               app_key_word,
+               join_time,
+               is_del,
+               is_audit,
+               keywordtype
+           )
+      values
+           (
+               #{queryString},
+               now(),
+               0,
+               0,
+               1
+           )
+  </insert>
+  
+  <!-- 检查用户搜索APP名称的关键词是否存在过  -->
+  <select id="checkUserAppNameKeyWord" parameterType="String" resultType="Integer">
+      SELECT
+			count(1)
+		FROM
+			user_supply_app_name_key_word
+		WHERE
+			is_del = 0
+		AND app_key_word = #{keyword}
+  </select>
+  
+  <!-- 搜索APP名称没结果的时候，记录用户搜索的关键词  -->
+  <insert id="insertUserAppNameKeyWord" parameterType="String" >
+      insert into user_supply_app_name_key_word
+           (
+               app_key_word,
+               join_time,
+               is_del,
+               is_audit
+           )
+      values
+           (
+               #{keyword},
+               now(),
+               0,
+               0
+           )
+  </insert>
+  
+  <!-- 获取自定义词库的个数  -->
+  <select id="getAppKeyWordCount" resultType="Integer">
+      SELECT count(1) from app_key_words
+  </select>
+  
+  <!-- 获取自定义词库  -->
+  <select id="getAppKeyWordDict" resultType="String">
+    select DISTINCT keyword from app_key_words
+  </select>
+  
+  <!-- 获取自定义停词库的个数  -->
+  <select id="getCustomDictCount" resultType="Integer">
+      SELECT count(1) from app_key_words_custom_dic
+  </select>
+  
+  <!-- 获取自定义停词库  -->
+  <select id="getCustomDict" resultType="String">
+    select DISTINCT keyword from app_key_words_custom_dic
+  </select>
+  
+  <!-- 获取自定义停词库的个数  -->
+  <select id="getCustomStopDictCount" resultType="Integer">
+      SELECT count(1) from app_key_words_stop_dic
+  </select>
+  
+  <!-- 获取自定义停词库  -->
+  <select id="getCustomStopDict" resultType="String">
+    select DISTINCT keyword from app_key_words_stop_dic
+  </select>
+  
+ 
+ 
+   <!-- 检查是否已存在反馈记录  -->
+  <select id="checkUserFeedBackAppKeyWord" parameterType="java.util.Map" resultType="Integer">
+      SELECT
+			count(1)
+		FROM
+			user_supply_app_key_word
+		WHERE app_key_word = #{queryString} and keywordtype=#{keywordtype}
+  </select>
+  
+  <!-- 用户端搜索的结果用户认为不匹配时反馈写入数据库  -->
+  <insert id="insertUserFeedBackAppKeyWord" parameterType="java.util.Map" >
+      insert into user_supply_app_key_word
+           (
+               app_key_word,
+               join_time,
+               is_del,
+               is_audit,  
+               remark,
+               feedbacknum,             
+               app_key_word_num,
+               keywordtype           
+           )
+      values
+           (
+               #{queryString},
+               now(),
+               #{is_del},
+               #{is_audit},
+               #{remark},
+               #{feedbacknum},
+               #{app_key_word_num},
+               #{keywordtype}     
+           )
+  </insert>
+  <!-- 用户端搜索的结果用户认为不匹配时，如果已记录，则更新反馈写入数据库  -->
+  <update id="updateUserFeedBackAppKeyWord" parameterType="java.util.Map" >
+      update user_supply_app_key_word set join_time=now(),feedbacknum=feedbacknum+1,is_audit=0,app_key_word_num=#{app_key_word_num} where app_key_word=#{queryString} and keywordtype=#{keywordtype}          
+  </update>
+ 
+   <!-- 首页推荐文案-->
+  <select id="selectrecommendLabel" parameterType="java.util.Map" resultType="java.util.HashMap">
+    select
+	id ,
+	label1,
+	label2 ,
+	status ,
+	date_format(join_time,'%Y-%m-%d %H:%i') as joinTime
+	from recommend_label
+	where label1!='' and label2!='' and status=1
+	and ifnull(label1,'')!='' and ifnull(label2,'')!=''
+	order by id desc 
+  </select>
+  
+</mapper>
+

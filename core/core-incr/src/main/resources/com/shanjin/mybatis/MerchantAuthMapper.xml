@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.dao.MerchantAuthMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantAuth" id="MerchantAuthBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="authType" column="auth_type"/>
+		<result property="authStatus" column="auth_status"/>
+		<result property="path" column="path"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="authTime" column="auth_time"/>
+		<result property="remark" column="remark"/>
+		<result property="operUser" column="oper_user"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.incr.model.MerchantAuth" id="MerchantAuthBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="merchantId" column="merchant_id"/>
+		<result property="authType" column="auth_type"/>
+		<result property="authStatus" column="auth_status"/>
+		<result property="path" column="path"/>
+		<result property="joinTime" column="join_time"/>
+		<result property="authTime" column="auth_time"/>
+		<result property="remark" column="remark"/>
+		<result property="operUser" column="oper_user"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.merchant_id as merchantId, 
+			t.auth_type as authType, 
+			t.auth_status as authStatus, 
+			t.path as path, 
+			t.join_time as joinTime, 
+			t.auth_time as authTime, 
+			t.remark as remark, 
+			t.oper_user as operUser
+		FROM merchant_auth AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM merchant_auth AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO merchant_auth (
+				
+				merchant_id, 
+				auth_type, 
+				auth_status, 
+				path, 
+				join_time, 
+				auth_time, 
+				remark, 
+				oper_user
+			) VALUES (
+				
+				#{merchantId}, 
+				#{authType}, 
+				#{authStatus}, 
+				#{path}, 
+				#{joinTime}, 
+				#{authTime}, 
+				#{remark}, 
+				#{operUser}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE merchant_auth AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM merchant_auth AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.incr.model.MerchantAuth" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.incr.model.MerchantAuth">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=merchantId">
+				t.merchant_id = #{merchantId},
+			</if>		
+			<if test="null!=authType">
+				t.auth_type = #{authType},
+			</if>		
+			<if test="null!=authStatus">
+				t.auth_status = #{authStatus},
+			</if>		
+			<if test="null!=path and path!=''">
+				t.path = #{path},
+			</if>		
+			<if test="null!=joinTime">
+				t.join_time = #{joinTime},
+			</if>		
+			<if test="null!=authTime">
+				t.auth_time = #{authTime},
+			</if>		
+			<if test="null!=remark and remark!=''">
+				t.remark = #{remark},
+			</if>		
+			<if test="null!=operUser and operUser!=''">
+				t.oper_user = #{operUser},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=path and path!=''">
+				and t.path = #{path}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=authTime">
+				and t.auth_time = #{authTime}
+			</if>		
+			<if test="null!=remark and remark!=''">
+				and t.remark = #{remark}
+			</if>		
+			<if test="null!=operUser and operUser!=''">
+				and t.oper_user = #{operUser}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="MerchantAuthBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="MerchantAuthBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=path and path!=''">
+				and t.path = #{path}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=authTime">
+				and t.auth_time = #{authTime}
+			</if>		
+			<if test="null!=remark and remark!=''">
+				and t.remark = #{remark}
+			</if>		
+			<if test="null!=operUser and operUser!=''">
+				and t.oper_user = #{operUser}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="MerchantAuthBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.incr.model.MerchantAuth" resultMap="MerchantAuthBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=merchantId">
+				and t.merchant_id = #{merchantId}
+			</if>		
+			<if test="null!=authType">
+				and t.auth_type = #{authType}
+			</if>		
+			<if test="null!=authStatus">
+				and t.auth_status = #{authStatus}
+			</if>		
+			<if test="null!=path and path!=''">
+				and t.path = #{path}
+			</if>		
+			<if test="null!=joinTime">
+				and t.join_time = #{joinTime}
+			</if>		
+			<if test="null!=authTime">
+				and t.auth_time = #{authTime}
+			</if>		
+			<if test="null!=remark and remark!=''">
+				and t.remark = #{remark}
+			</if>		
+			<if test="null!=operUser and operUser!=''">
+				and t.oper_user = #{operUser}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+</mapper>

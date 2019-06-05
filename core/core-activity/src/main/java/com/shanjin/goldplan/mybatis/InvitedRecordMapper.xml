@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanjin.goldplan.dao.InvitedRecordMapper">
+	
+	<!-- 
+	LRU – 最近最少使用的:移除最长时间不被使用的对象
+	FIFO – 先进先出:按对象进入缓存的顺序来移除它们。
+	SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+	WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+	 -->
+	<cache
+  		eviction="LRU"			
+  		flushInterval="60000"
+  		size="1024"
+  		readOnly="true"/>
+	
+	<!-- 结果实体映射 -->
+	<resultMap type="com.shanjin.goldplan.model.InvitedRecord" id="InvitedRecordBsRstMap">
+		<id property="id" column="id"/>
+		
+		<result property="activityId" column="activity_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="userPhone" column="user_phone"/>
+		<result property="invitedPhone" column="invited_phone"/>
+		<result property="invitedTime" column="invited_time"/>
+		<result property="invitedSuccessTime" column="invited_success_time"/>
+		<result property="invitedSource" column="invited_source"/>
+		<result property="invitedIp" column="invited_ip"/>
+		<result property="status" column="status"/>
+	</resultMap>
+	
+	<!-- 参数实体映射 -->
+	<resultMap type="com.shanjin.goldplan.model.InvitedRecord" id="InvitedRecordBsParaMap">
+		<id property="id" column="id"/>
+		
+		<result property="activityId" column="activity_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="userPhone" column="user_phone"/>
+		<result property="invitedPhone" column="invited_phone"/>
+		<result property="invitedTime" column="invited_time"/>
+		<result property="invitedSuccessTime" column="invited_success_time"/>
+		<result property="invitedSource" column="invited_source"/>
+		<result property="invitedIp" column="invited_ip"/>
+		<result property="status" column="status"/>
+	</resultMap>
+	
+	<!-- 通用的sql片段  -->
+	<sql id="commSelTpl">
+		SELECT 
+			t.id as id, 
+			t.activity_id as activityId, 
+			t.user_id as userId, 
+			t.user_phone as userPhone, 
+			t.invited_phone as invitedPhone, 
+			t.invited_time as invitedTime, 
+			t.invited_success_time as invitedSuccessTime, 
+			t.invited_source as invitedSource, 
+			t.invited_ip as invitedIp, 
+			t.status as status
+		FROM invited_record AS t
+	</sql>
+	
+	<sql id="commSelCount">
+		SELECT COUNT(1) FROM invited_record AS t
+	</sql>
+	
+	<sql id="commInsTpl">
+		INSERT INTO invited_record (
+				
+				activity_id, 
+				user_id, 
+				user_phone, 
+				invited_phone, 
+				invited_time, 
+				invited_success_time, 
+				invited_source, 
+				invited_ip, 
+				status
+			) VALUES (
+				
+				#{activityId}, 
+				#{userId}, 
+				#{userPhone}, 
+				#{invitedPhone}, 
+				#{invitedTime}, 
+				#{invitedSuccessTime}, 
+				#{invitedSource}, 
+				#{invitedIp}, 
+				#{status}
+			)
+	</sql>
+	
+	<sql id="commUpdTpl">
+		UPDATE invited_record AS t 
+	</sql>
+	
+	<sql id="commDelTpl">
+		DELETE t FROM invited_record AS t
+	</sql>
+	
+	<sql id="commOrderByTpl">
+		ORDER BY id DESC
+	</sql>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="saveEntity" parameterType="com.shanjin.goldplan.model.InvitedRecord" keyProperty="id" useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		<include refid="commInsTpl"/>
+	</insert>
+	
+	<update id="updateEntity" parameterType="com.shanjin.goldplan.model.InvitedRecord">
+		<include refid="commUpdTpl"/>
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="null!=activityId">
+				t.activity_id = #{activityId},
+			</if>		
+			<if test="null!=userId">
+				t.user_id = #{userId},
+			</if>		
+			<if test="null!=userPhone and userPhone!=''">
+				t.user_phone = #{userPhone},
+			</if>		
+			<if test="null!=invitedPhone and invitedPhone!=''">
+				t.invited_phone = #{invitedPhone},
+			</if>		
+			<if test="null!=invitedTime">
+				t.invited_time = #{invitedTime},
+			</if>		
+			<if test="null!=invitedSuccessTime">
+				t.invited_success_time = #{invitedSuccessTime},
+			</if>		
+			<if test="null!=invitedSource and invitedSource!=''">
+				t.invited_source = #{invitedSource},
+			</if>		
+			<if test="null!=invitedIp and invitedIp!=''">
+				t.invited_ip = #{invitedIp},
+			</if>		
+			<if test="null!=status">
+				t.status = #{status},
+			</if>		
+		</trim>
+		where t.id = #{id}
+	</update>
+	
+	<delete id="deleteByKey" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> where id = #{id}
+	</delete>
+	
+	<delete id="deleteEntity" parameterType="java.lang.Long">
+		<include refid="commDelTpl"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=activityId">
+				and t.activity_id = #{activityId}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=userPhone and userPhone!=''">
+				and t.user_phone = #{userPhone}
+			</if>		
+			<if test="null!=invitedPhone and invitedPhone!=''">
+				and t.invited_phone = #{invitedPhone}
+			</if>		
+			<if test="null!=invitedTime">
+				and t.invited_time = #{invitedTime}
+			</if>		
+			<if test="null!=invitedSuccessTime">
+				and t.invited_success_time = #{invitedSuccessTime}
+			</if>		
+			<if test="null!=invitedSource and invitedSource!=''">
+				and t.invited_source = #{invitedSource}
+			</if>		
+			<if test="null!=invitedIp and invitedIp!=''">
+				and t.invited_ip = #{invitedIp}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+		</trim>
+	</delete>
+	
+	
+	<delete id="batchDelete" parameterType="list">
+		<include refid="commDelTpl"/> 
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>		
+	</delete>
+	
+	<select id="getEntityByKey" resultMap="InvitedRecordBsRstMap" parameterType="java.lang.Long">
+		<include refid="commSelTpl"/> where t.id = #{id} 
+	</select>
+	
+	<select id="getAll" resultMap="InvitedRecordBsRstMap">
+		<include refid="commSelTpl"/>
+	</select>
+	
+	<select id="getCount" resultType="int">
+		<include refid="commSelCount"/> 
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=activityId">
+				and t.activity_id = #{activityId}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=userPhone and userPhone!=''">
+				and t.user_phone = #{userPhone}
+			</if>		
+			<if test="null!=invitedPhone and invitedPhone!=''">
+				and t.invited_phone = #{invitedPhone}
+			</if>		
+			<if test="null!=invitedTime">
+				and t.invited_time = #{invitedTime}
+			</if>		
+			<if test="null!=invitedSuccessTime">
+				and t.invited_success_time = #{invitedSuccessTime}
+			</if>		
+			<if test="null!=invitedSource and invitedSource!=''">
+				and t.invited_source = #{invitedSource}
+			</if>		
+			<if test="null!=invitedIp and invitedIp!=''">
+				and t.invited_ip = #{invitedIp}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+		</trim>
+	</select>
+	
+	
+	<select id="findInByKeyIds" parameterType="list" resultMap="InvitedRecordBsRstMap">
+		<include refid="commSelTpl"/>
+		where t.id in 
+		<foreach collection="list" item="ids" open="(" separator="," close=")">
+			#{ids}
+		</foreach>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	<select id="findByParamObj" parameterType="com.shanjin.goldplan.model.InvitedRecord" resultMap="InvitedRecordBsRstMap">
+		<include refid="commSelTpl"/>
+		<trim prefix="WHERE" prefixOverrides="and ">
+			<if test="null!=activityId">
+				and t.activity_id = #{activityId}
+			</if>		
+			<if test="null!=userId">
+				and t.user_id = #{userId}
+			</if>		
+			<if test="null!=userPhone and userPhone!=''">
+				and t.user_phone = #{userPhone}
+			</if>		
+			<if test="null!=invitedPhone and invitedPhone!=''">
+				and t.invited_phone = #{invitedPhone}
+			</if>		
+			<if test="null!=invitedTime">
+				and t.invited_time = #{invitedTime}
+			</if>		
+			<if test="null!=invitedSuccessTime">
+				and t.invited_success_time = #{invitedSuccessTime}
+			</if>		
+			<if test="null!=invitedSource and invitedSource!=''">
+				and t.invited_source = #{invitedSource}
+			</if>		
+			<if test="null!=invitedIp and invitedIp!=''">
+				and t.invited_ip = #{invitedIp}
+			</if>		
+			<if test="null!=status">
+				and t.status = #{status}
+			</if>		
+		</trim>
+		<include refid="commOrderByTpl"/>
+	</select>
+	
+	
+	<!-- +++++++++++++++++++++++++++++++++++公共方法End+++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法Start+++++++++++++++++++++++++++++++++++ -->
+	<insert id="atomSaveEntity" parameterType="com.shanjin.goldplan.model.InvitedRecord" keyProperty="id" useGeneratedKeys="false">
+
+		<selectKey keyProperty="id" resultType="java.lang.Long">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		INSERT INTO invited_record (
+
+				activity_id,
+				user_id,
+				user_phone,
+				invited_phone,
+				invited_time,
+				invited_success_time,
+				invited_source,
+				invited_ip,
+				status
+			)
+			 select
+
+				#{activityId},
+				#{userId},
+				#{userPhone},
+				#{invitedPhone},
+				#{invitedTime},
+				#{invitedSuccessTime},
+				#{invitedSource},
+				#{invitedIp},
+				#{status}
+				from dual
+				WHERE not EXISTS (
+					select 1 from invited_record s
+						where s.activity_id=#{activityId} and s.invited_phone=#{invitedPhone}
+						)
+	</insert>
+	<!-- +++++++++++++++++++++++++++++++++++扩展方法End+++++++++++++++++++++++++++++++++++++ -->
+  <select id="getNumberByOrder" resultType="java.lang.Integer" parameterType="java.util.Map">
+	SELECT count(1)
+	  FROM act_reward_user_detail i
+	 WHERE DATE_FORMAT(i.reward_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+	      and i.user_id = #{userId_}
+	      <if test="source != null">
+	      and i.get_method = #{source}
+	      </if>
+  </select>
+  <select id="getShareUserPhone" resultType="java.util.Map" parameterType="java.util.Map">
+	SELECT i.invited_phone phone
+	  FROM invited_record i
+	 WHERE DATE_FORMAT(i.invited_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+	      and i.user_id = #{userId_}
+  </select>
+  <select id="getTotalTouchGold" resultType="java.util.Map" parameterType="java.lang.Long">
+		SELECT count(t.id) totalNum, FORMAT(IFNULL(sum(t.amount),0),2) totalAmount
+		  FROM (SELECT d.id,
+		               CASE d.reward_type
+		                  WHEN 1 THEN tran_value
+		                  ELSE 0
+		               END
+		                  amount
+		          FROM act_reward_user_detail d
+		         WHERE 1=1
+		         <if test="today != null and today">
+		         	and DATE_FORMAT(d.reward_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+		         </if>
+		         and d.user_id = #{userId_}
+		         ) t
+  </select>
+	
+  <select id="findRewardElementConfig" resultType="java.util.Map" parameterType="java.util.Map">
+<!-- 		SELECT c.element_id elementId,控制每日数量 -->
+<!-- 	       e.name elementName, -->
+<!-- 	       c.odds odds, -->
+<!-- 	       c.totals, -->
+<!-- 	       c.day_limit dayLimit, -->
+<!-- 	       c.realtime, -->
+<!-- 	         c.day_limit - (SELECT count(1) -->
+<!-- 	            FROM act_reward_user_detail r -->
+<!--            WHERE r.element_id = c.element_id and DATE_FORMAT(r.reward_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')) lastLimit -->
+<!-- 		  FROM act_reward_element_config c, act_reward_element e -->
+<!-- 		 WHERE c.day_limit - (SELECT count(1) -->
+<!-- 	            FROM act_reward_user_detail r -->
+<!--            WHERE r.element_id = c.element_id and DATE_FORMAT(r.reward_time, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')) !=0 -->
+<!-- 		 and c.element_id = e.id -->
+<!-- 		and c.activity_id=#{activityId} -->
+<!-- 		and c.status=1 -->
+		
+		SELECT c.element_id elementId,
+	       e.name elementName,
+	       c.odds odds,
+	       c.totals,
+	       c.day_limit dayLimit,
+	       c.realtime,
+	         c.totals - (SELECT count(1)
+	            FROM act_reward_user_detail r
+           WHERE r.element_id = c.element_id ) lastLimit
+		  FROM act_reward_element_config c, act_reward_element e
+		 WHERE c.totals - (SELECT count(1)
+	            FROM act_reward_user_detail r
+           WHERE r.element_id = c.element_id ) > 0
+		 and c.element_id = e.id
+		and c.activity_id=#{activityId}
+		and c.status=1
+  </select>
+	
+  <select id="findRewardElementLst" resultType="java.util.Map" parameterType="java.util.Map">
+		SELECT e.name,
+		       e.id,
+		       e.type,
+		       e.value_type valueType,
+		       e.value1,
+		       e.value2,
+		       e.icon
+	  FROM act_reward_element e, act_reward_element_config a
+	 WHERE e.id = a.element_id AND a.activity_id = #{activityId}
+  </select>
+	
+  <select id="findRewardElementTextLst" resultType="java.util.Map" parameterType="java.util.Map">
+		select text FROM act_reward_element_text t where t.element_id=#{elementId} and t.activity_id=#{activityId}
+  </select>
+	<insert id="saveRewardUserDetail" parameterType="java.util.Map">
+			insert into act_reward_user_detail (
+			  activity_id
+			  ,user_id
+			  ,phone
+			  ,reward_type
+			  ,element_id
+			  ,context
+			  ,reward_time
+			  ,is_transfer
+			  ,account_time
+			  ,get_method
+			  ,tran_type
+			  ,tran_value
+			  ,remark
+			  ,user_name
+			) VALUES (
+			  #{activityId}
+			  ,#{userId_}  
+			  ,#{phone}
+			  ,#{type} 
+			  ,#{id}   
+			  ,#{name}
+			  ,now()
+			  <if test="type == 2">
+			  ,1
+			  ,now() 
+			  </if>
+			  <if test="type != 2">
+			  ,0
+			  ,null 
+			  </if>
+			  ,#{source} 
+			  ,#{valueType}   
+			  ,#{value1}  
+			  ,'' 
+			  ,''  
+			)
+	</insert>
+	
+	  <select id="getActivityOrderTime" resultType="java.util.Map" parameterType="java.util.Map">
+			SELECT DATE_FORMAT(b.start_time, '%H%i') startTime,
+		       DATE_FORMAT(b.end_time, '%H%i') endTime,
+		       b.wait_time waitTime
+		  FROM act_reward_element_basic b
+		 WHERE b.activity_id = #{activityId}
+	  </select>
+</mapper>

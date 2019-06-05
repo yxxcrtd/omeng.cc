@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantInvoiceDao">
+
+  <!-- 获取未开发票的增值服务列表 -->
+  <select id="selectIncOrders" parameterType="java.util.Map" resultType="java.util.HashMap">
+(
+select id,'topup' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime,apply_time as sortTime,apply_status as applyStatus
+,'' as applyIncreaseEmployeeNum,topup_money as money,'/resource/valueAddService/topup.png' as iconPath,pay_no payNo,pay_type payType
+from merchant_topup_apply 
+where merchant_id=#{merchantId} and is_del=0 and is_openinvoice=0 and apply_status=2 and buyconfirm=1
+)
+UNION ALL
+(select id,'employeesNum' as type,date_format(apply_time,'%Y-%m-%d %H:%i') as applyTime ,apply_time as sortTime
+,apply_status as applyStatus,apply_increase_employee_num as applyIncreaseEmployeeNum,money as money
+,'/resource/valueAddService/employeesNum.png' as iconPath,pay_no payNo,pay_type payType from merchant_employees_num_apply 
+where merchant_id=#{merchantId} and is_del=0 and is_openinvoice=0 and apply_status=2 and buyconfirm=1
+)
+UNION ALL
+(SELECT ipo.id
+-- , pkg.name AS TYPE
+,(select name from inc_service where id=pkg.service_id limit 1) as TYPE
+, DATE_FORMAT(ipo.create_time,'%Y-%m-%d %H:%i') AS applyTime, ipo.create_time AS sortTime, ipo.STATUS AS applyStatus, 
+'' AS applyIncreaseEmployeeNum, trade_amount AS money, '/resource/valueAddService/employeesNum.png' AS iconPath, order_no AS payNo,
+pay_type AS payType
+FROM inc_pkg_order  ipo
+inner join inc_pkg pkg on ipo.pkg_id=pkg.id  
+
+where merchant_id = #{merchantId} AND ipo.is_del = 0 and ipo.is_openinvoice=0 and ipo.status=1 and ipo.buyconfirm=1
+)
+order by sortTime DESC
+       
+  </select>
+
+
+  <!-- 获取未开发票的增值服务列表 -->
+  <select id="selectInvoiceCount" parameterType="java.util.Map"  resultType="Integer">
+   select count(*) from merchant_invoice where merchant_id=#{merchantId} and audit_status!=2 
+	and apply_time>=date_sub(date_sub(date_format(now(),'%y-%m-%d 00:00:00'),interval extract(  
+   day from now())-1 day),interval 0 month)
+   
+   and date_sub(date_sub(date_format(now(),'%y-%m-%d 23:59:59'),interval extract(  
+   day from now()) day),interval -1 month)>=apply_time
+
+       
+  </select>
+
+	<!-- 添加单个记录 -->
+	<insert id="insertInvoice" parameterType="java.util.Map"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		merchant_invoice(
+		merchant_id,apply_time,audit_time,invoice_title,invoice_amount,invoice_item,treated_human,audit_status,remark,mailing_method
+		)
+		values
+		(#{merchantId},now(),NULL,#{invoice_title},#{invoiceMoney},#{invoiceItem},NULL,0,NULL,#{mailing_method})
+	</insert>
+	<!-- 批量写入 -->
+	<insert id="insertInvoiceInfo" parameterType="java.util.List"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="AFTER"> SELECT
+			LAST_INSERT_ID() as id;
+		</selectKey>
+		insert into
+		merchant_invoice_info(voice_id,inctype_id, incorder_id,incorder_type,money,applyTime)
+		values
+		<foreach collection="list" item="item" index="index"
+			separator=",">
+			(#{item.voice_id},#{item.inctype_id},#{item.id},#{item.incorder_type},#{item.money},#{item.applyTime})
+		</foreach>
+	</insert>
+
+
+
+  <!-- 获取单个发票信息 -->
+  <select id="selectinvoice1" parameterType="java.util.Map"  resultType="java.util.Map">
+   select id,merchant_id
+   ,date_format(apply_time,'%Y-%m-%d %H:%i') as apply_time
+   ,invoice_title
+   ,ROUND(invoice_amount,2) as invoice_amount
+   ,invoice_item
+   ,audit_status
+   ,mailing_method
+    from merchant_invoice where merchant_id=#{merchantId} and id=#{voice_id}       
+  </select>	
+  
+  <!-- 获取单个发票关联信息 -->
+  <select id="selectinvoice2" parameterType="java.util.Map"  resultType="java.util.HashMap">
+   select id
+   ,voice_id
+   ,inctype_id
+   ,incorder_id
+   ,incorder_type
+   ,ROUND(money,2) as money
+   ,date_format(applyTime,'%Y-%m-%d %H:%i') as applyTime
+,(
+case when inctype_id =1 then '/resource/valueAddService/topup.png'
+when inctype_id =2 then '/resource/valueAddService/employeesNum.png'
+ ELSE '/resource/valueAddService/employeesNum.png' END  
+) as iconPath
+,ifnull((
+case when inctype_id =1 then (select apply_status from merchant_topup_apply where id=incorder_id limit 1)
+when inctype_id =2 then (select apply_status from merchant_employees_num_apply where id=incorder_id limit 1)
+ ELSE (select STATUS from inc_pkg_order where id=incorder_id limit 1) END  
+),3) as applyStatus
+ from merchant_invoice_info where voice_id=#{voice_id};       
+  </select>	  
+  
+  
+  
+   <!-- 获取开票历史 -->
+	<select id="selectinvoices" parameterType="java.util.Map" resultType="java.util.HashMap">  
+      select id,merchant_id
+   ,date_format(apply_time,'%Y-%m-%d %H:%i') as apply_time
+   ,audit_time
+   ,invoice_title
+   ,ROUND(invoice_amount,2) as invoice_amount
+   ,invoice_item
+   ,audit_status
+   ,mailing_method
+    from merchant_invoice where merchant_id=#{merchantId}  
+	 LIMIT  #{startNum}, #{pageSize}
+			
+			
+		
+    </select>    
+  
+   <!-- 获取开票历史记录总数 -->
+	<select id="selectinvoicesCount" parameterType="java.util.Map" resultType="int">  
+      select count(*) 
+    from merchant_invoice where merchant_id=#{merchantId} 		
+    </select>
+
+
+	<update id="updateMerchant_topup_apply" parameterType="java.util.List">
+		update merchant_topup_apply set is_openinvoice = 1 where id in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update> 
+	<update id="updateMerchant_employees_num_apply" parameterType="java.util.List">
+		update merchant_employees_num_apply set is_openinvoice = 1 where id in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update>     
+ 	<update id="updateInc_pkg_order" parameterType="java.util.List">
+		update inc_pkg_order set is_openinvoice = 1 where id in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update>    
+	
+	   <!-- 获取增值服务订开票关键记录总数 -->
+	<select id="selectInvoiceInfoCount" parameterType="java.util.List"  resultType="int">  
+         select count(*) 
+    from merchant_invoice_info 
+	  where incorder_id in
+    <foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+    </select>
+    
+       <!-- 获取增值服务订开票关键记录总数 -->
+	<select id="selectInvoiceInfoList" parameterType="java.util.List" resultType="java.util.HashMap">
+		select merchant_invoice.audit_status
+		from merchant_invoice_info inner join merchant_invoice on
+		merchant_invoice.id=merchant_invoice_info.voice_id
+		where merchant_invoice_info.incorder_id in
+		<foreach collection="list" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+	
+	 
+       <!-- 获取增值服务订开票关键记录 -->
+	<select id="selectInvoiceInfoList2" parameterType="java.util.List" resultType="java.util.HashMap">	
+		<foreach collection="list" item="item" index="index" open=""
+			separator="union all" close="">
+			 select merchant_invoice.audit_status,merchant_invoice.id,merchant_invoice_info.inctype_id,merchant_invoice_info.incorder_id
+		from merchant_invoice_info inner join merchant_invoice on
+		merchant_invoice.id=merchant_invoice_info.voice_id
+		where merchant_invoice_info.incorder_id =#{item.id} and merchant_invoice_info.inctype_id=#{item.inctype_id} and merchant_invoice.audit_status!=2
+		</foreach>
+	</select>
+</mapper>
+

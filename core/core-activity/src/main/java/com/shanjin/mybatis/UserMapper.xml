@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IUserDao">
+  
+  	<!-- 获取用户表中platform字段是否存在 -->
+	<select id="getPlatform" parameterType="java.util.Map" resultType="int">  
+    SELECT
+	   COUNT(1)
+    FROM
+	   information_schema. COLUMNS
+    WHERE
+	   table_schema = 'shanjin'
+    AND table_name = 'user_info'
+    AND column_name = 'platform'
+    </select>
+  
+	<!-- 注册新用户,填写基本手机号和验证码、验证时间 -->
+	<insert id="insertUserInfoWithVerification" parameterType="java.util.Map" >
+  		insert into 
+  		    user_info(id,name,sex,phone, verification_code,join_time,verification_time,is_verification,is_del,user_key,ip,province,city
+  		    <if test="havePlatform == 1">
+                ,platform
+            </if>) 
+  		values(#{userId},#{name},#{sex},#{phone}, #{verificationCode},now(),now(),1,0,#{userKey},#{ip},#{province},#{city}
+  		  	<if test="havePlatform == 1">
+                ,#{platform}
+            </if>)
+	</insert>
+	
+	<!-- 根据手机号获取用户的信息 -->
+	<select id="getUserInfoByPhone" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            ui.*,
+            ua.path as portraitPath
+        from 
+            user_info ui 
+            left join user_attachment ua 
+        on 
+        	ui.id=ua.user_id and
+            ua.attachment_type=1 and 
+            ua.attachment_use=11 and 
+            ua.is_del=0
+        where 
+            ui.phone=#{phone} and
+            ui.is_del=0 
+    </select>  
+    
+    <!-- 注册成功之后初始化用户头像 -->
+	<insert id="initUserInfoPortraitDirect" parameterType="java.util.Map">
+	    insert into 
+  		    user_attachment(user_id, attachment_type,attachment_use,path,join_time,is_del) 
+  		values(#{userId},1,11,#{filePath},now(),0)
+	</insert>
+	
+	<!-- 验证微信用户是否已经存在 -->
+	<select id="checkWechatUserIsEmpty" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            wechat_user
+        where 
+            openid=#{openid}
+    </select>  
+    
+    <!-- 保存微信用户信息 -->
+	<insert id="insertWechatUser" parameterType="java.util.Map">
+	    insert into 
+  		    wechat_user(openid, nickname,headimgUrl,province,city,sex,country) 
+  		values(#{openid},#{nickname},#{headimgUrl},#{province},#{city},#{sex},#{country})
+	</insert>
+	
+	<!-- 查询微信用户信息 -->
+	<select id="getWechatByOpenId" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        select 
+            t.*
+        from 
+            wechat_user t
+        where 
+            t.openid=#{openid}
+    </select>  
+    
+    <!-- 更新微信用户信息-->
+	<update  id="updateWechatUser" parameterType="java.util.Map">
+	    update 
+	        wechat_user
+        set 
+            nickname =#{nickname},
+            headimgUrl =#{headimgUrl},
+            province =#{province},
+            city =#{city},
+            sex =#{sex},
+            country =#{country}
+        where 
+            openid=#{openid}
+	</update >
+    <!-- 更新微信用户关联的平台用户ID -->
+	<update  id="updateWechatUserForId" parameterType="java.util.Map">
+	    update 
+	        wechat_user
+        set 
+            user_id =#{userId}
+        where 
+            openid=#{openid}
+	</update >
+	
+	<!-- 收藏店铺 -->
+	<insert id="collectionMerchant" parameterType="java.util.Map" >
+	    insert user_merchant_collection(
+	    	user_id,
+	    	merchant_id,
+	    	join_time
+	    )values(
+	    	#{userId},
+	    	#{merchantId},
+	    	now()
+	    )
+	</insert>
+	
+    <!-- 用户是否收藏商家 -->
+	<select id="isCollectionMerchant" parameterType="java.util.Map" resultType="int">  
+        SELECT COUNT(1) FROM user_merchant_collection t
+        WHERE t.user_id=#{userId} AND t.merchant_id=#{merchantId}
+    </select>  
+	
+	<!-- 获取注册用户数 -->
+	<select id="getUserCount" parameterType="java.util.Map" resultType="int">  
+        select 
+            count(1)
+        from 
+            user_info ui 
+        where 
+            ui.is_del=0 
+    </select>
+
+    <!--根据用户Id获取用户相关信息-->
+    <select id="getUserInfo" resultType="java.util.Map">
+        SELECT
+        t.phone as phone,
+        a.path as path
+        FROM user_info t
+        LEFT JOIN user_attachment a ON t.id =a.user_id AND a.attachment_use = 11 AND attachment_type = 1
+        WHERE
+          t.id = #{userId}
+    </select>
+</mapper>
+

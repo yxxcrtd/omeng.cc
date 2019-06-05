@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.shanjin.o2o.omeng</groupId>
+    <artifactId>core</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>com.shanjin.o2o.omeng.core</groupId>
+  <artifactId>core-common</artifactId>
+  <name>core-common</name>
+  
+  <dependencies>
+  	<dependency>
+  		<groupId>com.shanjin.o2o.omeng.core</groupId>
+  		<artifactId>core-util</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.shanjin.o2o.omeng.core</groupId>
+  		<artifactId>core-client</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.shanjin.o2o.omeng.core</groupId>
+  		<artifactId>core-cache</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>  	 
+  	<dependency>
+  		<groupId>com.shanjin.o2o.omeng.api</groupId>
+  		<artifactId>api-core</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+		<groupId>com.shanjin.o2o.omeng</groupId>
+		<artifactId>kafka</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+  	<dependency>
+  		<groupId>org.springframework</groupId>
+  		<artifactId>spring-tx</artifactId>
+  		<version>4.1.5.RELEASE</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>log4j</groupId>
+  		<artifactId>log4j</artifactId>
+  		<version>1.2.17</version>
+  	</dependency>
+     <!-- 搜索引擎 
+	<dependency>
+		<groupId>org.apache.lucene</groupId>
+		<artifactId>lucene-core</artifactId>
+		<version>5.3.0</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.lucene</groupId>
+		<artifactId>lucene-analyzers-common</artifactId>
+		<version>5.3.0</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.lucene</groupId>
+		<artifactId>lucene-queryparser</artifactId>
+		<version>5.3.0</version>
+	</dependency>-->
+	<!-- 分词
+	<dependency>  
+       <groupId>org.wltea.ik-analyzer</groupId>  
+       <artifactId>ik-analyzer</artifactId>  
+       <version>3.2.8</version>  
+    </dependency> -->
+   <dependency>
+	<groupId>org.elasticsearch</groupId>
+	<artifactId>elasticsearch</artifactId>
+	<version>2.1.0</version>
+</dependency>
+
+    <dependency>
+		<groupId>io.searchbox</groupId>
+		<artifactId>jest</artifactId>
+		<version>2.0.0</version>
+	</dependency>
+    
+  </dependencies>
+</project>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPhotoDao">
+
+  <!-- 根据相册Id查询相册中的相片 -->
+  <select id="selectPhotoByAlbumId" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          id as photoId,
+          path
+      from
+          merchant_photo
+      where
+          album_id = #{albumId}
+          and is_del = 0
+      order by
+          join_time asc
+  </select>
+
+  <!-- 查询单个商户的总相片数 -->
+  <select id="selectPhotoTotal" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(1)
+      from
+          merchant_photo
+      where
+          album_id in (select id from merchant_album where merchant_id = #{merchantId} and is_del = 0)
+          and is_del = 0
+  </select>
+
+  <!-- 根据相片Id查询相片路径(批量查询) -->
+  <select id="selectPhotoByPhotoId" parameterType="java.util.List" resultType="java.lang.String">
+      select
+          path
+      from
+          merchant_photo
+      where
+          id in
+      <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+          #{id}
+      </foreach>
+          and is_del = 0
+  </select>
+
+  <!-- 新建相片 -->
+  <insert id="insertPhoto" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="photoId">
+      insert into merchant_photo
+           (
+               album_id,
+               path,
+               join_time,
+               is_del
+           )
+      values
+           (
+               #{albumId},
+               #{path},
+               now(),
+               0
+           )
+  </insert>
+
+  <!-- 新建相片 -->
+  <insert id="insertPhotos" parameterType="java.util.List">
+      insert into merchant_photo
+           (
+               album_id,
+               path,
+               join_time,
+               is_del
+           )
+      values
+           <foreach collection="list" item="item" index="index" separator=",">
+               (#{item.albumId}, #{item.path}, now(), 0)
+           </foreach>
+  </insert>
+
+  <!-- 删除相片(根据相片Id批量删除),将is_del设置成1 -->
+  <update id="updatePhotoStatusById" parameterType="java.util.List">
+      update
+          merchant_photo
+      set
+          is_del = 1
+      where
+          id in
+      <foreach collection="list" index="index" item="id" open="(" separator="," close=")">   
+          #{id}
+      </foreach>
+  </update>
+
+  <!-- 删除相片(根据相册Id批量删除),将is_del设置成1 -->
+  <update id="updatePhotoStatusByAlbumId" parameterType="java.util.Map">
+      update
+          merchant_photo
+      set
+          is_del = 1
+      where
+          album_id = #{albumId}
+  </update>
+
+  <!-- 根据商户ID查询最新的1张照片 -->
+  <select id="selectLast1Photo" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          mp.path as path
+      from
+          merchant_album ma
+          inner join merchant_photo mp on ma.id = mp.album_id
+      where
+          ma.merchant_id = #{merchantId}
+          and ma.is_del = 0
+          and mp.is_del = 0
+      order by
+          mp.join_time desc
+      limit
+          0, 1
+  </select>
+
+  <!-- 根据商户ID查询最新的2张照片 -->
+  <select id="selectLast2Photo" parameterType="java.util.Map" resultType="java.util.HashMap">
+	  select
+	      GROUP_CONCAT(tmp.path) as path
+	  from
+	  (
+	      select
+	          mp.path as path
+	      from
+	          merchant_album ma
+	          inner join merchant_photo mp on ma.id = mp.album_id
+	      where
+	          ma.merchant_id = #{merchantId}
+	          and ma.is_del = 0
+	          and mp.is_del = 0
+	      order by
+	          mp.join_time desc
+	      limit
+	          0, 2
+	  ) tmp
+  </select>
+
+  <!-- 根据商户ID查询最新的4张照片 -->
+  <select id="selectLast4Photo" parameterType="java.util.Map" resultType="java.util.HashMap">
+	  select
+	      GROUP_CONCAT(tmp.path) as path
+	  from
+	  (
+	      select
+	          mp.path as path
+	      from
+	          merchant_album ma
+	          inner join merchant_photo mp on ma.id = mp.album_id
+	      where
+	          ma.merchant_id = #{merchantId}
+	          and ma.is_del = 0
+	          and mp.is_del = 0
+	      order by
+	          mp.join_time desc
+	      limit
+	          0, 4
+	  ) tmp
+  </select>
+  
+  <!-- 根据商户ID查询最新的4张照片 -->
+  <select id="selectLastPhotos" parameterType="java.util.Map" resultType="java.util.HashMap">
+	  select
+	      GROUP_CONCAT(tmp.path) as path
+	  from
+	  (
+	      select
+	          mp.path as path
+	      from
+	          merchant_album ma
+	          inner join merchant_photo mp on ma.id = mp.album_id
+	      where
+	          ma.merchant_id = #{merchantId}
+	          and ma.is_del = 0
+	          and mp.is_del = 0
+	      order by
+	          mp.join_time desc
+	      limit
+	          ${num}
+	  ) tmp
+  </select>
+</mapper>
+

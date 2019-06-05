@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantContactDao">
+
+  <!-- 查询商户的联系方式 -->
+  <select id="selectTelephone" parameterType="java.util.Map" resultType="java.lang.String">
+      select
+          telephone
+      from
+          merchant_contact
+      where
+          merchant_id = #{merchantId}
+  </select>
+
+  <!-- 保存商户的联系方式 -->
+  <insert id="insertTelephone" parameterType="java.util.Map">
+      insert into
+          merchant_contact(merchant_id, telephone)
+      values
+          (#{merchantId}, #{phone})
+  </insert>
+
+  <!-- 更新商户的联系方式 -->
+  <update id="updateTelephone" parameterType="java.util.Map">
+      update
+          merchant_contact
+      set
+          telephone = #{telephone}
+      where
+          merchant_id = #{merchantId}
+  </update>
+</mapper>
+

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IRequirementDao">
+  
+  	<!-- 获取需求活动基本信息 -->
+	<select id="getRequireActivity" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        SELECT t.id,t.title,t.subtitle,t.description,t.bImage as image FROM activity_info t WHERE t.id=#{activityId} limit 0,1
+    </select>
+	
+	<!-- 获取需求活动服务项目列表 -->
+	<select id="getRequireServiceList" parameterType="java.util.Map" resultType="java.util.HashMap">  
+        SELECT t.title,t.description,t.image,t.service_id AS serviceId,t.service_name AS serviceName
+        FROM activity_requirement_detail t WHERE t.activity_id=#{activityId}
+    </select>  
+
+</mapper>
+

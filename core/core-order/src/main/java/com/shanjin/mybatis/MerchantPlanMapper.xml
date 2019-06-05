@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shanjin.dao.IMerchantPlanDao">
+
+  <select id="selectPlanNum" parameterType="java.util.Map" resultType="java.lang.Integer">
+      select
+          count(id)
+      from
+          merchant_plan
+      where
+          merchant_id = #{merchantId}
+          and order_id = #{orderId}
+          and is_del = 0
+  </select>
+
+  <!-- 商户抢单后提供的方案的保存 -->
+  <insert id="insertMerchantPlan" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="merchantPlanId">
+      insert into
+          merchant_plan
+          (
+              merchant_id,
+              order_id,
+              receive_employees_id,
+              price,
+              discount_price,
+              deposit,
+              promise,
+              content,
+              plan_type,
+              join_time,
+              price_unit,
+              is_offer
+          )
+      values
+          (
+              #{merchantId},
+              #{orderId},
+              #{employeeId},
+              #{planPrice},
+              #{discountPrice},
+              #{deposit},
+              #{promise},
+              #{content},
+              #{planType},
+              now() ,
+              #{priceUnit},
+              #{isOffer}
+          )
+  </insert>
+   <!-- 商户抢单后提供的方案的保存 -->
+  <insert id="updateMerchantPlan" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="merchantPlanId">
+      update 
+      	merchant_plan 
+      set 
+        price=#{planPrice},
+        discount_price=#{discountPrice},
+        price_unit=#{priceUnit},
+        deposit= #{deposit},
+        promise=#{promise},
+        content=#{content},
+        plan_type=#{planType}
+      where
+      	merchant_id=#{merchantId}
+        and order_id=#{orderId}
+        
+  </insert>
+  <!-- 更新总抢单次数 -->
+  <update id="updateGrabFrequency" parameterType="java.util.Map">
+      update
+          merchant_statistics
+      set
+          grab_frequency = grab_frequency + 1
+      where
+          merchant_id = #{merchantId}
+          <!-- and app_type = #{appType} -->
+  </update>
+  
+  <select id="getOrderPlanCount" parameterType="Long" resultType="Integer">
+	  	select 
+	  		count(1) as count 
+	  	from 
+	  		merchant_plan mp 
+	  	where 
+	  		mp.order_id=#{orderId}
+	  		and is_del = 0
+  </select>
+  
+  <select id="getEmployeeIdByPhone" resultType="Object" parameterType="Map">
+  		select 
+  			user_id as id 
+  		from 
+  			merchant_employees 
+  		where 
+  			merchant_id = #{merchantId} 
+  			and phone = #{phone} 
+  			and verification_status = 1 
+  			and is_del = 0
+  </select>
+  
+  <update id="updateMerchantPlanExtInfo" parameterType="java.util.Map">
+	    update 
+	        merchant_plan
+        set 
+            distance =#{distance},
+            total_count =#{totalCount},
+            praise_count =#{praiseCount}  
+        where 
+            merchant_id = #{merchantId} 
+            and order_id=#{orderId}
+	</update>
+  
+  
+  <select id="selectMerchantTotalCountEvaluation" parameterType="java.util.Map" resultType="java.util.HashMap">
+      select
+          SUM(total_attitude_evaluation) AS totalAttitudeEvaluation,
+	      SUM(total_quality_evaluation) AS totalQualityEvaluation,
+	      SUM(total_speed_evaluation) AS totalSpeedEvaluation,
+          total_count_evaluation as totalCountEvaluation
+      from
+          merchant_statistics
+      where
+          merchant_id = #{merchantId}
+  </select>
+  
+  <select id="selectMerchantGoodEvaluationCount" parameterType="java.util.Map" resultType="java.util.HashMap">
+        SELECT
+			count(1) as goodCount
+		FROM
+			evaluation
+		WHERE
+			attitude_evaluation = 5
+		AND quality_evaluation = 5
+		AND speed_evaluation = 5
+		AND merchant_id = #{merchantId}
+  </select>
+  
+  
+  <select id="getMerchantInfoForChoosePlan" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select mi.name,mi.short_name,mc.telephone,ma.path from merchant_info mi 
+		inner join merchant_contact mc on mi.id = mc.merchant_id
+		inner join merchant_attachment ma on mi.id = ma.merchant_id
+		where mi.id = #{merchantId}
+  </select>
+  
+  
+   <select id="getMerchantPlan" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select * from merchant_plan where id = #{merchantId}
+  </select>
+  
+  
+   <select id="getEmployeeIdsOfMerchantPlan" parameterType="java.util.Map" resultType="java.util.Map">
+       	SELECT
+			merchant_id as merchantId,
+			receive_employees_id as receiveEmployeesId
+		FROM
+			merchant_plan
+		WHERE
+			order_id = #{orderId} 
+			and receive_employees_id!=#{excludeEmployeeID}
+  </select>
+  
+  <select id="getMerchantsByOrderId" parameterType="java.lang.Long" resultType="Long">
+        select merchant_id from merchant_plan where order_id = #{orderId}
+  </select> 
+  
+  
+  <select id="getBossIdByMerchant" parameterType="java.lang.Long" resultType="Map">
+        select user_id,phone from merchant_employees where merchant_id = #{merchantId}
+         and  employees_type=1 and  is_del=0
+  </select> 
+  
+  
+  <select id="getTotalPlainGoods" parameterType="java.lang.Long" resultType="Integer">
+        select  count(*) from merchantPlan_goods where plan_id=#{planId}
+  </select> 
+  
+  <select id="getDefaultGoodsInfo" parameterType="java.lang.Long" resultType="Map">
+        select * from merchant_goods_history
+        	 where id = 
+		(select  goods_history_id from merchantPlan_goods where plan_id=#{planId} order by id  limit 1 ) 
+  </select> 
+  
+   <select id="getGoodsInfoByPlan" parameterType="java.lang.Long" resultType="Map">
+        SELECT mgh.id as goodsHistoryId,mgh.goods_name as goodsName,mgh.goods_price as goodsPrice,
+        		mgh.goods_price_unit as goodsPriceUnit,goods_picture_url as goodsPictureUrl  
+        FROM merchantPlan_goods mpg 
+        INNER JOIN merchant_goods_history mgh on mpg.goods_history_id=mgh.id
+		where plan_id=#{planId}
+  </select> 
+
+  
+</mapper>
+
