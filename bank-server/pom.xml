@@ -8,7 +8,7 @@
   <artifactId>bank-server</artifactId>
   <packaging>war</packaging>
   <properties>  
-        <springframework.version>3.0.5.RELEASE</springframework.version>  
+        <springframework.version>3.2.18.RELEASE</springframework.version>  
     </properties>
    <dependencies>
         <dependency>
